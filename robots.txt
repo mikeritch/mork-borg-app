@@ -1,14 +1,4 @@
 User-agent: *
-Disallow: /
+Allow: /
 
-User-agent: Googlebot
-Disallow: /
-
-User-agent: Bingbot
-Disallow: /
-
-User-agent: Slurp
-Disallow: /
-
-Noindex: /
-Nofollow: /
+Sitemap: https://character-reliquary.manemike.com/sitemap.xml
