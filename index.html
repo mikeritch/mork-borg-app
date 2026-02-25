@@ -106,6 +106,73 @@
 
         <p id="status" class="status">Ready.</p>
 
+        <section id="dice-panel" class="dice-panel" data-collapsed="true">
+          <button
+            id="dice-toggle"
+            class="dice-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="dice-panel-body"
+          >
+            <span>3D Dice Tray</span>
+            <span class="dice-toggle-hint">Open</span>
+          </button>
+
+          <div id="dice-panel-body" class="dice-panel-body" hidden>
+            <div class="dice-controls">
+              <label class="dice-formula-label" for="dice-formula">
+                Roll Formula
+                <input
+                  id="dice-formula"
+                  type="text"
+                  maxlength="72"
+                  value="d20"
+                  placeholder="2d6+3, d20, d%"
+                  spellcheck="false"
+                />
+              </label>
+              <button id="dice-roll-btn" class="btn btn-primary dice-roll-btn" type="button">
+                Roll
+              </button>
+            </div>
+
+            <div class="dice-chip-row" aria-label="Quick dice">
+              <button type="button" class="dice-chip" data-dice-chip="d2">d2</button>
+              <button type="button" class="dice-chip" data-dice-chip="d4">d4</button>
+              <button type="button" class="dice-chip" data-dice-chip="d6">d6</button>
+              <button type="button" class="dice-chip" data-dice-chip="d8">d8</button>
+              <button type="button" class="dice-chip" data-dice-chip="d10">d10</button>
+              <button type="button" class="dice-chip" data-dice-chip="d12">d12</button>
+              <button type="button" class="dice-chip" data-dice-chip="d20">d20</button>
+              <button type="button" class="dice-chip" data-dice-chip="d100">d100</button>
+            </div>
+
+            <details id="dice-advanced" class="dice-advanced">
+              <summary>Advanced</summary>
+              <div class="dice-advanced-grid">
+                <label class="dice-switch-label" for="dice-force-2d">
+                  <input id="dice-force-2d" type="checkbox" />
+                  Force 2D Fallback
+                </label>
+              </div>
+            </details>
+
+            <p id="dice-status" class="dice-status" role="status" aria-live="polite">
+              Dice tray ready.
+            </p>
+
+            <div class="dice-stage-shell">
+              <canvas id="dice-canvas" aria-label="3D dice canvas"></canvas>
+              <div id="dice-fallback" class="dice-fallback" hidden></div>
+            </div>
+
+            <section class="dice-history-wrap">
+              <h4>Last 10 Rolls</h4>
+              <ul id="dice-history" class="dice-history"></ul>
+            </section>
+          </div>
+        </section>
+
         <form id="character-form" autocomplete="off">
           <section class="sheet-section rules-section">
             <h3>Core Rules Mode</h3>
@@ -598,6 +665,6 @@
       </li>
     </template>
 
-    <script src="app.js" defer></script>
+    <script src="app.js?v=20260225m-d20-biggerfont" defer></script>
   </body>
 </html>

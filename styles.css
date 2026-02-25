@@ -43,6 +43,14 @@
   --tracker-value-bg: linear-gradient(180deg, rgba(58, 44, 49, 0.96), rgba(43, 32, 37, 0.96));
   --tracker-value-text: #f2e4d3;
   --tracker-value-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  --dice-panel-bg: radial-gradient(circle at 86% 5%, rgba(164, 32, 42, 0.22), transparent 38%),
+    linear-gradient(180deg, rgba(31, 23, 27, 0.94), rgba(21, 15, 19, 0.94));
+  --dice-shell-bg: radial-gradient(circle at 74% 7%, rgba(177, 145, 78, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(23, 17, 20, 0.96), rgba(16, 11, 14, 0.96));
+  --dice-chip-bg: rgba(55, 41, 47, 0.86);
+  --dice-chip-active: linear-gradient(120deg, rgba(141, 33, 41, 0.84), rgba(177, 145, 78, 0.66));
+  --dice-surface: rgba(66, 50, 57, 0.6);
+  --dice-fallback-token: linear-gradient(180deg, rgba(84, 63, 72, 0.94), rgba(52, 39, 44, 0.94));
   --readonly-bg: rgba(44, 35, 39, 0.95);
   --readonly-text: #ddcfc0;
   --reference-bg: radial-gradient(circle at 80% 0%, rgba(177, 145, 78, 0.22), transparent 38%),
@@ -97,6 +105,14 @@ html[data-theme="light"] {
   --tracker-value-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(242, 234, 220, 0.9));
   --tracker-value-text: #382b2d;
   --tracker-value-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
+  --dice-panel-bg: radial-gradient(circle at 88% 3%, rgba(142, 30, 36, 0.13), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(245, 236, 221, 0.78));
+  --dice-shell-bg: radial-gradient(circle at 84% 5%, rgba(165, 133, 69, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(243, 232, 214, 0.82));
+  --dice-chip-bg: rgba(255, 255, 255, 0.82);
+  --dice-chip-active: linear-gradient(120deg, rgba(142, 30, 36, 0.8), rgba(165, 133, 69, 0.64));
+  --dice-surface: rgba(204, 189, 164, 0.58);
+  --dice-fallback-token: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(241, 230, 211, 0.92));
   --readonly-bg: rgba(246, 243, 235, 0.95);
   --readonly-text: #433537;
   --reference-bg: radial-gradient(circle at 80% 0%, rgba(165, 133, 69, 0.14), transparent 38%),
@@ -376,6 +392,290 @@ html[data-theme="dark"] .theme-toggle {
 
 .status[data-tone="error"] {
   border-left-color: #8b1e24;
+}
+
+.dice-panel {
+  border: 1px solid color-mix(in srgb, var(--line) 76%, var(--gold) 24%);
+  border-radius: 12px;
+  margin: 0 0 0.9rem;
+  background: var(--dice-panel-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 62%, transparent 38%);
+  overflow: clip;
+}
+
+.dice-toggle {
+  appearance: none;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 74%, transparent 26%);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font: 700 0.95rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.7rem 0.85rem;
+}
+
+.dice-toggle:hover {
+  background: color-mix(in srgb, var(--btn-ghost-bg) 50%, transparent 50%);
+}
+
+.dice-toggle-hint {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--field-help);
+}
+
+.dice-panel[data-collapsed="false"] .dice-toggle-hint::before {
+  content: "Close";
+}
+
+.dice-panel[data-collapsed="false"] .dice-toggle-hint {
+  font-size: 0;
+}
+
+.dice-panel-body {
+  display: grid;
+  gap: 0.72rem;
+  padding: 0.8rem 0.85rem 0.9rem;
+}
+
+.dice-panel-body[hidden] {
+  display: none !important;
+}
+
+.dice-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.dice-formula-label {
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+
+.dice-formula-label input {
+  margin-top: 0.25rem;
+  text-transform: none;
+  font: 700 1rem/1.2 "Cormorant Garamond", serif;
+  letter-spacing: 0.02em;
+}
+
+.dice-roll-btn {
+  min-height: 2.4rem;
+  min-width: 6.6rem;
+}
+
+.dice-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dice-chip {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, #fff 28%);
+  border-radius: 999px;
+  background: var(--dice-chip-bg);
+  color: inherit;
+  padding: 0.35rem 0.72rem;
+  font: 700 0.8rem/1 "Cinzel", serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.dice-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-soft);
+  box-shadow: var(--hover-shadow-soft);
+}
+
+.dice-chip:active {
+  transform: translateY(0);
+}
+
+.dice-chip.is-used {
+  color: #fff4f1;
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--gold) 36%);
+  background: var(--dice-chip-active);
+}
+
+.dice-advanced {
+  border: 1px dashed color-mix(in srgb, var(--line) 75%, var(--gold) 25%);
+  border-radius: 9px;
+  padding: 0.5rem 0.58rem 0.58rem;
+  background: color-mix(in srgb, var(--section-bg) 70%, transparent 30%);
+}
+
+.dice-advanced summary {
+  cursor: pointer;
+  list-style: none;
+  font: 700 0.78rem/1 "Cinzel", serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dice-advanced summary::-webkit-details-marker {
+  display: none;
+}
+
+.dice-advanced-grid {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dice-switch-label {
+  align-items: flex-start;
+  justify-content: flex-start;
+  font: 700 0.8rem/1.1 "Cinzel", serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.dice-switch-label input {
+  width: auto;
+  margin: 0.05rem 0.4rem 0 0;
+  accent-color: var(--accent);
+}
+
+.dice-status {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--status-bg) 86%, transparent 14%);
+  padding: 0.4rem 0.58rem;
+  font-size: 0.92rem;
+  color: var(--field-help);
+}
+
+.dice-status[data-tone="error"] {
+  border-color: color-mix(in srgb, #8b1e24 60%, var(--line) 40%);
+}
+
+.dice-status[data-tone="warn"] {
+  border-color: color-mix(in srgb, #904d1d 56%, var(--line) 44%);
+}
+
+.dice-stage-shell {
+  position: relative;
+  min-height: 340px;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, var(--gold) 24%);
+  border-radius: 11px;
+  background: var(--dice-shell-bg);
+  overflow: hidden;
+}
+
+#dice-canvas {
+  display: block;
+  width: 100%;
+  height: 340px;
+}
+
+.dice-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 1rem;
+}
+
+.dice-fallback-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dice-fallback-token {
+  min-width: 3rem;
+  border: 1px solid color-mix(in srgb, var(--line) 65%, #fff 35%);
+  border-radius: 10px;
+  background: var(--dice-fallback-token);
+  font: 700 1rem/1 "Cinzel", serif;
+  letter-spacing: 0.03em;
+  text-align: center;
+  padding: 0.62rem 0.52rem;
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.2);
+}
+
+.dice-fallback-token.is-rolling {
+  animation: dice-fallback-bounce 480ms ease-in-out infinite;
+}
+
+.dice-history-wrap {
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent 22%);
+  border-radius: 9px;
+  padding: 0.55rem 0.58rem;
+  background: color-mix(in srgb, var(--section-bg) 77%, transparent 23%);
+}
+
+.dice-history-wrap h4 {
+  margin: 0 0 0.45rem;
+  font: 700 0.84rem/1 "Cinzel", serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dice-history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.dice-history-item {
+  border: 1px solid color-mix(in srgb, var(--line) 74%, transparent 26%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--dice-surface) 65%, transparent 35%);
+  padding: 0.37rem 0.45rem;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.dice-history-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+}
+
+.dice-history-total {
+  font: 700 1rem/1 "Cinzel", serif;
+}
+
+.dice-history-meta {
+  color: var(--field-help);
+  font-size: 0.83rem;
+}
+
+@keyframes dice-fallback-bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-7px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(3deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(-1.5deg);
+  }
 }
 
 #character-form {
@@ -751,6 +1051,10 @@ html[data-theme="dark"] .theme-toggle {
   .power-spark {
     display: none;
   }
+
+  .dice-fallback-token.is-rolling {
+    animation: none !important;
+  }
 }
 
 input[readonly] {
@@ -915,6 +1219,22 @@ textarea:focus {
 }
 
 @media (max-width: 700px) {
+  .dice-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .dice-roll-btn {
+    width: 100%;
+  }
+
+  .dice-advanced-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #dice-canvas {
+    height: 290px;
+  }
+
   .two-col {
     grid-template-columns: 1fr;
   }
