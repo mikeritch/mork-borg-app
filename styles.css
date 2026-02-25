@@ -260,18 +260,64 @@ html[data-theme="dark"] .footer-license-logo {
   border-radius: 12px;
   padding: 1rem;
   background: var(--brand-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 0.55rem;
+  text-align: center;
+}
+
+.brand-copy {
+  width: 100%;
+  min-width: 0;
 }
 
 .brand-mark {
-  margin: 0;
+  margin: 0 0 0.2rem;
   font-family: "UnifrakturCook", cursive;
   font-size: 1.35rem;
   letter-spacing: 0.01em;
   color: var(--accent);
 }
 
-.brand h1 {
+.brand-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.58rem;
   margin: 0.1rem 0 0.45rem;
+}
+
+.brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: min(100%, clamp(8.4rem, 28vw, 13rem));
+  aspect-ratio: 1 / 1;
+}
+
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-logo-light {
+  display: none;
+}
+
+html[data-theme="light"] .brand-logo-dark {
+  display: none;
+}
+
+html[data-theme="light"] .brand-logo-light {
+  display: block;
+}
+
+.brand h1 {
+  margin: 0;
   font-family: "Cinzel", serif;
   font-size: 1.55rem;
   line-height: 1.2;
@@ -1428,6 +1474,28 @@ textarea:focus {
 }
 
 @media (max-width: 700px) {
+  .brand {
+    display: grid;
+    grid-template-columns: minmax(5.8rem, 34vw) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.8rem;
+    row-gap: 0;
+    text-align: left;
+  }
+
+  .brand-copy {
+    width: auto;
+  }
+
+  .brand-title-row {
+    gap: 0.45rem;
+    justify-content: flex-start;
+  }
+
+  .brand-logo-wrap {
+    width: 100%;
+  }
+
   .dice-preview-host {
     height: clamp(6.4rem, 18vh, 8.4rem);
   }

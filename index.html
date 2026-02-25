@@ -49,9 +49,29 @@
     <div class="app-shell">
       <aside class="vault-panel">
         <div class="brand">
-          <p class="brand-mark">MORK BORG</p>
-          <h1>Character Reliquary</h1>
-          <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
+          <div class="brand-logo-wrap">
+            <img
+              class="brand-logo brand-logo-dark"
+              src="assets/logos/CRLogo.webp"
+              alt="Character Reliquary logo"
+              width="112"
+              height="112"
+            />
+            <img
+              class="brand-logo brand-logo-light"
+              src="assets/logos/CRLogoLight.webp"
+              alt="Character Reliquary logo"
+              width="112"
+              height="112"
+            />
+          </div>
+          <div class="brand-copy">
+            <p class="brand-mark">MORK BORG</p>
+            <div class="brand-title-row">
+              <h1>Character Reliquary</h1>
+            </div>
+            <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
+          </div>
         </div>
 
         <div class="vault-actions">
@@ -274,7 +294,7 @@
             <div class="fields stat-grid">
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="activity" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="dumbbell" aria-hidden="true"></i>
                   <span>Strength</span>
                 </span>
                 <input id="strength" type="number" min="-3" max="6" step="1" />
@@ -295,7 +315,7 @@
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="shield" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="shield-alert" aria-hidden="true"></i>
                   <span>Toughness</span>
                 </span>
                 <input id="toughness" type="number" min="-3" max="6" step="1" />
@@ -342,28 +362,28 @@
               </article>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="heart" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="target" aria-hidden="true"></i>
                   <span>Hit Points (Max)</span>
                 </span>
                 <input id="hpMax" type="number" min="1" max="30" step="1" />
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="star" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="crown" aria-hidden="true"></i>
                   <span>Omens</span>
                 </span>
                 <input id="omens" type="number" min="0" max="9" step="1" />
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="disc" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="circle-dollar-sign" aria-hidden="true"></i>
                   <span>Silver</span>
                 </span>
                 <input id="silver" type="number" min="0" max="9999" step="1" />
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="scissors" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="badge-alert" aria-hidden="true"></i>
                   <span>Signature Scar</span>
                 </span>
                 <input id="scars" maxlength="120" placeholder="Burn marks, missing eye..." />
@@ -373,7 +393,7 @@
 
           <section class="sheet-section">
             <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="package" aria-hidden="true"></i>
+              <i class="heading-lucide" data-lucide="backpack" aria-hidden="true"></i>
               <span>Equipment</span>
             </h3>
             <p class="field-help">
@@ -382,7 +402,7 @@
             <div class="fields two-col">
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="activity" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="axe" aria-hidden="true"></i>
                   <span>Weapon</span>
                 </span>
                 <select id="weapon">
@@ -420,7 +440,7 @@
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="eye" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="crosshair" aria-hidden="true"></i>
                   <span>Primary Attack Stat</span>
                 </span>
                 <select id="attack">
@@ -431,7 +451,7 @@
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="shield" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="anvil" aria-hidden="true"></i>
                   <span>Armor</span>
                 </span>
                 <select id="armor">
@@ -465,7 +485,7 @@
               </label>
               <label class="span-2">
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="star" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="gem" aria-hidden="true"></i>
                   <span>Trinket</span>
                 </span>
                 <input
@@ -503,7 +523,7 @@
 
           <section class="sheet-section">
             <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="zap" aria-hidden="true"></i>
+              <i class="heading-lucide" data-lucide="sparkles" aria-hidden="true"></i>
               <span>Powers</span>
             </h3>
             <p class="field-help">Catalogue forbidden rites, cursed scrolls, and the toll of each casting.</p>
@@ -511,14 +531,14 @@
               <div class="power-summary span-2">
                 <article class="power-summary-chip">
                   <span class="power-summary-label label-with-icon">
-                    <i class="stat-lucide" data-lucide="star" aria-hidden="true"></i>
+                    <i class="stat-lucide" data-lucide="skull" aria-hidden="true"></i>
                     <span>Known Powers</span>
                   </span>
                   <output id="powers-known-counter" class="tracker-count">0</output>
                 </article>
                 <article class="power-summary-chip">
                   <span class="power-summary-label label-with-icon">
-                    <i class="stat-lucide" data-lucide="zap" aria-hidden="true"></i>
+                    <i class="stat-lucide" data-lucide="hourglass" aria-hidden="true"></i>
                     <span>Cast Attempts Today</span>
                   </span>
                   <output id="powers-cast-counter" class="tracker-count">0</output>
@@ -559,7 +579,7 @@
               <article class="known-powers-block span-2">
                 <div class="known-powers-head">
                   <h4 class="heading-with-icon">
-                    <i class="stat-lucide" data-lucide="book" aria-hidden="true"></i>
+                    <i class="stat-lucide" data-lucide="compass" aria-hidden="true"></i>
                     <span>Known Powers List</span>
                   </h4>
                   <button id="add-known-power" class="btn btn-ghost known-power-add" type="button">
@@ -574,14 +594,14 @@
               <textarea id="powersKnown" hidden aria-hidden="true"></textarea>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="book" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="scroll-text" aria-hidden="true"></i>
                   <span>Sacred Scrolls Carried</span>
                 </span>
                 <input id="sacredScrolls" type="number" min="0" max="99" step="1" />
               </label>
               <label>
                 <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="disc" aria-hidden="true"></i>
+                  <i class="stat-lucide" data-lucide="flask-conical" aria-hidden="true"></i>
                   <span>Unclean Scrolls Carried</span>
                 </span>
                 <input id="uncleanScrolls" type="number" min="0" max="99" step="1" />
@@ -604,7 +624,7 @@
 
           <section class="sheet-section">
             <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="file-text" aria-hidden="true"></i>
+              <i class="heading-lucide" data-lucide="pen-line" aria-hidden="true"></i>
               <span>Notes</span>
             </h3>
             <label>

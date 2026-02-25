@@ -1375,6 +1375,19 @@ function pullFromForm(existing) {
   return normalizeCharacter(source);
 }
 
+function hasCharacterData(character) {
+  if (!character) {
+    return false;
+  }
+  return FIELD_IDS.some((id) => {
+    const baseline = DEFAULTS[id];
+    if (NUMERIC_FIELDS.has(id)) {
+      return toSafeNumber(character[id], baseline) !== toSafeNumber(baseline, 0);
+    }
+    return String(character[id] ?? "").trim() !== String(baseline ?? "").trim();
+  });
+}
+
 function upsertCharacter(character, notify = true) {
   const idx = state.characters.findIndex((sheet) => sheet.id === character.id);
   if (idx >= 0) {
@@ -1592,7 +1605,18 @@ function randomCharacterPatch() {
 }
 
 function randomizeActiveCharacter() {
-  const base = activeCharacter() || createBlankCharacter();
+  const existing = activeCharacter() || createBlankCharacter();
+  const base = pullFromForm(existing);
+  if (hasCharacterData(base)) {
+    const label = base.name || "this character";
+    const confirmed = window.confirm(
+      `Randomize ${label}? This will overwrite the current character details.`
+    );
+    if (!confirmed) {
+      setStatus("Randomize canceled.", "warn");
+      return;
+    }
+  }
   const randomized = normalizeCharacter({
     ...base,
     ...randomCharacterPatch(),

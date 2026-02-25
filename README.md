@@ -1,5 +1,9 @@
 # MORK BORG Character Reliquary
 
+<p align="center">
+  <img src="assets/logos/CRBanner.webp" alt="Character Reliquary logo" width="560" />
+</p>
+
 A lightweight web app for generating, editing, and storing MORK BORG character sheets.
 
 ## Run
@@ -12,39 +16,21 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
 ## Features
 
 - Gothic-themed responsive UI (desktop + mobile).
-- Full character sheet editing.
-- Classless-rules-based random character generation.
-- Local autosave with `localStorage`.
-- Multiple saved characters with quick switching.
-- Import and export character JSON files.
-- Expanded dropdown options for class, homeland, weapon, armor, and attack stat.
-- Custom weapon and armor entries with editable `d` values.
-- Powers/scroll tracking with visual checkbox trackers and a bottom quick-reference sheet.
-- Expanded name variety in random generation.
-
-## Rules Accuracy
-
-The randomizer is aligned to baseline classless character creation:
-
-- Ability modifiers generated from 3d6 rolls using the core modifier table.
-- HP generated as `d8 + Toughness`, with minimum 1.
-- Omens generated as `d2`.
-- Silver generated as `2d6 x 10`.
-- Inventory generated from classless loadout/gear tables, plus waterskin and food.
-- Weapon and armor generated from classless weapon (`d10`) and armor (`d4`) tables, with reduced tables when a starting scroll appears in gear.
-
-If you select a class other than `Classless Scvm`, class-specific starting rules may differ and should be adjusted manually.
-
-## Anti-Crawl / Privacy
-
-For GitHub Pages hosting, this project uses:
-
-- Page-level noindex/noarchive meta tags in `index.html`.
-- `robots.txt` with `Disallow: /`.
-
-GitHub Pages does not let you set custom response headers like `X-Robots-Tag`, so meta tags and `robots.txt` are the enforceable controls here.
-
-For strongest protection, host behind authentication and avoid public linking.
+- Full sheet editor for Identity, Core Stats, Survival, Equipment, Powers, and Notes.
+- Classless random character generation with confirmation before overwriting an existing sheet.
+- Local autosave with `localStorage` and multi-character vault with quick switching.
+- JSON import/export for backup and transfer.
+- Expanded selectable options (class, homeland, weapon, armor, attack stat) plus custom weapon/armor entries with editable `d` values.
+- Interactive HP tracker (`+` / `-`) with Max HP clamping, low-HP danger styling, and `BROKEN` state at 0 HP.
+- Powers section with cast attempt counter, known-powers list builder, scroll counters, and notes.
+- Integrated collapsible dice tray with:
+  - 3D dice (`d2`, `d4`, `d6`, `d8`, `d10`, `d12`, `d20`, `d100`)
+  - active die buttons, dynamic roll label, clear dice action, and click-to-reroll behavior
+  - in-tray status, last-10-roll history, and one-click ledger purge
+  - advanced options (`Force 2D Fallback`, `Low Performance`)
+- Lazy-loaded dice module (`dice.js`) for better initial page load performance.
+- Themed quick-reference rules section in-app.
+- Devil/Saint theme toggle with dark mode default.
 
 ## Data Storage
 
@@ -52,3 +38,8 @@ Character sheets are stored locally in your browser using:
 
 - `morkborg-reliquary.characters.v1`
 - `morkborg-reliquary.active.v1`
+
+Dice tray settings and history are also stored locally:
+
+- `mb_dice_settings_v1`
+- `mb_dice_history_v1`
