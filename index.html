@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mork Borg Character Reliquary</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="vault-panel">
+        <div class="brand">
+          <p class="brand-mark">Mork Borg</p>
+          <h1>Character Reliquary</h1>
+          <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
+        </div>
+
+        <div class="vault-actions">
+          <button id="new-character" class="btn btn-primary" type="button">
+            New Sheet
+          </button>
+          <button id="random-character" class="btn btn-ghost" type="button">
+            Randomize
+          </button>
+        </div>
+
+        <section class="vault-list-wrap">
+          <h2>Saved Characters</h2>
+          <p id="list-empty" class="muted">No saved characters yet.</p>
+          <ul id="character-list" class="character-list"></ul>
+        </section>
+      </aside>
+
+      <main class="sheet-panel">
+        <header class="sheet-header">
+          <div>
+            <p class="section-kicker">Sheet Editor</p>
+            <h2 id="sheet-title">Unnamed Soul</h2>
+          </div>
+
+          <div class="header-actions">
+            <button id="save-character" class="btn btn-primary" type="button">
+              Save
+            </button>
+            <button id="delete-character" class="btn btn-danger" type="button">
+              Delete
+            </button>
+            <button id="export-character" class="btn btn-ghost" type="button">
+              Export JSON
+            </button>
+            <button id="import-character" class="btn btn-ghost" type="button">
+              Import
+            </button>
+            <input id="import-file" type="file" accept=".json" hidden />
+          </div>
+        </header>
+
+        <p id="status" class="status">Ready.</p>
+
+        <form id="character-form" autocomplete="off">
+          <section class="sheet-section">
+            <h3>Identity</h3>
+            <div class="fields two-col">
+              <label>
+                Name
+                <input id="name" maxlength="60" placeholder="Aldur the Ashen" />
+              </label>
+              <label>
+                Epithet
+                <input id="epithet" maxlength="80" placeholder="Carrion Crown" />
+              </label>
+              <label>
+                Class
+                <input
+                  id="className"
+                  list="class-options"
+                  maxlength="60"
+                  placeholder="Classless Scvm"
+                />
+                <datalist id="class-options">
+                  <option value="Classless Scvm"></option>
+                  <option value="Fanged Deserter"></option>
+                  <option value="Gutterborn Scum"></option>
+                  <option value="Esoteric Hermit"></option>
+                  <option value="Wretched Royalty"></option>
+                  <option value="Heretical Priest"></option>
+                  <option value="Occult Herbmaster"></option>
+                  <option value="Pale One"></option>
+                  <option value="Child of the Swamp"></option>
+                </datalist>
+              </label>
+              <label>
+                Homeland
+                <input id="homeland" maxlength="60" placeholder="Kerguz, Sarkash..." />
+              </label>
+              <label>
+                Age
+                <input id="age" maxlength="30" placeholder="19" />
+              </label>
+              <label>
+                Level
+                <input id="level" type="number" min="1" max="20" step="1" />
+              </label>
+            </div>
+          </section>
+
+          <section class="sheet-section">
+            <h3>Core Stats</h3>
+            <div class="fields stat-grid">
+              <label>
+                Strength
+                <input id="strength" type="number" min="-3" max="3" step="1" />
+              </label>
+              <label>
+                Agility
+                <input id="agility" type="number" min="-3" max="3" step="1" />
+              </label>
+              <label>
+                Presence
+                <input id="presence" type="number" min="-3" max="3" step="1" />
+              </label>
+              <label>
+                Toughness
+                <input id="toughness" type="number" min="-3" max="3" step="1" />
+              </label>
+            </div>
+          </section>
+
+          <section class="sheet-section">
+            <h3>Survival</h3>
+            <div class="fields two-col">
+              <label>
+                Hit Points (Current)
+                <input id="hpCurrent" type="number" min="0" max="30" step="1" />
+              </label>
+              <label>
+                Hit Points (Max)
+                <input id="hpMax" type="number" min="1" max="30" step="1" />
+              </label>
+              <label>
+                Omens
+                <input id="omens" type="number" min="0" max="9" step="1" />
+              </label>
+              <label>
+                Silver
+                <input id="silver" type="number" min="0" max="9999" step="1" />
+              </label>
+              <label>
+                Armor Tier
+                <input id="armorTier" type="number" min="0" max="3" step="1" />
+              </label>
+              <label>
+                Attack Bonus
+                <input id="attack" maxlength="20" placeholder="+0" />
+              </label>
+              <label>
+                Damage Dice
+                <input id="damage" maxlength="20" placeholder="d6" />
+              </label>
+              <label>
+                Signature Scar
+                <input id="scars" maxlength="120" placeholder="Burn marks, missing eye..." />
+              </label>
+            </div>
+          </section>
+
+          <section class="sheet-section">
+            <h3>Equipment</h3>
+            <div class="fields two-col">
+              <label>
+                Weapon
+                <input id="weapon" maxlength="80" placeholder="Flail" />
+              </label>
+              <label>
+                Armor
+                <input id="armor" maxlength="80" placeholder="Light armor and shield" />
+              </label>
+              <label class="span-2">
+                Trinket
+                <input
+                  id="trinket"
+                  maxlength="120"
+                  placeholder="A nail from a saint's coffin"
+                />
+              </label>
+              <label class="span-2">
+                Inventory
+                <textarea
+                  id="inventory"
+                  rows="5"
+                  placeholder="Rope, torch, stale bread, cursed mirror..."
+                ></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="sheet-section">
+            <h3>Notes</h3>
+            <label>
+              Story, vows, and dark history
+              <textarea id="notes" rows="7" placeholder="What drives this soul onward?"></textarea>
+            </label>
+          </section>
+        </form>
+      </main>
+    </div>
+
+    <template id="character-item-template">
+      <li>
+        <button class="character-item" type="button">
+          <span class="character-item-name"></span>
+          <span class="character-item-meta"></span>
+        </button>
+      </li>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
