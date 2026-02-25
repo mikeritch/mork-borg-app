@@ -1,5 +1,9 @@
 const STORAGE_KEY = "morkborg-reliquary.characters.v1";
 const ACTIVE_KEY = "morkborg-reliquary.active.v1";
+const THEME_KEY = "morkborg-reliquary.theme.v1";
+const CUSTOM_OPTION_VALUE = "__custom__";
+const POWER_TRACKER_LENGTH = 12;
+const KNOWN_POWERS_MAX = 99;
 
 const FIELD_IDS = [
   "name",
@@ -16,9 +20,19 @@ const FIELD_IDS = [
   "hpMax",
   "omens",
   "silver",
-  "armorTier",
   "attack",
-  "damage",
+  "weaponCustomName",
+  "weaponCustomDie",
+  "armorCustomName",
+  "armorCustomDie",
+  "powersKnownCount",
+  "powersCastToday",
+  "sacredScrolls",
+  "uncleanScrolls",
+  "powersKnown",
+  "powersNotes",
+  "powersKnownMarks",
+  "powersCastMarks",
   "scars",
   "weapon",
   "armor",
@@ -37,7 +51,12 @@ const NUMERIC_FIELDS = new Set([
   "hpMax",
   "omens",
   "silver",
-  "armorTier",
+  "weaponCustomDie",
+  "armorCustomDie",
+  "powersKnownCount",
+  "powersCastToday",
+  "sacredScrolls",
+  "uncleanScrolls",
 ]);
 
 const DEFAULTS = {
@@ -55,9 +74,23 @@ const DEFAULTS = {
   hpMax: 1,
   omens: 1,
   silver: 20,
-  armorTier: 0,
-  attack: "+0",
+  attack: "Strength",
   damage: "d6",
+  armorTier: 0,
+  weaponCustomName: "",
+  weaponCustomDie: 6,
+  armorCustomName: "",
+  armorCustomDie: 2,
+  powersKnownCount: 0,
+  powersCastToday: 0,
+  sacredScrolls: 0,
+  uncleanScrolls: 0,
+  powersKnown: "",
+  powersNotes: "",
+  powersKnownMarks: "",
+  powersCastMarks: "",
+  weaponLabel: "",
+  armorLabel: "",
   scars: "",
   weapon: "",
   armor: "",
@@ -66,36 +99,131 @@ const DEFAULTS = {
   notes: "",
 };
 
+const WEAPON_DATA = {
+  "Unarmed (d2)": { damage: "d2", attack: "Strength" },
+  "Femur (d4)": { damage: "d4", attack: "Strength" },
+  "Staff (d4)": { damage: "d4", attack: "Strength" },
+  "Shortsword (d4)": { damage: "d4", attack: "Strength" },
+  "Knife (d4)": { damage: "d4", attack: "Strength" },
+  "Warhammer (d6)": { damage: "d6", attack: "Strength" },
+  "Sword (d6)": { damage: "d6", attack: "Strength" },
+  "Bow (d6, Presence + 10 arrows)": { damage: "d6", attack: "Presence" },
+  "Flail (d8)": { damage: "d8", attack: "Strength" },
+  "Crossbow (d8, Presence + 10 bolts)": { damage: "d8", attack: "Presence" },
+  "Zweihander (d10)": { damage: "d10", attack: "Strength" },
+};
+
+const ARMOR_DATA = {
+  "No armor": { tier: 0, reductionDie: 0 },
+  "Light armor (-d2 damage)": { tier: 1, reductionDie: 2 },
+  "Medium armor (-d4 damage, DR +2 Agility tests)": { tier: 2, reductionDie: 4 },
+  "Heavy armor (-d6 damage, DR +4 Agility tests)": { tier: 3, reductionDie: 6 },
+  "Shield (-1 damage or break to ignore one attack)": { tier: 0, reductionDie: 1 },
+};
+
+const WEAPON_CHOICES = new Set(["", CUSTOM_OPTION_VALUE, ...Object.keys(WEAPON_DATA)]);
+const ARMOR_CHOICES = new Set(["", CUSTOM_OPTION_VALUE, ...Object.keys(ARMOR_DATA)]);
+
 const generators = {
   namesA: [
+    "Aerg-Tval",
+    "Agn",
+    "Arvant",
+    "Belsum",
+    "Belum",
+    "Brint",
+    "Borda",
+    "Daeru",
+    "Eldar",
+    "Felban",
+    "Gotven",
+    "Graft",
+    "Grin",
+    "Grittr",
+    "Haeru",
+    "Hargha",
+    "Harmug",
+    "Jotna",
+    "Karg",
+    "Karva",
+    "Katla",
+    "Keftar",
+    "Klort",
+    "Kratar",
+    "Kutz",
+    "Kvetin",
+    "Lygan",
+    "Margar",
+    "Merkari",
+    "Nagl",
+    "Niduk",
+    "Nifehl",
+    "Prugl",
+    "Qillnach",
+    "Risten",
+    "Svind",
+    "Theras",
+    "Therg",
+    "Torvul",
+    "Torn",
+    "Urm",
+    "Urvarg",
+    "Vagal",
+    "Vatan",
+    "Von",
+    "Vrakh",
+    "Vresi",
+    "Wemut",
     "Aldur",
-    "Vorn",
-    "Nara",
-    "Krag",
-    "Mira",
-    "Eld",
-    "Tova",
-    "Ravik",
-    "Sable",
-    "Wren",
     "Ysold",
-    "Drogo",
-    "Kelda",
+    "Mirek",
     "Silas",
+    "Tova",
+    "Drogo",
+    "Ravik",
+    "Kelda",
   ],
   namesB: [
-    "Blacktongue",
-    "Grimveil",
     "Ashborn",
+    "Blacktongue",
+    "Bleakvein",
+    "Bonewake",
+    "Brine-Crown",
+    "Carrion",
+    "Corpsebane",
     "Crowhand",
     "Dreadwake",
-    "Corpsebane",
-    "Rimeblood",
-    "Mireclaw",
-    "Skullmarrow",
+    "Frostspine",
+    "Gallows",
     "Gloamchild",
-    "Holloweye",
     "Graveshade",
+    "Grimveil",
+    "Hallow",
+    "Harrow",
+    "Holloweye",
+    "Ironmold",
+    "Mireclaw",
+    "Morrow",
+    "Nightmire",
+    "Palegrin",
+    "Rimeblood",
+    "Rottooth",
+    "Ruin-Bell",
+    "Sable",
+    "Skullmarrow",
+    "Slagborn",
+    "Thorn",
+    "Tombsalt",
+    "Vilewater",
+    "Woe",
+    "Wormsigil",
+    "Wraithmark",
+    "Doomthread",
+    "Galldust",
+    "Rotspark",
+    "Charnel",
+    "Crow-Mire",
+    "Bog-Saint",
   ],
   epithets: [
     "Bearer of Rotten Light",
@@ -106,6 +234,12 @@ const generators = {
     "Witness to the Black Sun",
     "Vagrant of Broken Relics",
     "Herald of the Pale Feast",
+    "Ash-Crowned Graverobber",
+    "Bell-Toll Penitent",
+    "Maggot-Fed Prophet",
+    "Candleless Pilgrim",
+    "Sepulcher Witness",
+    "Scourge of the Mire",
   ],
   classes: [
     "Classless Scvm",
@@ -124,21 +258,66 @@ const generators = {
     "Sarkash",
     "Tveland",
     "Bergen Chrypt",
-    "The Valley of the Unfortunate Dead",
+    "Valley of the Unfortunate Undead",
     "Galgenbeck outskirts",
     "A nameless plague village",
+    "An unmarked battlefield",
+    "A ruined monastery",
   ],
-  weapons: [
-    "Rust-eaten sword",
-    "Notched hand axe",
-    "Blackened spear",
-    "Chained flail",
-    "Sacrificial dagger",
-    "War hammer",
-    "Jagged bow and 12 arrows",
-    "Hooked polearm",
+  classlessLoadD6: [
+    "Nothing",
+    "Nothing",
+    "Backpack (capacity: 7 normal items)",
+    "Sack (capacity: 10 normal items)",
+    "Small wagon",
+    "Donkey (inventory carrier)",
   ],
-  armors: ["None", "Light armor", "Light armor and shield", "Medium armor"],
+  classlessGearD12A: [
+    "Rope (30ft)",
+    "Torches (Presence + 4)",
+    "Lantern and oil (Presence + 6 hours)",
+    "Magnesium strip (instant bright light)",
+    "Random unclean scroll",
+    "Sharp needle",
+    "Medicine chest (Presence + 4 uses)",
+    "Metal file and lockpicks",
+    "Bear trap (d8 damage)",
+    "Bomb (d10 damage)",
+    "Red poison (d4 doses, Toughness DR12 or d10 damage)",
+    "Silver crucifix",
+  ],
+  classlessGearD12B: [
+    "Life elixir (d4 doses, heal d6 HP)",
+    "Random sacred scroll",
+    "Small vicious dog (d6+2 HP, bite d4)",
+    "Monkeys (d4)",
+    "Exquisite perfume (worth 25s)",
+    "Toolbox (nails, tongs, hammer, saw, drill)",
+    "Heavy chain (15ft)",
+    "Grappling hook",
+    "Shield (-1 damage, or break to ignore one attack)",
+    "Crowbar (d4 damage)",
+    "Lard (5 meals)",
+    "Tent",
+  ],
+  classlessWeapons: [
+    { label: "Femur (d4)", damage: "d4", attack: "Strength" },
+    { label: "Staff (d4)", damage: "d4", attack: "Strength" },
+    { label: "Shortsword (d4)", damage: "d4", attack: "Strength" },
+    { label: "Knife (d4)", damage: "d4", attack: "Strength" },
+    { label: "Warhammer (d6)", damage: "d6", attack: "Strength" },
+    { label: "Sword (d6)", damage: "d6", attack: "Strength" },
+    { label: "Bow (d6, Presence + 10 arrows)", damage: "d6", attack: "Presence" },
+    { label: "Flail (d8)", damage: "d8", attack: "Strength" },
+    { label: "Crossbow (d8, Presence + 10 bolts)", damage: "d8", attack: "Presence" },
+    { label: "Zweihander (d10)", damage: "d10", attack: "Strength" },
+  ],
+  classlessArmor: [
+    { label: "No armor", tier: 0 },
+    { label: "Light armor (-d2 damage)", tier: 1 },
+    { label: "Medium armor (-d4 damage, DR +2 Agility tests)", tier: 2 },
+    { label: "Heavy armor (-d6 damage, DR +4 Agility tests)", tier: 3 },
+  ],
   trinkets: [
     "A tooth carved with scripture",
     "A key with no known lock",
@@ -148,22 +327,10 @@ const generators = {
     "A saint's fingerbone wrapped in linen",
     "A black coin stamped with a blind eye",
     "A prayer strip sewn into skin",
-  ],
-  inventory: [
-    "Rope (30ft)",
-    "Torch x3",
-    "Lantern and oil",
-    "Flint and steel",
-    "Iron spikes x6",
-    "Bandages",
-    "Moldy rations x2 days",
-    "Small mirror",
-    "Crowbar",
-    "Chalk",
-    "Lockpicks",
-    "Tar pot",
-    "Tin cup",
-    "Waterskin",
+    "A rusted knucklebone reliquary",
+    "A tiny iron idol missing its head",
+    "A bone die with no pips",
+    "A ribbon from a saint's shroud",
   ],
   notes: [
     "Owes a favor to a one-eyed butcher in Galgenbeck.",
@@ -172,6 +339,19 @@ const generators = {
     "Will never enter a church again after the winter purge.",
     "Hunts the apostate who burned their kin.",
     "Claims to hear the sea inside sealed tombs.",
+    "Has sworn to never refuse a grave-digger's request.",
+    "Keeps a tally of each night survived in charcoal marks.",
+    "Carries guilt for abandoning a sibling during the plague.",
+  ],
+  scars: [
+    "Acid pitting",
+    "Ritual brand",
+    "Half-healed bite",
+    "Old battlefield cut",
+    "Burned palm sigil",
+    "Broken nose set wrong",
+    "Clouded eye",
+    "Missing fingertip",
   ],
 };
 
@@ -190,13 +370,97 @@ const els = {
   status: document.getElementById("status"),
   newCharacter: document.getElementById("new-character"),
   randomCharacter: document.getElementById("random-character"),
+  themeToggle: document.getElementById("theme-toggle"),
   saveCharacter: document.getElementById("save-character"),
   deleteCharacter: document.getElementById("delete-character"),
   exportCharacter: document.getElementById("export-character"),
   importCharacter: document.getElementById("import-character"),
   importFile: document.getElementById("import-file"),
+  weaponCustomNameWrap: document.getElementById("weapon-custom-name-wrap"),
+  weaponCustomDieWrap: document.getElementById("weapon-custom-die-wrap"),
+  armorCustomNameWrap: document.getElementById("armor-custom-name-wrap"),
+  armorCustomDieWrap: document.getElementById("armor-custom-die-wrap"),
+  powersCastCard: document.getElementById("powers-cast-card"),
+  powersKnownCounter: document.getElementById("powers-known-counter"),
+  powersCastCounter: document.getElementById("powers-cast-counter"),
+  powersCastDisplay: document.getElementById("powers-cast-display"),
+  knownPowersList: document.getElementById("known-powers-list"),
+  addKnownPower: document.getElementById("add-known-power"),
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, document.getElementById(id)])),
 };
+
+function ensureThemeToggleButton() {
+  const actions = document.querySelector(".header-actions");
+  if (!actions) {
+    return;
+  }
+
+  const button = els.themeToggle || document.createElement("button");
+  button.id = "theme-toggle";
+  button.className = "btn btn-ghost theme-toggle";
+  button.type = "button";
+  button.setAttribute("aria-pressed", "true");
+  button.setAttribute("aria-label", "Switch theme");
+  button.title = "Switch theme";
+  if (!button.textContent.trim()) {
+    button.textContent = "Devil";
+  }
+  const importButton = document.getElementById("import-character");
+  if (importButton && importButton.parentElement === actions) {
+    if (importButton.nextElementSibling !== button) {
+      actions.insertBefore(button, importButton.nextElementSibling);
+    }
+  } else if (button.parentElement !== actions) {
+    actions.appendChild(button);
+  }
+  els.themeToggle = button;
+}
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+function resolveTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "light" || stored === "dark") {
+      return stored;
+    }
+  } catch (_error) {
+    // Ignore storage access issues and keep default theme.
+  }
+  return currentTheme();
+}
+
+function applyTheme(theme, persist = false) {
+  const next = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  document.documentElement.style.colorScheme = next;
+
+  if (els.themeToggle) {
+    const darkOn = next === "dark";
+    els.themeToggle.textContent = darkOn ? "Devil" : "Saint";
+    els.themeToggle.setAttribute("aria-pressed", String(darkOn));
+    const targetLabel = darkOn ? "Switch to Saint mode" : "Switch to Devil mode";
+    els.themeToggle.setAttribute("aria-label", targetLabel);
+    els.themeToggle.title = targetLabel;
+  }
+
+  if (!persist) {
+    return;
+  }
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch (_error) {
+    // Ignore storage access issues and keep theme in-memory.
+  }
+}
+
+function toggleTheme() {
+  const next = currentTheme() === "dark" ? "light" : "dark";
+  applyTheme(next, true);
+  setStatus(next === "dark" ? "Dark mode stirs." : "Light mode kindled.", "ok");
+}
 
 function nowIso() {
   return new Date().toISOString();
@@ -225,16 +489,6 @@ function pick(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function pickMany(items, count) {
-  const copy = [...items];
-  const chosen = [];
-  while (copy.length > 0 && chosen.length < count) {
-    const idx = Math.floor(Math.random() * copy.length);
-    chosen.push(copy.splice(idx, 1)[0]);
-  }
-  return chosen;
-}
-
 function createBlankCharacter() {
   const timestamp = nowIso();
   return {
@@ -250,6 +504,412 @@ function toSafeNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function dieText(sides) {
+  return `d${sides}`;
+}
+
+function parseDieFromText(text) {
+  const match = String(text || "").match(/d(\d+)/i);
+  return match ? Number(match[1]) : null;
+}
+
+function parseArmorReductionDie(text) {
+  const match = String(text || "").match(/-d(\d+)/i);
+  return match ? Number(match[1]) : null;
+}
+
+function clampCustomDie(value, fallback) {
+  return clamp(Math.trunc(toSafeNumber(value, fallback)), 2, 20);
+}
+
+function normalizePowerMarks(marks) {
+  const clean = String(marks ?? "").replace(/[^01]/g, "");
+  return clean.slice(0, POWER_TRACKER_LENGTH).padEnd(POWER_TRACKER_LENGTH, "0");
+}
+
+function countMarked(marks) {
+  return marks.split("").reduce((total, mark) => total + (mark === "1" ? 1 : 0), 0);
+}
+
+function parseKnownPowersText(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function fallbackKnownPowersFromCount(count) {
+  const safe = clamp(Math.trunc(toSafeNumber(count, 0)), 0, KNOWN_POWERS_MAX);
+  return Array.from({ length: safe }, (_unused, index) => `Power ${index + 1}`);
+}
+
+function buildKnownPowerRow(value = "") {
+  const row = document.createElement("div");
+  row.className = "known-power-row";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "known-power-input";
+  input.placeholder = "Power name";
+  input.maxLength = 120;
+  input.value = value;
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "known-power-remove";
+  remove.setAttribute("data-known-power-remove", "1");
+  remove.setAttribute("aria-label", "Remove known power");
+  remove.title = "Remove known power";
+  remove.textContent = "×";
+
+  row.appendChild(input);
+  row.appendChild(remove);
+  return row;
+}
+
+function collectKnownPowersFromList() {
+  if (!els.knownPowersList) {
+    return parseKnownPowersText(els.fields.powersKnown?.value);
+  }
+  return Array.from(els.knownPowersList.querySelectorAll(".known-power-input"))
+    .map((input) => input.value.trim())
+    .filter(Boolean);
+}
+
+function syncKnownPowersFromUI() {
+  const powers = collectKnownPowersFromList();
+  if (els.fields.powersKnown) {
+    els.fields.powersKnown.value = powers.join("\n");
+  }
+  setPowerTrackerValue("known", powers.length);
+}
+
+function renderKnownPowersList(character) {
+  if (!els.knownPowersList) {
+    return;
+  }
+  const explicit = parseKnownPowersText(character?.powersKnown);
+  const legacyCount = clamp(Math.trunc(toSafeNumber(character?.powersKnownCount, 0)), 0, KNOWN_POWERS_MAX);
+  const values = explicit.length > 0 ? explicit : fallbackKnownPowersFromCount(legacyCount);
+  els.knownPowersList.innerHTML = "";
+  const initial = values.length > 0 ? values : [""];
+  initial.forEach((value) => {
+    els.knownPowersList.appendChild(buildKnownPowerRow(value));
+  });
+  syncKnownPowersFromUI();
+}
+
+function addKnownPowerRow(value = "", shouldFocus = true) {
+  if (!els.knownPowersList) {
+    return;
+  }
+  const row = buildKnownPowerRow(value);
+  els.knownPowersList.appendChild(row);
+  if (shouldFocus) {
+    const input = row.querySelector(".known-power-input");
+    if (input instanceof HTMLInputElement) {
+      input.focus();
+      input.select();
+    }
+  }
+}
+
+function powerMarksFromCount(count) {
+  const safe = clamp(Math.trunc(toSafeNumber(count, 0)), 0, POWER_TRACKER_LENGTH);
+  return `${"1".repeat(safe)}${"0".repeat(POWER_TRACKER_LENGTH - safe)}`;
+}
+
+function trackerDescriptor(target) {
+  switch (target) {
+    case "known":
+      return {
+        label: "known powers",
+        fieldId: "powersKnownCount",
+        marksFieldId: null,
+        max: KNOWN_POWERS_MAX,
+        showMax: false,
+        counter: els.powersKnownCounter,
+      };
+    case "cast":
+      return {
+        label: "cast attempts",
+        fieldId: "powersCastToday",
+        marksFieldId: "powersCastMarks",
+        max: POWER_TRACKER_LENGTH,
+        showMax: true,
+        card: els.powersCastCard,
+        display: els.powersCastDisplay,
+        counter: els.powersCastCounter,
+      };
+    default:
+      return null;
+  }
+}
+
+function retriggerAnimation(element, className) {
+  if (!element) {
+    return;
+  }
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+  let cleared = false;
+  const clear = () => {
+    if (cleared) {
+      return;
+    }
+    cleared = true;
+    element.classList.remove(className);
+    element.removeEventListener("animationend", clear);
+  };
+  element.addEventListener("animationend", clear);
+  window.setTimeout(clear, 760);
+}
+
+function spawnMagicSparks(container) {
+  if (!container) {
+    return;
+  }
+  for (let index = 0; index < 7; index += 1) {
+    const spark = document.createElement("span");
+    spark.className = "power-spark";
+    spark.style.setProperty("--dx", `${Math.round((Math.random() - 0.5) * 120)}px`);
+    spark.style.setProperty("--dy", `${Math.round((Math.random() - 0.5) * 90 - 18)}px`);
+    spark.style.setProperty("--delay", `${Math.round(Math.random() * 90)}ms`);
+    container.appendChild(spark);
+    window.setTimeout(() => spark.remove(), 760);
+  }
+}
+
+function applyPowerTrackerSkin(target, count) {
+  const tracker = trackerDescriptor(target);
+  if (!tracker) {
+    return;
+  }
+  const isBloodied = count > 3;
+  tracker.card?.classList.toggle("is-bloodied", isBloodied);
+  tracker.display?.classList.toggle("is-bloodied", isBloodied);
+}
+
+function getTrackerCount(target) {
+  const tracker = trackerDescriptor(target);
+  if (!tracker) {
+    return 0;
+  }
+  const max = typeof tracker.max === "number" ? tracker.max : POWER_TRACKER_LENGTH;
+  const source = els.fields[tracker.fieldId];
+  return clamp(Math.trunc(toSafeNumber(source?.value, 0)), 0, max);
+}
+
+function setPowerTrackerValue(target, count) {
+  const tracker = trackerDescriptor(target);
+  if (!tracker) {
+    return 0;
+  }
+  const max = typeof tracker.max === "number" ? tracker.max : POWER_TRACKER_LENGTH;
+  const safe = clamp(Math.trunc(toSafeNumber(count, 0)), 0, max);
+
+  if (els.fields[tracker.fieldId]) {
+    els.fields[tracker.fieldId].value = String(safe);
+  }
+  if (tracker.marksFieldId && els.fields[tracker.marksFieldId]) {
+    const marks = powerMarksFromCount(safe);
+    els.fields[tracker.marksFieldId].value = marks;
+  }
+  if (tracker.display) {
+    tracker.display.textContent = String(safe);
+  }
+  if (tracker.counter) {
+    tracker.counter.textContent = tracker.showMax ? `${safe} / ${max}` : String(safe);
+  }
+  applyPowerTrackerSkin(target, safe);
+  return safe;
+}
+
+function trackerCountFromCharacter(character, target) {
+  const tracker = trackerDescriptor(target);
+  if (!tracker) {
+    return 0;
+  }
+  const max = typeof tracker.max === "number" ? tracker.max : POWER_TRACKER_LENGTH;
+
+  if (target === "known") {
+    const fromList = parseKnownPowersText(character?.powersKnown).length;
+    if (fromList > 0) {
+      return clamp(fromList, 0, max);
+    }
+  }
+
+  const hasStoredMarks = tracker.marksFieldId
+    ? String(character[tracker.marksFieldId] ?? "").trim() !== ""
+    : false;
+  if (tracker.marksFieldId && hasStoredMarks) {
+    return countMarked(normalizePowerMarks(character[tracker.marksFieldId]));
+  }
+  return clamp(Math.trunc(toSafeNumber(character[tracker.fieldId], 0)), 0, max);
+}
+
+function syncPowerTrackersFromCharacter(character) {
+  renderKnownPowersList(character);
+  setPowerTrackerValue("cast", trackerCountFromCharacter(character, "cast"));
+}
+
+function syncPowerTrackersFromUI() {
+  syncKnownPowersFromUI();
+  setPowerTrackerValue("cast", getTrackerCount("cast"));
+}
+
+function adjustPowerTracker(target, delta) {
+  const tracker = trackerDescriptor(target);
+  if (!tracker) {
+    return;
+  }
+  const current = getTrackerCount(target);
+  const next = clamp(current + delta, 0, POWER_TRACKER_LENGTH);
+  setPowerTrackerValue(target, next);
+
+  if (delta > 0 && next > current) {
+    retriggerAnimation(tracker.card, "is-magic-burst");
+    retriggerAnimation(tracker.display, "is-rising");
+    spawnMagicSparks(tracker.card);
+  } else if (delta < 0) {
+    retriggerAnimation(tracker.card, "is-shaking");
+  }
+
+  if (next === current) {
+    if (delta > 0) {
+      setStatus(`Maximum ${tracker.label} reached.`, "warn");
+    } else {
+      setStatus(`No ${tracker.label} left to reduce.`, "warn");
+    }
+    return;
+  }
+
+  setStatus(
+    `${target === "known" ? "Known powers" : "Cast attempts"}: ${next}/${POWER_TRACKER_LENGTH}.`,
+    "ok"
+  );
+}
+
+function stripTrailingParens(text) {
+  return String(text || "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+function normalizeLegacyWeapon(character) {
+  if (WEAPON_CHOICES.has(character.weapon)) {
+    return;
+  }
+  if (!character.weapon) {
+    return;
+  }
+  const fallbackDie = parseDieFromText(character.damage) || DEFAULTS.weaponCustomDie;
+  character.weaponCustomName = stripTrailingParens(character.weapon) || "Custom weapon";
+  character.weaponCustomDie = clampCustomDie(
+    parseDieFromText(character.weapon) || character.weaponCustomDie,
+    fallbackDie
+  );
+  character.weapon = CUSTOM_OPTION_VALUE;
+}
+
+function normalizeLegacyArmor(character) {
+  if (ARMOR_CHOICES.has(character.armor)) {
+    return;
+  }
+  if (!character.armor) {
+    return;
+  }
+  const tierDerivedDie =
+    character.armorTier === 1 ? 2 : character.armorTier === 2 ? 4 : character.armorTier >= 3 ? 6 : 2;
+  character.armorCustomName = stripTrailingParens(character.armor) || "Custom armor";
+  character.armorCustomDie = clampCustomDie(
+    parseArmorReductionDie(character.armor) || character.armorCustomDie,
+    tierDerivedDie
+  );
+  character.armor = CUSTOM_OPTION_VALUE;
+}
+
+function resolvedWeapon(character) {
+  if (character.weapon === CUSTOM_OPTION_VALUE) {
+    const die = clampCustomDie(character.weaponCustomDie, DEFAULTS.weaponCustomDie);
+    const name = character.weaponCustomName.trim() || "Custom weapon";
+    return {
+      label: `${name} (${dieText(die)})`,
+      damage: dieText(die),
+      attack: character.attack || "Strength",
+    };
+  }
+  const standard = WEAPON_DATA[character.weapon];
+  if (standard) {
+    return {
+      label: character.weapon,
+      damage: standard.damage,
+      attack: standard.attack,
+    };
+  }
+  return {
+    label: character.weapon || "",
+    damage: character.damage || "",
+    attack: character.attack || "Strength",
+  };
+}
+
+function resolvedArmor(character) {
+  if (character.armor === CUSTOM_OPTION_VALUE) {
+    const die = clampCustomDie(character.armorCustomDie, DEFAULTS.armorCustomDie);
+    const name = character.armorCustomName.trim() || "Custom armor";
+    return {
+      label: `${name} (-${dieText(die)} damage)`,
+      tier: die <= 2 ? 1 : die <= 4 ? 2 : 3,
+      reductionDie: die,
+    };
+  }
+  const standard = ARMOR_DATA[character.armor];
+  if (standard) {
+    return {
+      label: character.armor,
+      tier: standard.tier,
+      reductionDie: standard.reductionDie,
+    };
+  }
+  return {
+    label: character.armor || "",
+    tier: 0,
+    reductionDie: 0,
+  };
+}
+
+function applyDerivedEquipment(character) {
+  const weapon = resolvedWeapon(character);
+  const armor = resolvedArmor(character);
+  character.damage = weapon.damage || DEFAULTS.damage;
+  character.armorTier = armor.tier;
+  character.weaponLabel = weapon.label;
+  character.armorLabel = armor.label;
+  if (!["Strength", "Presence", "Strength or Presence"].includes(character.attack)) {
+    character.attack = weapon.attack || "Strength";
+  }
+}
+
+function setFieldVisibility(element, isVisible) {
+  if (!element) {
+    return;
+  }
+  element.hidden = !isVisible;
+  element.classList.toggle("is-hidden", !isVisible);
+  element.querySelectorAll("input, select, textarea").forEach((control) => {
+    control.disabled = !isVisible;
+  });
+}
+
+function syncCustomEquipmentFields() {
+  const isWeaponCustom = els.fields.weapon.value === CUSTOM_OPTION_VALUE;
+  const isArmorCustom = els.fields.armor.value === CUSTOM_OPTION_VALUE;
+  setFieldVisibility(els.weaponCustomNameWrap, isWeaponCustom);
+  setFieldVisibility(els.weaponCustomDieWrap, isWeaponCustom);
+  setFieldVisibility(els.armorCustomNameWrap, isArmorCustom);
+  setFieldVisibility(els.armorCustomDieWrap, isArmorCustom);
+}
+
 function normalizeCharacter(candidate) {
   const baseline = createBlankCharacter();
   const merged = { ...baseline, ...(candidate || {}) };
@@ -263,13 +923,40 @@ function normalizeCharacter(candidate) {
 
   merged.level = clamp(Math.trunc(merged.level), 1, 20);
   ["strength", "agility", "presence", "toughness"].forEach((stat) => {
-    merged[stat] = clamp(Math.trunc(merged[stat]), -3, 3);
+    merged[stat] = clamp(Math.trunc(merged[stat]), -3, 6);
   });
   merged.hpMax = clamp(Math.trunc(merged.hpMax), 1, 30);
   merged.hpCurrent = clamp(Math.trunc(merged.hpCurrent), 0, merged.hpMax);
   merged.omens = clamp(Math.trunc(merged.omens), 0, 9);
   merged.silver = Math.max(0, Math.trunc(merged.silver));
-  merged.armorTier = clamp(Math.trunc(merged.armorTier), 0, 3);
+  merged.weaponCustomDie = clampCustomDie(merged.weaponCustomDie, DEFAULTS.weaponCustomDie);
+  merged.armorCustomDie = clampCustomDie(merged.armorCustomDie, DEFAULTS.armorCustomDie);
+  merged.powersKnownCount = clamp(Math.trunc(merged.powersKnownCount), 0, KNOWN_POWERS_MAX);
+  merged.powersCastToday = clamp(Math.trunc(merged.powersCastToday), 0, POWER_TRACKER_LENGTH);
+  merged.sacredScrolls = clamp(Math.trunc(merged.sacredScrolls), 0, 99);
+  merged.uncleanScrolls = clamp(Math.trunc(merged.uncleanScrolls), 0, 99);
+  merged.powersKnownMarks = normalizePowerMarks(merged.powersKnownMarks);
+  merged.powersCastMarks = normalizePowerMarks(merged.powersCastMarks);
+  if (!candidate || !candidate.powersCastMarks) {
+    merged.powersCastMarks = `${"1".repeat(
+      clamp(merged.powersCastToday, 0, POWER_TRACKER_LENGTH)
+    )}${"0".repeat(
+      POWER_TRACKER_LENGTH - clamp(merged.powersCastToday, 0, POWER_TRACKER_LENGTH)
+    )}`;
+  }
+  const knownFromList = parseKnownPowersText(merged.powersKnown).length;
+  if (knownFromList > 0) {
+    merged.powersKnownCount = clamp(knownFromList, 0, KNOWN_POWERS_MAX);
+  } else if (candidate && String(candidate.powersKnownMarks ?? "").trim() !== "") {
+    merged.powersKnownCount = clamp(countMarked(merged.powersKnownMarks), 0, KNOWN_POWERS_MAX);
+  }
+  merged.powersCastToday = countMarked(merged.powersCastMarks);
+  normalizeLegacyWeapon(merged);
+  normalizeLegacyArmor(merged);
+  if (!merged.className) {
+    merged.className = DEFAULTS.className;
+  }
+  applyDerivedEquipment(merged);
   merged.id = typeof merged.id === "string" && merged.id ? merged.id : uid();
   merged.createdAt = merged.createdAt || baseline.createdAt;
   merged.updatedAt = merged.updatedAt || baseline.updatedAt;
@@ -330,8 +1017,22 @@ function applyToForm(character) {
     return;
   }
   FIELD_IDS.forEach((id) => {
-    els.fields[id].value = character[id] ?? "";
+    const field = els.fields[id];
+    const value = character[id] ?? "";
+    if (
+      field instanceof HTMLSelectElement &&
+      value &&
+      !Array.from(field.options).some((option) => option.value === value)
+    ) {
+      const customOption = document.createElement("option");
+      customOption.value = value;
+      customOption.textContent = `${value} (custom)`;
+      field.appendChild(customOption);
+    }
+    field.value = value;
   });
+  syncCustomEquipmentFields();
+  syncPowerTrackersFromCharacter(character);
   updateSheetTitle(character);
 }
 
@@ -429,38 +1130,119 @@ function createNewCharacter() {
   setStatus("New character sheet ready.", "ok");
 }
 
-function randomStat() {
-  return clamp(rollDice(2, 4) - 5, -3, 3);
+function abilityScoreToModifier(score) {
+  if (score <= 4) {
+    return -3;
+  }
+  if (score <= 6) {
+    return -2;
+  }
+  if (score <= 8) {
+    return -1;
+  }
+  if (score <= 12) {
+    return 0;
+  }
+  if (score <= 14) {
+    return 1;
+  }
+  if (score <= 16) {
+    return 2;
+  }
+  return 3;
+}
+
+function rollAbilityModifier() {
+  return abilityScoreToModifier(rollDice(3, 6));
+}
+
+function randomName() {
+  if (Math.random() < 0.42) {
+    return pick(generators.namesA);
+  }
+  return `${pick(generators.namesA)} ${pick(generators.namesB)}`;
+}
+
+function withPresenceScaling(text, presenceMod) {
+  const plusFour = Math.max(1, presenceMod + 4);
+  const plusSix = Math.max(1, presenceMod + 6);
+  return text
+    .replace("Presence + 4", `${plusFour}`)
+    .replace("Presence + 6", `${plusSix}`);
+}
+
+function rollClasslessWeapon(reducedStart) {
+  const table = reducedStart
+    ? generators.classlessWeapons.slice(0, 6)
+    : generators.classlessWeapons;
+  return pick(table);
+}
+
+function rollClasslessArmor(reducedStart) {
+  const table = reducedStart ? generators.classlessArmor.slice(0, 2) : generators.classlessArmor;
+  return pick(table);
 }
 
 function randomCharacterPatch() {
-  const hpMax = Math.max(1, rollDice(1, 8));
-  const inventoryBits = pickMany(generators.inventory, 4).join(", ");
-  const attackBonus = Math.floor(Math.random() * 4) - 1;
+  const strength = rollAbilityModifier();
+  const agility = rollAbilityModifier();
+  const presence = rollAbilityModifier();
+  const toughness = rollAbilityModifier();
+
+  const load = pick(generators.classlessLoadD6);
+  const gearA = withPresenceScaling(pick(generators.classlessGearD12A), presence);
+  const gearB = pick(generators.classlessGearD12B);
+  const reducedStart = gearA.toLowerCase().includes("scroll") || gearB.toLowerCase().includes("scroll");
+
+  const weapon = rollClasslessWeapon(reducedStart);
+  const armor = rollClasslessArmor(reducedStart);
+
+  const hpMax = Math.max(1, rollDice(1, 8) + toughness);
+  const foodDays = rollDice(1, 4);
+  const inventoryBits = [
+    "Waterskin",
+    `${foodDays} day${foodDays === 1 ? "" : "s"} of dry food`,
+    load,
+    gearA,
+    gearB,
+  ];
+
   return {
-    name: `${pick(generators.namesA)} ${pick(generators.namesB)}`,
+    name: randomName(),
     epithet: pick(generators.epithets),
-    className: pick(generators.classes),
+    className: "Classless Scvm",
     homeland: pick(generators.homelands),
     age: String(rollDice(2, 10) + 8),
     level: 1,
-    strength: randomStat(),
-    agility: randomStat(),
-    presence: randomStat(),
-    toughness: randomStat(),
+    strength,
+    agility,
+    presence,
+    toughness,
     hpCurrent: hpMax,
     hpMax,
     omens: rollDice(1, 2),
     silver: rollDice(2, 6) * 10,
-    armorTier: Math.floor(Math.random() * 3),
-    attack: `${attackBonus >= 0 ? "+" : ""}${attackBonus}`,
-    damage: `d${[4, 6, 8, 10][Math.floor(Math.random() * 4)]}`,
-    scars: pick(["Acid pitting", "Ritual brand", "Half-healed bite", "Old battlefield cut"]),
-    weapon: pick(generators.weapons),
-    armor: pick(generators.armors),
+    weaponCustomName: "",
+    weaponCustomDie: DEFAULTS.weaponCustomDie,
+    armorCustomName: "",
+    armorCustomDie: DEFAULTS.armorCustomDie,
+    powersKnownCount: 0,
+    powersCastToday: 0,
+    powersKnownMarks: "",
+    powersCastMarks: "",
+    sacredScrolls: 0,
+    uncleanScrolls: 0,
+    powersKnown: "",
+    powersNotes: "",
+    attack: weapon.attack,
+    scars: pick(generators.scars),
+    weapon: weapon.label,
+    armor: armor.label,
     trinket: pick(generators.trinkets),
-    inventory: inventoryBits,
-    notes: pick(generators.notes),
+    inventory: inventoryBits.join(", "),
+    notes: `${pick(generators.notes)}${
+      reducedStart ? " Started with a scroll, so weapon/armor used reduced classless tables." : ""
+    }`,
   };
 }
 
@@ -473,7 +1255,7 @@ function randomizeActiveCharacter() {
   });
   upsertCharacter(randomized, false);
   applyToForm(randomized);
-  setStatus("Generated a fresh doomed adventurer.", "ok");
+  setStatus("Generated a classless adventurer from core tables.", "ok");
 }
 
 function deleteActiveCharacter() {
@@ -561,23 +1343,142 @@ function scheduleAutoSave() {
   }, 450);
 }
 
+function clampFieldValue(fieldId, min, max) {
+  const field = els.fields[fieldId];
+  if (!field || field.value === "") {
+    return;
+  }
+  const value = toSafeNumber(field.value, min);
+  field.value = clamp(Math.trunc(value), min, max);
+}
+
 function bindEvents() {
   els.form.addEventListener("input", (event) => {
     if (event.target.id === "name") {
       updateSheetTitle({ name: event.target.value });
     }
+
+    if (["strength", "agility", "presence", "toughness"].includes(event.target.id)) {
+      clampFieldValue(event.target.id, -3, 6);
+    }
+
+    if (event.target.id === "level") {
+      clampFieldValue("level", 1, 20);
+    }
+
     if (event.target.id === "hpMax") {
       const hpMax = Math.max(1, toSafeNumber(els.fields.hpMax.value, 1));
+      els.fields.hpMax.value = hpMax;
       if (toSafeNumber(els.fields.hpCurrent.value, 0) > hpMax) {
         els.fields.hpCurrent.value = hpMax;
       }
     }
+    if (event.target.id === "hpCurrent") {
+      const hpMax = Math.max(1, toSafeNumber(els.fields.hpMax.value, 1));
+      const hpCurrent = clamp(toSafeNumber(els.fields.hpCurrent.value, 0), 0, hpMax);
+      els.fields.hpCurrent.value = hpCurrent;
+    }
+    if (event.target.id === "omens") {
+      clampFieldValue("omens", 0, 9);
+    }
+    if (event.target.id === "weaponCustomDie") {
+      clampFieldValue("weaponCustomDie", 2, 20);
+    }
+    if (event.target.id === "armorCustomDie") {
+      clampFieldValue("armorCustomDie", 2, 20);
+    }
+    if (event.target.id === "powersKnownCount") {
+      clampFieldValue("powersKnownCount", 0, KNOWN_POWERS_MAX);
+      syncPowerTrackersFromUI();
+    }
+    if (event.target.id === "powersCastToday") {
+      clampFieldValue("powersCastToday", 0, POWER_TRACKER_LENGTH);
+      syncPowerTrackersFromUI();
+    }
+    if (event.target.id === "sacredScrolls") {
+      clampFieldValue("sacredScrolls", 0, 99);
+    }
+    if (event.target.id === "uncleanScrolls") {
+      clampFieldValue("uncleanScrolls", 0, 99);
+    }
+    if (event.target.id === "silver") {
+      const silver = Math.max(0, Math.trunc(toSafeNumber(els.fields.silver.value, 0)));
+      els.fields.silver.value = silver;
+    }
+    if (event.target.id === "weapon" || event.target.id === "armor") {
+      syncCustomEquipmentFields();
+    }
+    if (event.target instanceof Element && event.target.classList.contains("known-power-input")) {
+      syncKnownPowersFromUI();
+    }
+
     scheduleAutoSave();
-    setStatus("Changes pending...", "neutral");
+    if (els.fields.className.value !== "Classless Scvm") {
+      setStatus(
+        "Class-specific starting rules vary. Randomize stays faithful to classless baseline.",
+        "warn"
+      );
+    } else {
+      setStatus("Changes pending...", "neutral");
+    }
   });
+
+  els.fields.weapon.addEventListener("change", syncCustomEquipmentFields);
+  els.fields.armor.addEventListener("change", syncCustomEquipmentFields);
+  els.form.addEventListener("click", (event) => {
+    const origin = event.target;
+    if (!(origin instanceof Element)) {
+      return;
+    }
+    const button = origin.closest("[data-power-action][data-power-target]");
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    const target = button.dataset.powerTarget;
+    const action = button.dataset.powerAction;
+    if (!target || !action) {
+      return;
+    }
+    adjustPowerTracker(target, action === "increment" ? 1 : -1);
+    scheduleAutoSave();
+  });
+  if (els.addKnownPower) {
+    els.addKnownPower.addEventListener("click", () => {
+      addKnownPowerRow("");
+      syncKnownPowersFromUI();
+      scheduleAutoSave();
+      setStatus("Added known power slot.", "ok");
+    });
+  }
+  if (els.knownPowersList) {
+    els.knownPowersList.addEventListener("click", (event) => {
+      const origin = event.target;
+      if (!(origin instanceof Element)) {
+        return;
+      }
+      const remove = origin.closest("[data-known-power-remove]");
+      if (!(remove instanceof HTMLElement)) {
+        return;
+      }
+      const row = remove.closest(".known-power-row");
+      if (!(row instanceof HTMLElement)) {
+        return;
+      }
+      row.remove();
+      if (els.knownPowersList.querySelectorAll(".known-power-row").length === 0) {
+        addKnownPowerRow("", false);
+      }
+      syncKnownPowersFromUI();
+      scheduleAutoSave();
+      setStatus("Known power removed.", "warn");
+    });
+  }
 
   els.newCharacter.addEventListener("click", createNewCharacter);
   els.randomCharacter.addEventListener("click", randomizeActiveCharacter);
+  if (els.themeToggle) {
+    els.themeToggle.addEventListener("click", toggleTheme);
+  }
   els.saveCharacter.addEventListener("click", () => saveActiveCharacter(true));
   els.deleteCharacter.addEventListener("click", deleteActiveCharacter);
   els.exportCharacter.addEventListener("click", exportActiveCharacter);
@@ -608,11 +1509,13 @@ function bindEvents() {
 }
 
 function init() {
+  ensureThemeToggleButton();
+  applyTheme(resolveTheme(), false);
   loadState();
   renderCharacterList();
   applyToForm(activeCharacter());
   bindEvents();
-  setStatus("Ready. Your character sheets autosave locally.", "ok");
+  setStatus("Ready. Autosave is local and randomize uses classless core rules.", "ok");
 }
 
 init();

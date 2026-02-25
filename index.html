@@ -3,14 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mork Borg Character Reliquary</title>
+    <title>MORK BORG Character Reliquary</title>
+    <meta
+      name="description"
+      content="Private MORK BORG character sheet generator and local vault."
+    />
+    <meta
+      name="robots"
+      content="noindex, nofollow, noarchive, nosnippet, noimageindex, max-snippet:0, max-image-preview:none, max-video-preview:0"
+    />
+    <meta
+      name="googlebot"
+      content="noindex, nofollow, noarchive, nosnippet, noimageindex, max-snippet:0, max-image-preview:none, max-video-preview:0"
+    />
+    <meta
+      name="bingbot"
+      content="noindex, nofollow, noarchive, nosnippet, noimageindex, max-snippet:0, max-image-preview:none, max-video-preview:0"
+    />
+    <meta
+      http-equiv="X-Robots-Tag"
+      content="noindex, nofollow, noarchive, nosnippet, noimageindex"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <script>
+      (() => {
+        const key = "morkborg-reliquary.theme.v1";
+        let theme = "dark";
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved === "light" || saved === "dark") {
+            theme = saved;
+          }
+        } catch (_error) {
+          theme = "dark";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="vault-panel">
         <div class="brand">
-          <p class="brand-mark">Mork Borg</p>
+          <p class="brand-mark">MORK BORG</p>
           <h1>Character Reliquary</h1>
           <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
         </div>
@@ -20,7 +59,7 @@
             New Sheet
           </button>
           <button id="random-character" class="btn btn-ghost" type="button">
-            Randomize
+            Randomize (Classless)
           </button>
         </div>
 
@@ -51,6 +90,16 @@
             <button id="import-character" class="btn btn-ghost" type="button">
               Import
             </button>
+            <button
+              id="theme-toggle"
+              class="btn btn-ghost theme-toggle"
+              type="button"
+              aria-pressed="true"
+              aria-label="Switch theme"
+              title="Switch theme"
+            >
+              Devil
+            </button>
             <input id="import-file" type="file" accept=".json" hidden />
           </div>
         </header>
@@ -58,6 +107,19 @@
         <p id="status" class="status">Ready.</p>
 
         <form id="character-form" autocomplete="off">
+          <section class="sheet-section rules-section">
+            <h3>Core Rules Mode</h3>
+            <p class="field-help">
+              The randomizer follows baseline classless character generation from the MORK BORG
+              Bare Bones ruleset: silver, kit tables, weapon/armor tables, ability rolls, HP, and
+              omens.
+            </p>
+            <p class="field-help">
+              If you pick an optional class, class-specific starting rules may differ and should be
+              adjusted manually.
+            </p>
+          </section>
+
           <section class="sheet-section">
             <h3>Identity</h3>
             <div class="fields two-col">
@@ -67,35 +129,56 @@
               </label>
               <label>
                 Epithet
-                <input id="epithet" maxlength="80" placeholder="Carrion Crown" />
-              </label>
-              <label>
-                Class
-                <input
-                  id="className"
-                  list="class-options"
-                  maxlength="60"
-                  placeholder="Classless Scvm"
-                />
-                <datalist id="class-options">
-                  <option value="Classless Scvm"></option>
-                  <option value="Fanged Deserter"></option>
-                  <option value="Gutterborn Scum"></option>
-                  <option value="Esoteric Hermit"></option>
-                  <option value="Wretched Royalty"></option>
-                  <option value="Heretical Priest"></option>
-                  <option value="Occult Herbmaster"></option>
-                  <option value="Pale One"></option>
-                  <option value="Child of the Swamp"></option>
+                <input id="epithet" list="epithet-options" maxlength="80" placeholder="Carrion Crown" />
+                <datalist id="epithet-options">
+                  <option value="Bearer of Rotten Light"></option>
+                  <option value="Saint of Ruined Bells"></option>
+                  <option value="Sworn to the Last Dusk"></option>
+                  <option value="Pilgrim of the Burning Mire"></option>
+                  <option value="Keeper of Splintered Teeth"></option>
+                  <option value="Witness to the Black Sun"></option>
+                  <option value="Vagrant of Broken Relics"></option>
+                  <option value="Herald of the Pale Feast"></option>
+                  <option value="Ash-Crowned Graverobber"></option>
+                  <option value="Bell-Toll Penitent"></option>
                 </datalist>
               </label>
               <label>
+                Class
+                <select id="className">
+                  <option value="Classless Scvm">Classless Scvm</option>
+                  <option value="Fanged Deserter">Fanged Deserter</option>
+                  <option value="Gutterborn Scum">Gutterborn Scum</option>
+                  <option value="Esoteric Hermit">Esoteric Hermit</option>
+                  <option value="Wretched Royalty">Wretched Royalty</option>
+                  <option value="Heretical Priest">Heretical Priest</option>
+                  <option value="Occult Herbmaster">Occult Herbmaster</option>
+                  <option value="Pale One">Pale One</option>
+                  <option value="Child of the Swamp">Child of the Swamp</option>
+                  <option value="Other">Other / Homebrew</option>
+                </select>
+              </label>
+              <label>
                 Homeland
-                <input id="homeland" maxlength="60" placeholder="Kerguz, Sarkash..." />
+                <select id="homeland">
+                  <option value="">Choose a homeland...</option>
+                  <option value="Grift">Grift</option>
+                  <option value="Kerguz">Kerguz</option>
+                  <option value="Sarkash">Sarkash</option>
+                  <option value="Tveland">Tveland</option>
+                  <option value="Bergen Chrypt">Bergen Chrypt</option>
+                  <option value="Galgenbeck outskirts">Galgenbeck outskirts</option>
+                  <option value="Valley of the Unfortunate Undead">
+                    Valley of the Unfortunate Undead
+                  </option>
+                  <option value="A nameless plague village">A nameless plague village</option>
+                  <option value="An unmarked battlefield">An unmarked battlefield</option>
+                  <option value="A ruined monastery">A ruined monastery</option>
+                </select>
               </label>
               <label>
                 Age
-                <input id="age" maxlength="30" placeholder="19" />
+                <input id="age" type="number" min="8" max="120" step="1" placeholder="19" />
               </label>
               <label>
                 Level
@@ -106,22 +189,26 @@
 
           <section class="sheet-section">
             <h3>Core Stats</h3>
+            <p class="field-help">
+              Modifiers are normally created by rolling 3d6 and mapping to -3 through +3. They can
+              improve up to +6 over time.
+            </p>
             <div class="fields stat-grid">
               <label>
                 Strength
-                <input id="strength" type="number" min="-3" max="3" step="1" />
+                <input id="strength" type="number" min="-3" max="6" step="1" />
               </label>
               <label>
                 Agility
-                <input id="agility" type="number" min="-3" max="3" step="1" />
+                <input id="agility" type="number" min="-3" max="6" step="1" />
               </label>
               <label>
                 Presence
-                <input id="presence" type="number" min="-3" max="3" step="1" />
+                <input id="presence" type="number" min="-3" max="6" step="1" />
               </label>
               <label>
                 Toughness
-                <input id="toughness" type="number" min="-3" max="3" step="1" />
+                <input id="toughness" type="number" min="-3" max="6" step="1" />
               </label>
             </div>
           </section>
@@ -146,20 +233,17 @@
                 <input id="silver" type="number" min="0" max="9999" step="1" />
               </label>
               <label>
-                Armor Tier
-                <input id="armorTier" type="number" min="0" max="3" step="1" />
-              </label>
-              <label>
-                Attack Bonus
-                <input id="attack" maxlength="20" placeholder="+0" />
-              </label>
-              <label>
-                Damage Dice
-                <input id="damage" maxlength="20" placeholder="d6" />
-              </label>
-              <label>
                 Signature Scar
-                <input id="scars" maxlength="120" placeholder="Burn marks, missing eye..." />
+                <input id="scars" list="scar-options" maxlength="120" placeholder="Burn marks, missing eye..." />
+                <datalist id="scar-options">
+                  <option value="Acid pitting"></option>
+                  <option value="Ritual brand"></option>
+                  <option value="Half-healed bite"></option>
+                  <option value="Old battlefield cut"></option>
+                  <option value="Burned palm sigil"></option>
+                  <option value="Broken nose set wrong"></option>
+                  <option value="Clouded eye"></option>
+                </datalist>
               </label>
             </div>
           </section>
@@ -169,19 +253,98 @@
             <div class="fields two-col">
               <label>
                 Weapon
-                <input id="weapon" maxlength="80" placeholder="Flail" />
+                <select id="weapon">
+                  <option value="">Choose a weapon...</option>
+                  <option value="Unarmed (d2)">Unarmed (d2)</option>
+                  <option value="Femur (d4)">Femur (d4)</option>
+                  <option value="Staff (d4)">Staff (d4)</option>
+                  <option value="Shortsword (d4)">Shortsword (d4)</option>
+                  <option value="Knife (d4)">Knife (d4)</option>
+                  <option value="Warhammer (d6)">Warhammer (d6)</option>
+                  <option value="Sword (d6)">Sword (d6)</option>
+                  <option value="Bow (d6, Presence + 10 arrows)">
+                    Bow (d6, Presence + 10 arrows)
+                  </option>
+                  <option value="Flail (d8)">Flail (d8)</option>
+                  <option value="Crossbow (d8, Presence + 10 bolts)">
+                    Crossbow (d8, Presence + 10 bolts)
+                  </option>
+                  <option value="Zweihander (d10)">Zweihander (d10)</option>
+                  <option value="__custom__">Custom weapon...</option>
+                </select>
+              </label>
+              <label id="weapon-custom-name-wrap" class="is-hidden" hidden>
+                Custom Weapon Name
+                <input
+                  id="weaponCustomName"
+                  maxlength="80"
+                  placeholder="Hooked chainblade"
+                  disabled
+                />
+              </label>
+              <label id="weapon-custom-die-wrap" class="is-hidden" hidden>
+                Custom Weapon Damage Die (dX)
+                <input id="weaponCustomDie" type="number" min="2" max="20" step="1" disabled />
+              </label>
+              <label>
+                Primary Attack Stat
+                <select id="attack">
+                  <option value="Strength">Strength</option>
+                  <option value="Presence">Presence</option>
+                  <option value="Strength or Presence">Strength or Presence</option>
+                </select>
               </label>
               <label>
                 Armor
-                <input id="armor" maxlength="80" placeholder="Light armor and shield" />
+                <select id="armor">
+                  <option value="">Choose armor...</option>
+                  <option value="No armor">No armor</option>
+                  <option value="Light armor (-d2 damage)">Light armor (-d2 damage)</option>
+                  <option value="Medium armor (-d4 damage, DR +2 Agility tests)">
+                    Medium armor (-d4 damage, DR +2 Agility tests)
+                  </option>
+                  <option value="Heavy armor (-d6 damage, DR +4 Agility tests)">
+                    Heavy armor (-d6 damage, DR +4 Agility tests)
+                  </option>
+                  <option value="Shield (-1 damage or break to ignore one attack)">
+                    Shield (-1 damage or break to ignore one attack)
+                  </option>
+                  <option value="__custom__">Custom armor...</option>
+                </select>
+              </label>
+              <label id="armor-custom-name-wrap" class="is-hidden" hidden>
+                Custom Armor Name
+                <input
+                  id="armorCustomName"
+                  maxlength="80"
+                  placeholder="Barbed lamellar"
+                  disabled
+                />
+              </label>
+              <label id="armor-custom-die-wrap" class="is-hidden" hidden>
+                Custom Armor Reduction Die (dX)
+                <input id="armorCustomDie" type="number" min="2" max="20" step="1" disabled />
               </label>
               <label class="span-2">
                 Trinket
                 <input
                   id="trinket"
+                  list="trinket-options"
                   maxlength="120"
                   placeholder="A nail from a saint's coffin"
                 />
+                <datalist id="trinket-options">
+                  <option value="A tooth carved with scripture"></option>
+                  <option value="A key with no known lock"></option>
+                  <option value="A mirror shard showing another face"></option>
+                  <option value="A bell that rings only underwater"></option>
+                  <option value="A vial of grave dirt and silver filings"></option>
+                  <option value="A saint's fingerbone wrapped in linen"></option>
+                  <option value="A black coin stamped with a blind eye"></option>
+                  <option value="A prayer strip sewn into skin"></option>
+                  <option value="A rusted knucklebone reliquary"></option>
+                  <option value="A tiny iron idol missing its head"></option>
+                </datalist>
               </label>
               <label class="span-2">
                 Inventory
@@ -195,6 +358,86 @@
           </section>
 
           <section class="sheet-section">
+            <h3>Powers</h3>
+            <p class="field-help">
+              Track powers and scroll casting. Core casting checks are typically Presence DR12
+              unless the GM sets a different DR.
+            </p>
+            <div class="fields two-col">
+              <div class="power-summary span-2">
+                <article class="power-summary-chip">
+                  <span class="power-summary-label">Known Powers</span>
+                  <output id="powers-known-counter" class="tracker-count">0</output>
+                </article>
+                <article class="power-summary-chip">
+                  <span class="power-summary-label">Cast Attempts Today</span>
+                  <output id="powers-cast-counter" class="tracker-count">0 / 12</output>
+                </article>
+              </div>
+              <div class="power-trackers power-trackers-single span-2">
+                <article class="power-tracker-card" id="powers-cast-card">
+                  <div class="power-tracker-head">
+                    <h4>Cast Attempts Tracker</h4>
+                  </div>
+                  <div class="tracker-controls">
+                    <button
+                      class="tracker-btn tracker-btn-minus"
+                      type="button"
+                      data-power-action="decrement"
+                      data-power-target="cast"
+                      aria-label="Decrease cast attempts"
+                    >
+                      -
+                    </button>
+                    <output id="powers-cast-display" class="tracker-value">0</output>
+                    <button
+                      class="tracker-btn tracker-btn-plus"
+                      type="button"
+                      data-power-action="increment"
+                      data-power-target="cast"
+                      aria-label="Increase cast attempts"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p class="tracker-hint">Increase each cast attempt during the day.</p>
+                </article>
+              </div>
+              <article class="known-powers-block span-2">
+                <div class="known-powers-head">
+                  <h4>Known Powers List</h4>
+                  <button id="add-known-power" class="btn btn-ghost known-power-add" type="button">
+                    Add Power
+                  </button>
+                </div>
+                <div id="known-powers-list" class="known-powers-list"></div>
+                <p class="tracker-hint">Each non-empty entry is counted as a known power.</p>
+              </article>
+              <input id="powersKnownCount" type="number" min="0" max="99" step="1" hidden aria-hidden="true" />
+              <input id="powersCastToday" type="number" min="0" max="12" step="1" hidden aria-hidden="true" />
+              <textarea id="powersKnown" hidden aria-hidden="true"></textarea>
+              <label>
+                Sacred Scrolls Carried
+                <input id="sacredScrolls" type="number" min="0" max="99" step="1" />
+              </label>
+              <label>
+                Unclean Scrolls Carried
+                <input id="uncleanScrolls" type="number" min="0" max="99" step="1" />
+              </label>
+              <label class="span-2">
+                Power Notes
+                <textarea
+                  id="powersNotes"
+                  rows="4"
+                  placeholder="Mishaps, special effects, and house rules..."
+                ></textarea>
+              </label>
+              <input id="powersKnownMarks" type="hidden" />
+              <input id="powersCastMarks" type="hidden" />
+            </div>
+          </section>
+
+          <section class="sheet-section">
             <h3>Notes</h3>
             <label>
               Story, vows, and dark history
@@ -202,6 +445,147 @@
             </label>
           </section>
         </form>
+
+        <section class="reference-sheet">
+          <h3>Quick Reference</h3>
+          <p class="reference-kicker">Stylized MORK BORG table notes from your light rules sheet</p>
+
+          <div class="reference-grid">
+            <article class="reference-card">
+              <h4>Tests</h4>
+              <ul>
+                <li>Roll <code>d20 ± ability</code> and meet or beat DR to succeed.</li>
+                <li>Creatures typically roll unmodified <code>d20</code> versus DR.</li>
+                <li>Default baseline DR for routine action is often 12.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Powers and Scrolls</h4>
+              <ul>
+                <li>Use powers per day: <code>Presence + d4</code> (roll daily).</li>
+                <li>Wielding a power: Presence DR12 test.</li>
+                <li>Failure: no effect, take <code>d2</code> HP, dizzy for one hour, no powers during that hour.</li>
+                <li>Fumble handling follows the fumble section.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Rest and Infection</h4>
+              <ul>
+                <li>Catch breath: heal <code>d4</code> HP.</li>
+                <li>Night's sleep: heal <code>d6</code> HP.</li>
+                <li>Infection: no healing from rest and take <code>d6</code> damage each day.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Morale</h4>
+              <ul>
+                <li>Roll morale when leader dies, half group is eliminated, or lone enemy is near defeat.</li>
+                <li>Morale test: <code>2d6</code> versus creature morale.</li>
+                <li>On failure, roll <code>d6</code>: 1-3 flee, 4-6 surrender.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Initiative</h4>
+              <ul>
+                <li>Group initiative: <code>d6</code>.</li>
+                <li>1-3 enemies begin, 4-6 PCs begin.</li>
+                <li>Individual initiative variant: <code>Agility + d6</code>.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Attack and Defence</h4>
+              <ul>
+                <li>Melee test: DR12 Strength.</li>
+                <li>Ranged test: DR12 Presence.</li>
+                <li>Defence test: DR12 Agility.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Critical and Fumble</h4>
+              <ul>
+                <li>Crit (natural 20) attack: double damage; armor/protection drops one tier.</li>
+                <li>Crit defence: PC gains a free attack.</li>
+                <li>Fumble (natural 1) attack: weapon breaks or is lost.</li>
+                <li>Fumble defence: PC takes double damage; armor drops one tier.</li>
+              </ul>
+            </article>
+
+            <article class="reference-card">
+              <h4>Armor Tiers</h4>
+              <ul>
+                <li>Light: <code>-d2</code> damage reduction.</li>
+                <li>Medium: <code>-d4</code> damage reduction and +2 DR Agility tests.</li>
+                <li>Heavy: <code>-d6</code> damage reduction and +4 DR Agility tests.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="reference-table-wrap">
+            <h4>Ability Score to Modifier (3d6)</h4>
+            <table class="reference-table">
+              <thead>
+                <tr>
+                  <th>Score</th>
+                  <th>Modifier</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>3-4</td><td>-3</td></tr>
+                <tr><td>5-6</td><td>-2</td></tr>
+                <tr><td>7-8</td><td>-1</td></tr>
+                <tr><td>9-12</td><td>0</td></tr>
+                <tr><td>13-14</td><td>+1</td></tr>
+                <tr><td>15-16</td><td>+2</td></tr>
+                <tr><td>17-18</td><td>+3</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="reference-table-wrap">
+            <h4>Difficulty Ratings</h4>
+            <table class="reference-table">
+              <thead>
+                <tr>
+                  <th>DR</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>6</td><td>Incredibly simple</td></tr>
+                <tr><td>8</td><td>Routine</td></tr>
+                <tr><td>10</td><td>Pretty simple</td></tr>
+                <tr><td>12</td><td>Normal</td></tr>
+                <tr><td>14</td><td>Difficult</td></tr>
+                <tr><td>16</td><td>Really hard</td></tr>
+                <tr><td>18</td><td>Should not be possible</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="reference-table-wrap">
+            <h4>Broken (0 HP) d4</h4>
+            <table class="reference-table">
+              <thead>
+                <tr>
+                  <th>Roll</th>
+                  <th>Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>Fall unconscious for d4 rounds; wake with d4 HP.</td></tr>
+                <tr><td>2</td><td>Roll d6: 1-5 broken/severed limb, 6 lost eye. No action for d4 rounds, then active with d4 HP.</td></tr>
+                <tr><td>3</td><td>Haemorrhage: death in d2 hours unless treated. Tests are DR16 first hour, DR18 last hour.</td></tr>
+                <tr><td>4</td><td>Dead.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
 
