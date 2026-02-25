@@ -1,45 +1,31 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MORK BORG Character Sheet Generator | Character Reliquary</title>
-    <meta
-      name="description"
-      content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups."
-    />
-    <meta
-      name="robots"
-      content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1"
-    />
-    <link rel="canonical" href="https://character-reliquary.manemike.com/" />
-    <link rel="icon" type="image/webp" href="assets/logos/CRLogo.webp" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Character Reliquary" />
-    <meta property="og:title" content="MORK BORG Character Sheet Generator | Character Reliquary" />
-    <meta
-      property="og:description"
-      content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups."
-    />
-    <meta property="og:url" content="https://character-reliquary.manemike.com/" />
-    <meta
-      property="og:image"
-      content="https://character-reliquary.manemike.com/assets/logos/CRBanner.webp"
-    />
-    <meta property="og:image:alt" content="Character Reliquary banner art" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="MORK BORG Character Sheet Generator | Character Reliquary" />
-    <meta
-      name="twitter:description"
-      content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups."
-    />
-    <meta
-      name="twitter:image"
-      content="https://character-reliquary.manemike.com/assets/logos/CRBanner.webp"
-    />
-    <meta name="twitter:image:alt" content="Character Reliquary banner art" />
-    <script type="application/ld+json">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MORK BORG Character Sheet Generator | Character Reliquary</title>
+  <meta name="description"
+    content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups." />
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
+  <link rel="canonical" href="https://character-reliquary.manemike.com/" />
+  <link rel="icon" type="image/webp" href="assets/logos/CRLogo.webp" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Character Reliquary" />
+  <meta property="og:title" content="MORK BORG Character Sheet Generator | Character Reliquary" />
+  <meta property="og:description"
+    content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups." />
+  <meta property="og:url" content="https://character-reliquary.manemike.com/" />
+  <meta property="og:image" content="https://character-reliquary.manemike.com/assets/logos/CRBanner.webp" />
+  <meta property="og:image:alt" content="Character Reliquary banner art" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MORK BORG Character Sheet Generator | Character Reliquary" />
+  <meta name="twitter:description"
+    content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups." />
+  <meta name="twitter:image" content="https://character-reliquary.manemike.com/assets/logos/CRBanner.webp" />
+  <meta name="twitter:image:alt" content="Character Reliquary banner art" />
+  <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -59,805 +45,796 @@
         }
       }
     </script>
-    <script>
-      (() => {
-        const key = "morkborg-reliquary.theme.v1";
-        let theme = "dark";
-        try {
-          const saved = localStorage.getItem(key);
-          if (saved === "light" || saved === "dark") {
-            theme = saved;
-          }
-        } catch (_error) {
-          theme = "dark";
+  <script>
+    (() => {
+      const key = "morkborg-reliquary.theme.v1";
+      let theme = "dark";
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved === "light" || saved === "dark") {
+          theme = saved;
         }
-        document.documentElement.setAttribute("data-theme", theme);
-      })();
-    </script>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="vault-panel">
-        <div class="brand">
-          <div class="brand-logo-wrap">
-            <img
-              class="brand-logo brand-logo-dark"
-              src="assets/logos/CRLogo.webp"
-              alt="Character Reliquary logo"
-              width="112"
-              height="112"
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-            />
-            <img
-              class="brand-logo brand-logo-light"
-              src="assets/logos/CRLogoLight.webp"
-              alt="Character Reliquary logo"
-              width="112"
-              height="112"
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-            />
+      } catch (_error) {
+        theme = "dark";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="vault-panel">
+      <div class="brand">
+        <div class="brand-logo-wrap">
+          <img class="brand-logo brand-logo-dark" src="assets/logos/CRLogo.webp" alt="Character Reliquary logo"
+            width="112" height="112" loading="eager" decoding="async" fetchpriority="high" />
+          <img class="brand-logo brand-logo-light" src="assets/logos/CRLogoLight.webp" alt="Character Reliquary logo"
+            width="112" height="112" loading="eager" decoding="async" fetchpriority="high" />
+        </div>
+        <div class="brand-copy">
+          <p class="brand-mark">MORK BORG</p>
+          <div class="brand-title-row">
+            <h1>Character Reliquary</h1>
           </div>
-          <div class="brand-copy">
-            <p class="brand-mark">MORK BORG</p>
-            <div class="brand-title-row">
-              <h1>Character Reliquary</h1>
+          <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
+          <div class="brand-quick-actions">
+            <button id="theme-toggle" class="btn btn-ghost theme-toggle brand-theme-toggle" type="button"
+              aria-pressed="true" aria-label="Switch theme" title="Switch theme">
+              Sinner
+            </button>
+            <span class="brand-share-tooltip" title="Coming Soon">
+              <button class="btn btn-ghost brand-share-btn" type="button" disabled aria-disabled="true" tabindex="-1">
+                Join Party
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vault-actions">
+        <button id="new-character" class="btn btn-primary" type="button">
+          New Sheet
+        </button>
+        <button id="random-character" class="btn btn-ghost" type="button">
+          Randomize (Classless)
+        </button>
+      </div>
+
+      <section class="vault-list-wrap">
+        <h2>Saved Characters</h2>
+        <p id="list-empty" class="muted">No saved characters yet.</p>
+        <ul id="character-list" class="character-list"></ul>
+      </section>
+
+      <div id="dice-panel-desktop-slot" class="dice-panel-slot dice-panel-slot-desktop">
+        <section id="dice-panel" class="dice-panel" data-collapsed="true">
+          <button id="dice-toggle" class="dice-toggle" type="button" aria-expanded="false"
+            aria-controls="dice-panel-body">
+            <span>Dice Tray</span>
+            <span class="dice-toggle-hint">Open</span>
+          </button>
+
+          <div id="dice-panel-body" class="dice-panel-body" hidden>
+            <div id="dice-preview-host" class="dice-preview-host" aria-hidden="true">
+              <canvas id="dice-preview-canvas" aria-label="3D preview dice canvas" hidden></canvas>
+              <div id="dice-fallback" class="dice-fallback" hidden></div>
             </div>
-            <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
+
+            <div class="dice-chip-row" aria-label="Quick dice">
+              <button type="button" class="dice-chip" data-dice-chip="d2" aria-pressed="false">d2</button>
+              <button type="button" class="dice-chip" data-dice-chip="d4" aria-pressed="false">d4</button>
+              <button type="button" class="dice-chip" data-dice-chip="d6" aria-pressed="false">d6</button>
+              <button type="button" class="dice-chip" data-dice-chip="d8" aria-pressed="false">d8</button>
+              <button type="button" class="dice-chip" data-dice-chip="d10" aria-pressed="false">d10</button>
+              <button type="button" class="dice-chip" data-dice-chip="d12" aria-pressed="false">d12</button>
+              <button type="button" class="dice-chip" data-dice-chip="d20" aria-pressed="false">d20</button>
+              <button type="button" class="dice-chip" data-dice-chip="d100" aria-pressed="false">d100</button>
+            </div>
+
+            <div class="dice-controls">
+              <button id="dice-roll-btn" class="btn btn-primary dice-roll-btn" type="button">
+                Roll d20
+              </button>
+              <button id="dice-clear-btn" class="btn btn-ghost dice-clear-btn" type="button">
+                Clear
+              </button>
+            </div>
+
+            <p id="dice-status" class="dice-status" role="status" aria-live="polite">
+              Dice tray ready.
+            </p>
+
+            <section class="dice-history-wrap">
+              <h4>Last 10 Rolls</h4>
+              <ul id="dice-history" class="dice-history"></ul>
+              <button id="dice-purge-btn" class="btn btn-danger dice-purge-btn" type="button">
+                Purge The Ledgers
+              </button>
+            </section>
+
+            <details id="dice-advanced" class="dice-advanced">
+              <summary>Advanced</summary>
+              <div class="dice-advanced-grid">
+                <label class="dice-switch-label" for="dice-force-2d">
+                  <input id="dice-force-2d" type="checkbox" />
+                  Force 2D Fallback
+                </label>
+                <label class="dice-switch-label" for="dice-low-performance">
+                  <input id="dice-low-performance" type="checkbox" />
+                  Low Performance
+                </label>
+              </div>
+            </details>
           </div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="sheet-panel">
+      <header class="sheet-header">
+        <div>
+          <p class="section-kicker">Sheet Editor</p>
+          <h2 class="sheet-title-row"><span id="sheet-title">Unnamed Soul</span></h2>
         </div>
 
-        <div class="vault-actions">
-          <button id="new-character" class="btn btn-primary" type="button">
-            New Sheet
+        <div class="header-actions">
+          <button id="save-character" class="btn btn-primary" type="button">
+            Save
           </button>
-          <button id="random-character" class="btn btn-ghost" type="button">
-            Randomize (Classless)
+          <button id="delete-character" class="btn btn-danger" type="button">
+            Delete
           </button>
+          <button id="export-character" class="btn btn-ghost" type="button">
+            Export JSON
+          </button>
+          <button id="import-character" class="btn btn-ghost" type="button">
+            Import
+          </button>
+          <input id="import-file" type="file" accept=".json" hidden />
+          <p class="header-actions-note">Characters are saved locally in your browser.</p>
         </div>
+      </header>
 
-        <section class="vault-list-wrap">
-          <h2>Saved Characters</h2>
-          <p id="list-empty" class="muted">No saved characters yet.</p>
-          <ul id="character-list" class="character-list"></ul>
+      <p id="status" class="status">Ready.</p>
+
+      <form id="character-form" autocomplete="off">
+        <section class="sheet-section rules-section">
+          <h3 class="heading-with-icon">
+            <i class="heading-lucide" data-lucide="book" aria-hidden="true"></i>
+            <span>Core Rules Mode</span>
+          </h3>
+          <p class="field-help">
+            The randomizer follows baseline classless character generation from the MORK BORG
+            Bare Bones ruleset: silver, kit tables, weapon/armor tables, ability rolls, HP, and
+            omens.
+          </p>
+          <p class="field-help">
+            If you pick an optional class, class-specific starting rules may differ and should be
+            adjusted manually.
+          </p>
         </section>
 
-        <div id="dice-panel-desktop-slot" class="dice-panel-slot dice-panel-slot-desktop">
-          <section id="dice-panel" class="dice-panel" data-collapsed="true">
-            <button
-              id="dice-toggle"
-              class="dice-toggle"
-              type="button"
-              aria-expanded="false"
-              aria-controls="dice-panel-body"
-            >
-              <span>Dice Tray</span>
-              <span class="dice-toggle-hint">Open</span>
-            </button>
-
-            <div id="dice-panel-body" class="dice-panel-body" hidden>
-              <div id="dice-preview-host" class="dice-preview-host" aria-hidden="true">
-                <canvas id="dice-preview-canvas" aria-label="3D preview dice canvas" hidden></canvas>
-                <div id="dice-fallback" class="dice-fallback" hidden></div>
-              </div>
-
-              <div class="dice-chip-row" aria-label="Quick dice">
-                <button type="button" class="dice-chip" data-dice-chip="d2" aria-pressed="false">d2</button>
-                <button type="button" class="dice-chip" data-dice-chip="d4" aria-pressed="false">d4</button>
-                <button type="button" class="dice-chip" data-dice-chip="d6" aria-pressed="false">d6</button>
-                <button type="button" class="dice-chip" data-dice-chip="d8" aria-pressed="false">d8</button>
-                <button type="button" class="dice-chip" data-dice-chip="d10" aria-pressed="false">d10</button>
-                <button type="button" class="dice-chip" data-dice-chip="d12" aria-pressed="false">d12</button>
-                <button type="button" class="dice-chip" data-dice-chip="d20" aria-pressed="false">d20</button>
-                <button type="button" class="dice-chip" data-dice-chip="d100" aria-pressed="false">d100</button>
-              </div>
-
-              <div class="dice-controls">
-                <button id="dice-roll-btn" class="btn btn-primary dice-roll-btn" type="button">
-                  Roll d20
-                </button>
-                <button id="dice-clear-btn" class="btn btn-ghost dice-clear-btn" type="button">
-                  Clear
-                </button>
-              </div>
-
-              <p id="dice-status" class="dice-status" role="status" aria-live="polite">
-                Dice tray ready.
-              </p>
-
-              <section class="dice-history-wrap">
-                <h4>Last 10 Rolls</h4>
-                <ul id="dice-history" class="dice-history"></ul>
-                <button id="dice-purge-btn" class="btn btn-danger dice-purge-btn" type="button">
-                  Purge The Ledgers
-                </button>
-              </section>
-
-              <details id="dice-advanced" class="dice-advanced">
-                <summary>Advanced</summary>
-                <div class="dice-advanced-grid">
-                  <label class="dice-switch-label" for="dice-force-2d">
-                    <input id="dice-force-2d" type="checkbox" />
-                    Force 2D Fallback
-                  </label>
-                  <label class="dice-switch-label" for="dice-low-performance">
-                    <input id="dice-low-performance" type="checkbox" />
-                    Low Performance
-                  </label>
-                </div>
-              </details>
-            </div>
-          </section>
-        </div>
-      </aside>
-
-      <main class="sheet-panel">
-        <header class="sheet-header">
-          <div>
-            <p class="section-kicker">Sheet Editor</p>
-            <h2 class="sheet-title-row"><span id="sheet-title">Unnamed Soul</span></h2>
+        <section class="sheet-section">
+          <h3 class="heading-with-icon">
+            <i class="heading-lucide" data-lucide="user" aria-hidden="true"></i>
+            <span>Identity</span>
+          </h3>
+          <p class="field-help">Name the doomed soul, its station, and the land that spat it out.</p>
+          <div class="fields two-col">
+            <label>
+              Name
+              <input id="name" maxlength="60" placeholder="Aldur the Ashen" />
+            </label>
+            <label>
+              Epithet
+              <input id="epithet" list="epithet-options" maxlength="80" placeholder="Carrion Crown" />
+              <datalist id="epithet-options">
+                <option value="Bearer of Rotten Light"></option>
+                <option value="Saint of Ruined Bells"></option>
+                <option value="Sworn to the Last Dusk"></option>
+                <option value="Pilgrim of the Burning Mire"></option>
+                <option value="Keeper of Splintered Teeth"></option>
+                <option value="Witness to the Black Sun"></option>
+                <option value="Vagrant of Broken Relics"></option>
+                <option value="Herald of the Pale Feast"></option>
+                <option value="Ash-Crowned Graverobber"></option>
+                <option value="Bell-Toll Penitent"></option>
+              </datalist>
+            </label>
+            <label>
+              Class
+              <select id="className">
+                <option value="Classless Scvm">Classless Scvm</option>
+                <option value="Fanged Deserter">Fanged Deserter</option>
+                <option value="Gutterborn Scum">Gutterborn Scum</option>
+                <option value="Esoteric Hermit">Esoteric Hermit</option>
+                <option value="Wretched Royalty">Wretched Royalty</option>
+                <option value="Heretical Priest">Heretical Priest</option>
+                <option value="Occult Herbmaster">Occult Herbmaster</option>
+                <option value="Pale One">Pale One</option>
+                <option value="Child of the Swamp">Child of the Swamp</option>
+                <option value="Other">Other / Homebrew</option>
+              </select>
+            </label>
+            <label>
+              Homeland
+              <select id="homeland">
+                <option value="">Choose a homeland...</option>
+                <option value="Grift">Grift</option>
+                <option value="Kerguz">Kerguz</option>
+                <option value="Sarkash">Sarkash</option>
+                <option value="Tveland">Tveland</option>
+                <option value="Bergen Chrypt">Bergen Chrypt</option>
+                <option value="Galgenbeck outskirts">Galgenbeck outskirts</option>
+                <option value="Valley of the Unfortunate Undead">
+                  Valley of the Unfortunate Undead
+                </option>
+                <option value="A nameless plague village">A nameless plague village</option>
+                <option value="An unmarked battlefield">An unmarked battlefield</option>
+                <option value="A ruined monastery">A ruined monastery</option>
+              </select>
+            </label>
+            <label>
+              Age
+              <input id="age" type="number" min="8" max="120" step="1" placeholder="19" />
+            </label>
+            <label>
+              Level
+              <input id="level" type="number" min="1" max="20" step="1" />
+            </label>
           </div>
+        </section>
 
-          <div class="header-actions">
-            <button id="save-character" class="btn btn-primary" type="button">
-              Save
-            </button>
-            <button id="delete-character" class="btn btn-danger" type="button">
-              Delete
-            </button>
-            <button id="export-character" class="btn btn-ghost" type="button">
-              Export JSON
-            </button>
-            <button id="import-character" class="btn btn-ghost" type="button">
-              Import
-            </button>
-            <button
-              id="theme-toggle"
-              class="btn btn-ghost theme-toggle"
-              type="button"
-              aria-pressed="true"
-              aria-label="Switch theme"
-              title="Switch theme"
-            >
-              Devil
-            </button>
-            <input id="import-file" type="file" accept=".json" hidden />
+        <section class="sheet-section">
+          <h3 class="heading-with-icon">
+            <i class="heading-lucide" data-lucide="bar-chart-2" aria-hidden="true"></i>
+            <span>Core Stats</span>
+          </h3>
+          <p class="field-help">
+            Modifiers are normally created by rolling 3d6 and mapping to -3 through +3. They can
+            improve up to +6 over time.
+          </p>
+          <div class="fields stat-grid">
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="dumbbell" aria-hidden="true"></i>
+                <span>Strength</span>
+              </span>
+              <input id="strength" type="number" min="-3" max="6" step="1" />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="wind" aria-hidden="true"></i>
+                <span>Agility</span>
+              </span>
+              <input id="agility" type="number" min="-3" max="6" step="1" />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="eye" aria-hidden="true"></i>
+                <span>Presence</span>
+              </span>
+              <input id="presence" type="number" min="-3" max="6" step="1" />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="shield-alert" aria-hidden="true"></i>
+                <span>Toughness</span>
+              </span>
+              <input id="toughness" type="number" min="-3" max="6" step="1" />
+            </label>
           </div>
-        </header>
+        </section>
 
-        <p id="status" class="status">Ready.</p>
+        <section class="sheet-section">
+          <h3 class="heading-with-icon">
+            <i class="heading-lucide" data-lucide="heart" aria-hidden="true"></i>
+            <span>Survival</span>
+          </h3>
+          <p class="field-help">Track wounds, omens, silver, and scars as the end draws nearer.</p>
+          <div class="fields two-col">
+            <article class="power-tracker-card hp-tracker-card span-2" id="hp-current-card">
+              <div class="power-tracker-head">
+                <h4>Hit Points (Current)</h4>
+                <output id="hp-current-counter" class="tracker-count">1 / 1</output>
+              </div>
+              <div class="tracker-controls">
+                <button class="tracker-btn tracker-btn-minus" type="button" data-hp-action="decrement"
+                  aria-label="Decrease current hit points">
+                  -
+                </button>
+                <output id="hp-current-display" class="tracker-value hp-tracker-value">
+                  <span id="hp-current-value">1</span>
+                  <span id="hp-current-skull" class="hp-current-skull" hidden aria-hidden="true">☠</span>
+                </output>
+                <button class="tracker-btn tracker-btn-plus" type="button" data-hp-action="increment"
+                  aria-label="Increase current hit points">
+                  +
+                </button>
+              </div>
+              <p id="hp-current-hint" class="tracker-hint" hidden>Current HP cannot exceed Max HP.</p>
+              <input id="hpCurrent" type="number" min="0" max="30" step="1" hidden aria-hidden="true" />
+            </article>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="target" aria-hidden="true"></i>
+                <span>Hit Points (Max)</span>
+              </span>
+              <input id="hpMax" type="number" min="1" max="30" step="1" />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="crown" aria-hidden="true"></i>
+                <span>Omens</span>
+              </span>
+              <input id="omens" type="number" min="0" max="9" step="1" />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="circle-dollar-sign" aria-hidden="true"></i>
+                <span>Silver</span>
+              </span>
+              <input id="silver" type="number" min="0" max="9999" step="1" />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="badge-alert" aria-hidden="true"></i>
+                <span>Signature Scar</span>
+              </span>
+              <input id="scars" maxlength="120" placeholder="Burn marks, missing eye..." />
+            </label>
+          </div>
+        </section>
 
-        <form id="character-form" autocomplete="off">
-          <section class="sheet-section rules-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="book" aria-hidden="true"></i>
-              <span>Core Rules Mode</span>
-            </h3>
-            <p class="field-help">
-              The randomizer follows baseline classless character generation from the MORK BORG
-              Bare Bones ruleset: silver, kit tables, weapon/armor tables, ability rolls, HP, and
-              omens.
-            </p>
-            <p class="field-help">
-              If you pick an optional class, class-specific starting rules may differ and should be
-              adjusted manually.
-            </p>
-          </section>
+        <section class="sheet-section">
+          <h3 class="heading-with-icon">
+            <i class="heading-lucide" data-lucide="backpack" aria-hidden="true"></i>
+            <span>Equipment</span>
+          </h3>
+          <p class="field-help">
+            Record the rusted steel, tattered armor, and grave-picked relics keeping you alive.
+          </p>
+          <div class="fields two-col">
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="axe" aria-hidden="true"></i>
+                <span>Weapon</span>
+              </span>
+              <select id="weapon">
+                <option value="">Choose a weapon...</option>
+                <option value="Unarmed (d2)">Unarmed (d2)</option>
+                <option value="Femur (d4)">Femur (d4)</option>
+                <option value="Staff (d4)">Staff (d4)</option>
+                <option value="Shortsword (d4)">Shortsword (d4)</option>
+                <option value="Knife (d4)">Knife (d4)</option>
+                <option value="Warhammer (d6)">Warhammer (d6)</option>
+                <option value="Sword (d6)">Sword (d6)</option>
+                <option value="Bow (d6, Presence + 10 arrows)">
+                  Bow (d6, Presence + 10 arrows)
+                </option>
+                <option value="Flail (d8)">Flail (d8)</option>
+                <option value="Crossbow (d8, Presence + 10 bolts)">
+                  Crossbow (d8, Presence + 10 bolts)
+                </option>
+                <option value="Zweihander (d10)">Zweihander (d10)</option>
+                <option value="__custom__">Custom weapon...</option>
+              </select>
+            </label>
+            <label id="weapon-custom-name-wrap" class="is-hidden" hidden>
+              Custom Weapon Name
+              <input id="weaponCustomName" maxlength="80" placeholder="Hooked chainblade" disabled />
+            </label>
+            <label id="weapon-custom-die-wrap" class="is-hidden" hidden>
+              Custom Weapon Damage Die (dX)
+              <input id="weaponCustomDie" type="number" min="2" max="20" step="1" disabled />
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="crosshair" aria-hidden="true"></i>
+                <span>Primary Attack Stat</span>
+              </span>
+              <select id="attack">
+                <option value="Strength">Strength</option>
+                <option value="Presence">Presence</option>
+                <option value="Strength or Presence">Strength or Presence</option>
+              </select>
+            </label>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="anvil" aria-hidden="true"></i>
+                <span>Armor</span>
+              </span>
+              <select id="armor">
+                <option value="">Choose armor...</option>
+                <option value="No armor">No armor</option>
+                <option value="Light armor (-d2 damage)">Light armor (-d2 damage)</option>
+                <option value="Medium armor (-d4 damage, DR +2 Agility tests)">
+                  Medium armor (-d4 damage, DR +2 Agility tests)
+                </option>
+                <option value="Heavy armor (-d6 damage, DR +4 Agility tests)">
+                  Heavy armor (-d6 damage, DR +4 Agility tests)
+                </option>
+                <option value="Shield (-1 damage or break to ignore one attack)">
+                  Shield (-1 damage or break to ignore one attack)
+                </option>
+                <option value="__custom__">Custom armor...</option>
+              </select>
+            </label>
+            <label id="armor-custom-name-wrap" class="is-hidden" hidden>
+              Custom Armor Name
+              <input id="armorCustomName" maxlength="80" placeholder="Barbed lamellar" disabled />
+            </label>
+            <label id="armor-custom-die-wrap" class="is-hidden" hidden>
+              Custom Armor Reduction Die (dX)
+              <input id="armorCustomDie" type="number" min="2" max="20" step="1" disabled />
+            </label>
+            <label class="span-2">
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="gem" aria-hidden="true"></i>
+                <span>Trinket</span>
+              </span>
+              <input id="trinket" list="trinket-options" maxlength="120" placeholder="A nail from a saint's coffin" />
+              <datalist id="trinket-options">
+                <option value="A tooth carved with scripture"></option>
+                <option value="A key with no known lock"></option>
+                <option value="A mirror shard showing another face"></option>
+                <option value="A bell that rings only underwater"></option>
+                <option value="A vial of grave dirt and silver filings"></option>
+                <option value="A saint's fingerbone wrapped in linen"></option>
+                <option value="A black coin stamped with a blind eye"></option>
+                <option value="A prayer strip sewn into skin"></option>
+                <option value="A rusted knucklebone reliquary"></option>
+                <option value="A tiny iron idol missing its head"></option>
+              </datalist>
+            </label>
+            <label class="span-2">
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="package" aria-hidden="true"></i>
+                <span>Inventory</span>
+              </span>
+              <textarea id="inventory" rows="5" placeholder="Rope, torch, stale bread, cursed mirror..."></textarea>
+            </label>
+          </div>
+        </section>
 
-          <section class="sheet-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="user" aria-hidden="true"></i>
-              <span>Identity</span>
-            </h3>
-            <p class="field-help">Name the doomed soul, its station, and the land that spat it out.</p>
-            <div class="fields two-col">
-              <label>
-                Name
-                <input id="name" maxlength="60" placeholder="Aldur the Ashen" />
-              </label>
-              <label>
-                Epithet
-                <input id="epithet" list="epithet-options" maxlength="80" placeholder="Carrion Crown" />
-                <datalist id="epithet-options">
-                  <option value="Bearer of Rotten Light"></option>
-                  <option value="Saint of Ruined Bells"></option>
-                  <option value="Sworn to the Last Dusk"></option>
-                  <option value="Pilgrim of the Burning Mire"></option>
-                  <option value="Keeper of Splintered Teeth"></option>
-                  <option value="Witness to the Black Sun"></option>
-                  <option value="Vagrant of Broken Relics"></option>
-                  <option value="Herald of the Pale Feast"></option>
-                  <option value="Ash-Crowned Graverobber"></option>
-                  <option value="Bell-Toll Penitent"></option>
-                </datalist>
-              </label>
-              <label>
-                Class
-                <select id="className">
-                  <option value="Classless Scvm">Classless Scvm</option>
-                  <option value="Fanged Deserter">Fanged Deserter</option>
-                  <option value="Gutterborn Scum">Gutterborn Scum</option>
-                  <option value="Esoteric Hermit">Esoteric Hermit</option>
-                  <option value="Wretched Royalty">Wretched Royalty</option>
-                  <option value="Heretical Priest">Heretical Priest</option>
-                  <option value="Occult Herbmaster">Occult Herbmaster</option>
-                  <option value="Pale One">Pale One</option>
-                  <option value="Child of the Swamp">Child of the Swamp</option>
-                  <option value="Other">Other / Homebrew</option>
-                </select>
-              </label>
-              <label>
-                Homeland
-                <select id="homeland">
-                  <option value="">Choose a homeland...</option>
-                  <option value="Grift">Grift</option>
-                  <option value="Kerguz">Kerguz</option>
-                  <option value="Sarkash">Sarkash</option>
-                  <option value="Tveland">Tveland</option>
-                  <option value="Bergen Chrypt">Bergen Chrypt</option>
-                  <option value="Galgenbeck outskirts">Galgenbeck outskirts</option>
-                  <option value="Valley of the Unfortunate Undead">
-                    Valley of the Unfortunate Undead
-                  </option>
-                  <option value="A nameless plague village">A nameless plague village</option>
-                  <option value="An unmarked battlefield">An unmarked battlefield</option>
-                  <option value="A ruined monastery">A ruined monastery</option>
-                </select>
-              </label>
-              <label>
-                Age
-                <input id="age" type="number" min="8" max="120" step="1" placeholder="19" />
-              </label>
-              <label>
-                Level
-                <input id="level" type="number" min="1" max="20" step="1" />
-              </label>
+        <section class="sheet-section">
+          <h3 class="heading-with-icon">
+            <i class="heading-lucide" data-lucide="sparkles" aria-hidden="true"></i>
+            <span>Powers</span>
+          </h3>
+          <p class="field-help">Catalogue forbidden rites, cursed scrolls, and the toll of each casting.</p>
+          <div class="fields two-col">
+            <div class="power-summary span-2">
+              <article class="power-summary-chip">
+                <span class="power-summary-label label-with-icon">
+                  <i class="stat-lucide" data-lucide="skull" aria-hidden="true"></i>
+                  <span>Known Powers</span>
+                </span>
+                <output id="powers-known-counter" class="tracker-count">0</output>
+              </article>
+              <article class="power-summary-chip">
+                <span class="power-summary-label label-with-icon">
+                  <i class="stat-lucide" data-lucide="hourglass" aria-hidden="true"></i>
+                  <span>Cast Attempts Today</span>
+                </span>
+                <output id="powers-cast-counter" class="tracker-count">0</output>
+              </article>
             </div>
-          </section>
-
-          <section class="sheet-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="bar-chart-2" aria-hidden="true"></i>
-              <span>Core Stats</span>
-            </h3>
-            <p class="field-help">
-              Modifiers are normally created by rolling 3d6 and mapping to -3 through +3. They can
-              improve up to +6 over time.
-            </p>
-            <div class="fields stat-grid">
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="dumbbell" aria-hidden="true"></i>
-                  <span>Strength</span>
-                </span>
-                <input id="strength" type="number" min="-3" max="6" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="wind" aria-hidden="true"></i>
-                  <span>Agility</span>
-                </span>
-                <input id="agility" type="number" min="-3" max="6" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="eye" aria-hidden="true"></i>
-                  <span>Presence</span>
-                </span>
-                <input id="presence" type="number" min="-3" max="6" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="shield-alert" aria-hidden="true"></i>
-                  <span>Toughness</span>
-                </span>
-                <input id="toughness" type="number" min="-3" max="6" step="1" />
-              </label>
-            </div>
-          </section>
-
-          <section class="sheet-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="heart" aria-hidden="true"></i>
-              <span>Survival</span>
-            </h3>
-            <p class="field-help">Track wounds, omens, silver, and scars as the end draws nearer.</p>
-            <div class="fields two-col">
-              <article class="power-tracker-card hp-tracker-card span-2" id="hp-current-card">
+            <div class="power-trackers power-trackers-single span-2">
+              <article class="power-tracker-card" id="powers-cast-card">
                 <div class="power-tracker-head">
-                  <h4>Hit Points (Current)</h4>
-                  <output id="hp-current-counter" class="tracker-count">1 / 1</output>
+                  <h4 class="heading-with-icon">
+                    <i class="stat-lucide" data-lucide="activity" aria-hidden="true"></i>
+                    <span>Cast Attempts Tracker</span>
+                  </h4>
                 </div>
                 <div class="tracker-controls">
-                  <button
-                    class="tracker-btn tracker-btn-minus"
-                    type="button"
-                    data-hp-action="decrement"
-                    aria-label="Decrease current hit points"
-                  >
+                  <button class="tracker-btn tracker-btn-minus" type="button" data-power-action="decrement"
+                    data-power-target="cast" aria-label="Decrease cast attempts">
                     -
                   </button>
-                  <output id="hp-current-display" class="tracker-value hp-tracker-value">
-                    <span id="hp-current-value">1</span>
-                    <span id="hp-current-skull" class="hp-current-skull" hidden aria-hidden="true">☠</span>
-                  </output>
-                  <button
-                    class="tracker-btn tracker-btn-plus"
-                    type="button"
-                    data-hp-action="increment"
-                    aria-label="Increase current hit points"
-                  >
+                  <output id="powers-cast-display" class="tracker-value">0</output>
+                  <button class="tracker-btn tracker-btn-plus" type="button" data-power-action="increment"
+                    data-power-target="cast" aria-label="Increase cast attempts">
                     +
                   </button>
                 </div>
-                <p id="hp-current-hint" class="tracker-hint" hidden>Current HP cannot exceed Max HP.</p>
-                <input id="hpCurrent" type="number" min="0" max="30" step="1" hidden aria-hidden="true" />
+                <p class="tracker-hint">Mark every invocation as your spirit frays.</p>
               </article>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="target" aria-hidden="true"></i>
-                  <span>Hit Points (Max)</span>
-                </span>
-                <input id="hpMax" type="number" min="1" max="30" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="crown" aria-hidden="true"></i>
-                  <span>Omens</span>
-                </span>
-                <input id="omens" type="number" min="0" max="9" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="circle-dollar-sign" aria-hidden="true"></i>
-                  <span>Silver</span>
-                </span>
-                <input id="silver" type="number" min="0" max="9999" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="badge-alert" aria-hidden="true"></i>
-                  <span>Signature Scar</span>
-                </span>
-                <input id="scars" maxlength="120" placeholder="Burn marks, missing eye..." />
-              </label>
             </div>
-          </section>
-
-          <section class="sheet-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="backpack" aria-hidden="true"></i>
-              <span>Equipment</span>
-            </h3>
-            <p class="field-help">
-              Record the rusted steel, tattered armor, and grave-picked relics keeping you alive.
-            </p>
-            <div class="fields two-col">
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="axe" aria-hidden="true"></i>
-                  <span>Weapon</span>
-                </span>
-                <select id="weapon">
-                  <option value="">Choose a weapon...</option>
-                  <option value="Unarmed (d2)">Unarmed (d2)</option>
-                  <option value="Femur (d4)">Femur (d4)</option>
-                  <option value="Staff (d4)">Staff (d4)</option>
-                  <option value="Shortsword (d4)">Shortsword (d4)</option>
-                  <option value="Knife (d4)">Knife (d4)</option>
-                  <option value="Warhammer (d6)">Warhammer (d6)</option>
-                  <option value="Sword (d6)">Sword (d6)</option>
-                  <option value="Bow (d6, Presence + 10 arrows)">
-                    Bow (d6, Presence + 10 arrows)
-                  </option>
-                  <option value="Flail (d8)">Flail (d8)</option>
-                  <option value="Crossbow (d8, Presence + 10 bolts)">
-                    Crossbow (d8, Presence + 10 bolts)
-                  </option>
-                  <option value="Zweihander (d10)">Zweihander (d10)</option>
-                  <option value="__custom__">Custom weapon...</option>
-                </select>
-              </label>
-              <label id="weapon-custom-name-wrap" class="is-hidden" hidden>
-                Custom Weapon Name
-                <input
-                  id="weaponCustomName"
-                  maxlength="80"
-                  placeholder="Hooked chainblade"
-                  disabled
-                />
-              </label>
-              <label id="weapon-custom-die-wrap" class="is-hidden" hidden>
-                Custom Weapon Damage Die (dX)
-                <input id="weaponCustomDie" type="number" min="2" max="20" step="1" disabled />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="crosshair" aria-hidden="true"></i>
-                  <span>Primary Attack Stat</span>
-                </span>
-                <select id="attack">
-                  <option value="Strength">Strength</option>
-                  <option value="Presence">Presence</option>
-                  <option value="Strength or Presence">Strength or Presence</option>
-                </select>
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="anvil" aria-hidden="true"></i>
-                  <span>Armor</span>
-                </span>
-                <select id="armor">
-                  <option value="">Choose armor...</option>
-                  <option value="No armor">No armor</option>
-                  <option value="Light armor (-d2 damage)">Light armor (-d2 damage)</option>
-                  <option value="Medium armor (-d4 damage, DR +2 Agility tests)">
-                    Medium armor (-d4 damage, DR +2 Agility tests)
-                  </option>
-                  <option value="Heavy armor (-d6 damage, DR +4 Agility tests)">
-                    Heavy armor (-d6 damage, DR +4 Agility tests)
-                  </option>
-                  <option value="Shield (-1 damage or break to ignore one attack)">
-                    Shield (-1 damage or break to ignore one attack)
-                  </option>
-                  <option value="__custom__">Custom armor...</option>
-                </select>
-              </label>
-              <label id="armor-custom-name-wrap" class="is-hidden" hidden>
-                Custom Armor Name
-                <input
-                  id="armorCustomName"
-                  maxlength="80"
-                  placeholder="Barbed lamellar"
-                  disabled
-                />
-              </label>
-              <label id="armor-custom-die-wrap" class="is-hidden" hidden>
-                Custom Armor Reduction Die (dX)
-                <input id="armorCustomDie" type="number" min="2" max="20" step="1" disabled />
-              </label>
-              <label class="span-2">
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="gem" aria-hidden="true"></i>
-                  <span>Trinket</span>
-                </span>
-                <input
-                  id="trinket"
-                  list="trinket-options"
-                  maxlength="120"
-                  placeholder="A nail from a saint's coffin"
-                />
-                <datalist id="trinket-options">
-                  <option value="A tooth carved with scripture"></option>
-                  <option value="A key with no known lock"></option>
-                  <option value="A mirror shard showing another face"></option>
-                  <option value="A bell that rings only underwater"></option>
-                  <option value="A vial of grave dirt and silver filings"></option>
-                  <option value="A saint's fingerbone wrapped in linen"></option>
-                  <option value="A black coin stamped with a blind eye"></option>
-                  <option value="A prayer strip sewn into skin"></option>
-                  <option value="A rusted knucklebone reliquary"></option>
-                  <option value="A tiny iron idol missing its head"></option>
-                </datalist>
-              </label>
-              <label class="span-2">
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="package" aria-hidden="true"></i>
-                  <span>Inventory</span>
-                </span>
-                <textarea
-                  id="inventory"
-                  rows="5"
-                  placeholder="Rope, torch, stale bread, cursed mirror..."
-                ></textarea>
-              </label>
-            </div>
-          </section>
-
-          <section class="sheet-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="sparkles" aria-hidden="true"></i>
-              <span>Powers</span>
-            </h3>
-            <p class="field-help">Catalogue forbidden rites, cursed scrolls, and the toll of each casting.</p>
-            <div class="fields two-col">
-              <div class="power-summary span-2">
-                <article class="power-summary-chip">
-                  <span class="power-summary-label label-with-icon">
-                    <i class="stat-lucide" data-lucide="skull" aria-hidden="true"></i>
-                    <span>Known Powers</span>
-                  </span>
-                  <output id="powers-known-counter" class="tracker-count">0</output>
-                </article>
-                <article class="power-summary-chip">
-                  <span class="power-summary-label label-with-icon">
-                    <i class="stat-lucide" data-lucide="hourglass" aria-hidden="true"></i>
-                    <span>Cast Attempts Today</span>
-                  </span>
-                  <output id="powers-cast-counter" class="tracker-count">0</output>
-                </article>
+            <article class="known-powers-block span-2">
+              <div class="known-powers-head">
+                <h4 class="heading-with-icon">
+                  <i class="stat-lucide" data-lucide="compass" aria-hidden="true"></i>
+                  <span>Known Powers List</span>
+                </h4>
+                <button id="add-known-power" class="btn btn-ghost known-power-add" type="button">
+                  Add Power
+                </button>
               </div>
-              <div class="power-trackers power-trackers-single span-2">
-                <article class="power-tracker-card" id="powers-cast-card">
-                  <div class="power-tracker-head">
-                    <h4 class="heading-with-icon">
-                      <i class="stat-lucide" data-lucide="activity" aria-hidden="true"></i>
-                      <span>Cast Attempts Tracker</span>
-                    </h4>
-                  </div>
-                  <div class="tracker-controls">
-                    <button
-                      class="tracker-btn tracker-btn-minus"
-                      type="button"
-                      data-power-action="decrement"
-                      data-power-target="cast"
-                      aria-label="Decrease cast attempts"
-                    >
-                      -
-                    </button>
-                    <output id="powers-cast-display" class="tracker-value">0</output>
-                    <button
-                      class="tracker-btn tracker-btn-plus"
-                      type="button"
-                      data-power-action="increment"
-                      data-power-target="cast"
-                      aria-label="Increase cast attempts"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <p class="tracker-hint">Mark every invocation as your spirit frays.</p>
-                </article>
-              </div>
-              <article class="known-powers-block span-2">
-                <div class="known-powers-head">
-                  <h4 class="heading-with-icon">
-                    <i class="stat-lucide" data-lucide="compass" aria-hidden="true"></i>
-                    <span>Known Powers List</span>
-                  </h4>
-                  <button id="add-known-power" class="btn btn-ghost known-power-add" type="button">
-                    Add Power
-                  </button>
-                </div>
-                <div id="known-powers-list" class="known-powers-list"></div>
-                <p class="tracker-hint">Inscribe each power that still answers your call.</p>
-              </article>
-              <input id="powersKnownCount" type="number" min="0" max="99" step="1" hidden aria-hidden="true" />
-              <input id="powersCastToday" type="number" min="0" step="1" hidden aria-hidden="true" />
-              <textarea id="powersKnown" hidden aria-hidden="true"></textarea>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="scroll-text" aria-hidden="true"></i>
-                  <span>Sacred Scrolls Carried</span>
-                </span>
-                <input id="sacredScrolls" type="number" min="0" max="99" step="1" />
-              </label>
-              <label>
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="flask-conical" aria-hidden="true"></i>
-                  <span>Unclean Scrolls Carried</span>
-                </span>
-                <input id="uncleanScrolls" type="number" min="0" max="99" step="1" />
-              </label>
-              <label class="span-2">
-                <span class="label-with-icon">
-                  <i class="stat-lucide" data-lucide="file-text" aria-hidden="true"></i>
-                  <span>Power Notes</span>
-                </span>
-                <textarea
-                  id="powersNotes"
-                  rows="4"
-                  placeholder="Mishaps, special effects, and house rules..."
-                ></textarea>
-              </label>
-              <input id="powersKnownMarks" type="hidden" />
-              <input id="powersCastMarks" type="hidden" />
-            </div>
-          </section>
-
-          <section class="sheet-section">
-            <h3 class="heading-with-icon">
-              <i class="heading-lucide" data-lucide="pen-line" aria-hidden="true"></i>
-              <span>Notes</span>
-            </h3>
+              <div id="known-powers-list" class="known-powers-list"></div>
+              <p class="tracker-hint">Inscribe each power that still answers your call.</p>
+            </article>
+            <input id="powersKnownCount" type="number" min="0" max="99" step="1" hidden aria-hidden="true" />
+            <input id="powersCastToday" type="number" min="0" step="1" hidden aria-hidden="true" />
+            <textarea id="powersKnown" hidden aria-hidden="true"></textarea>
             <label>
-              Story, vows, and dark history
-              <textarea id="notes" rows="7" placeholder="What drives this soul onward?"></textarea>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="scroll-text" aria-hidden="true"></i>
+                <span>Sacred Scrolls Carried</span>
+              </span>
+              <input id="sacredScrolls" type="number" min="0" max="99" step="1" />
             </label>
-          </section>
-        </form>
+            <label>
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="flask-conical" aria-hidden="true"></i>
+                <span>Unclean Scrolls Carried</span>
+              </span>
+              <input id="uncleanScrolls" type="number" min="0" max="99" step="1" />
+            </label>
+            <label class="span-2">
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="file-text" aria-hidden="true"></i>
+                <span>Power Notes</span>
+              </span>
+              <textarea id="powersNotes" rows="4" placeholder="Mishaps, special effects, and house rules..."></textarea>
+            </label>
+            <input id="powersKnownMarks" type="hidden" />
+            <input id="powersCastMarks" type="hidden" />
+          </div>
+        </section>
 
-        <section class="reference-sheet">
+        <section class="sheet-section">
           <h3 class="heading-with-icon">
-            <i class="heading-lucide" data-lucide="bookmark" aria-hidden="true"></i>
-            <span>Quick Reference</span>
+            <i class="heading-lucide" data-lucide="pen-line" aria-hidden="true"></i>
+            <span>Notes</span>
           </h3>
-          <p class="reference-kicker">Doom-soaked rites and rulings for the table's final hour.</p>
-
-          <div class="reference-grid">
-            <article class="reference-card">
-              <h4>Tests</h4>
-              <ul>
-                <li>Roll <code>d20 ± ability</code> and meet or beat DR to succeed.</li>
-                <li>Creatures typically roll unmodified <code>d20</code> versus DR.</li>
-                <li>Default baseline DR for routine action is often 12.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Powers and Scrolls</h4>
-              <ul>
-                <li>Use powers per day: <code>Presence + d4</code> (roll daily).</li>
-                <li>Wielding a power: Presence DR12 test.</li>
-                <li>Failure: no effect, take <code>d2</code> HP, dizzy for one hour, no powers during that hour.</li>
-                <li>Fumble handling follows the fumble section.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Rest and Infection</h4>
-              <ul>
-                <li>Catch breath: heal <code>d4</code> HP.</li>
-                <li>Night's sleep: heal <code>d6</code> HP.</li>
-                <li>Infection: no healing from rest and take <code>d6</code> damage each day.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Morale</h4>
-              <ul>
-                <li>Roll morale when leader dies, half group is eliminated, or lone enemy is near defeat.</li>
-                <li>Morale test: <code>2d6</code> versus creature morale.</li>
-                <li>On failure, roll <code>d6</code>: 1-3 flee, 4-6 surrender.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Initiative</h4>
-              <ul>
-                <li>Group initiative: <code>d6</code>.</li>
-                <li>1-3 enemies begin, 4-6 PCs begin.</li>
-                <li>Individual initiative variant: <code>Agility + d6</code>.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Attack and Defence</h4>
-              <ul>
-                <li>Melee test: DR12 Strength.</li>
-                <li>Ranged test: DR12 Presence.</li>
-                <li>Defence test: DR12 Agility.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Critical and Fumble</h4>
-              <ul>
-                <li>Crit (natural 20) attack: double damage; armor/protection drops one tier.</li>
-                <li>Crit defence: PC gains a free attack.</li>
-                <li>Fumble (natural 1) attack: weapon breaks or is lost.</li>
-                <li>Fumble defence: PC takes double damage; armor drops one tier.</li>
-              </ul>
-            </article>
-
-            <article class="reference-card">
-              <h4>Armor Tiers</h4>
-              <ul>
-                <li>Light: <code>-d2</code> damage reduction.</li>
-                <li>Medium: <code>-d4</code> damage reduction and +2 DR Agility tests.</li>
-                <li>Heavy: <code>-d6</code> damage reduction and +4 DR Agility tests.</li>
-              </ul>
-            </article>
-          </div>
-
-          <div class="reference-table-wrap">
-            <h4>Ability Score to Modifier (3d6)</h4>
-            <table class="reference-table">
-              <thead>
-                <tr>
-                  <th>Score</th>
-                  <th>Modifier</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>3-4</td><td>-3</td></tr>
-                <tr><td>5-6</td><td>-2</td></tr>
-                <tr><td>7-8</td><td>-1</td></tr>
-                <tr><td>9-12</td><td>0</td></tr>
-                <tr><td>13-14</td><td>+1</td></tr>
-                <tr><td>15-16</td><td>+2</td></tr>
-                <tr><td>17-18</td><td>+3</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="reference-table-wrap">
-            <h4>Difficulty Ratings</h4>
-            <table class="reference-table">
-              <thead>
-                <tr>
-                  <th>DR</th>
-                  <th>Meaning</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>6</td><td>Incredibly simple</td></tr>
-                <tr><td>8</td><td>Routine</td></tr>
-                <tr><td>10</td><td>Pretty simple</td></tr>
-                <tr><td>12</td><td>Normal</td></tr>
-                <tr><td>14</td><td>Difficult</td></tr>
-                <tr><td>16</td><td>Really hard</td></tr>
-                <tr><td>18</td><td>Should not be possible</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="reference-table-wrap">
-            <h4>Broken (0 HP) d4</h4>
-            <table class="reference-table">
-              <thead>
-                <tr>
-                  <th>Roll</th>
-                  <th>Outcome</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>1</td><td>Fall unconscious for d4 rounds; wake with d4 HP.</td></tr>
-                <tr><td>2</td><td>Roll d6: 1-5 broken/severed limb, 6 lost eye. No action for d4 rounds, then active with d4 HP.</td></tr>
-                <tr><td>3</td><td>Haemorrhage: death in d2 hours unless treated. Tests are DR16 first hour, DR18 last hour.</td></tr>
-                <tr><td>4</td><td>Dead.</td></tr>
-              </tbody>
-            </table>
-          </div>
+          <label>
+            Story, vows, and dark history
+            <textarea id="notes" rows="7" placeholder="What drives this soul onward?"></textarea>
+          </label>
         </section>
-      </main>
+      </form>
+
+      <section class="reference-sheet">
+        <h3 class="heading-with-icon">
+          <i class="heading-lucide" data-lucide="bookmark" aria-hidden="true"></i>
+          <span>Quick Reference</span>
+        </h3>
+        <p class="reference-kicker">Doom-soaked rites and rulings for the table's final hour.</p>
+
+        <div class="reference-grid">
+          <article class="reference-card">
+            <h4>Tests</h4>
+            <ul>
+              <li>Roll <code>d20 ± ability</code> and meet or beat DR to succeed.</li>
+              <li>Creatures typically roll unmodified <code>d20</code> versus DR.</li>
+              <li>Default baseline DR for routine action is often 12.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Powers and Scrolls</h4>
+            <ul>
+              <li>Use powers per day: <code>Presence + d4</code> (roll daily).</li>
+              <li>Wielding a power: Presence DR12 test.</li>
+              <li>Failure: no effect, take <code>d2</code> HP, dizzy for one hour, no powers during that hour.</li>
+              <li>Fumble handling follows the fumble section.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Rest and Infection</h4>
+            <ul>
+              <li>Catch breath: heal <code>d4</code> HP.</li>
+              <li>Night's sleep: heal <code>d6</code> HP.</li>
+              <li>Infection: no healing from rest and take <code>d6</code> damage each day.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Morale</h4>
+            <ul>
+              <li>Roll morale when leader dies, half group is eliminated, or lone enemy is near defeat.</li>
+              <li>Morale test: <code>2d6</code> versus creature morale.</li>
+              <li>On failure, roll <code>d6</code>: 1-3 flee, 4-6 surrender.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Initiative</h4>
+            <ul>
+              <li>Group initiative: <code>d6</code>.</li>
+              <li>1-3 enemies begin, 4-6 PCs begin.</li>
+              <li>Individual initiative variant: <code>Agility + d6</code>.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Attack and Defence</h4>
+            <ul>
+              <li>Melee test: DR12 Strength.</li>
+              <li>Ranged test: DR12 Presence.</li>
+              <li>Defence test: DR12 Agility.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Critical and Fumble</h4>
+            <ul>
+              <li>Crit (natural 20) attack: double damage; armor/protection drops one tier.</li>
+              <li>Crit defence: PC gains a free attack.</li>
+              <li>Fumble (natural 1) attack: weapon breaks or is lost.</li>
+              <li>Fumble defence: PC takes double damage; armor drops one tier.</li>
+            </ul>
+          </article>
+
+          <article class="reference-card">
+            <h4>Armor Tiers</h4>
+            <ul>
+              <li>Light: <code>-d2</code> damage reduction.</li>
+              <li>Medium: <code>-d4</code> damage reduction and +2 DR Agility tests.</li>
+              <li>Heavy: <code>-d6</code> damage reduction and +4 DR Agility tests.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="reference-table-wrap">
+          <h4>Ability Score to Modifier (3d6)</h4>
+          <table class="reference-table">
+            <thead>
+              <tr>
+                <th>Score</th>
+                <th>Modifier</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>3-4</td>
+                <td>-3</td>
+              </tr>
+              <tr>
+                <td>5-6</td>
+                <td>-2</td>
+              </tr>
+              <tr>
+                <td>7-8</td>
+                <td>-1</td>
+              </tr>
+              <tr>
+                <td>9-12</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>13-14</td>
+                <td>+1</td>
+              </tr>
+              <tr>
+                <td>15-16</td>
+                <td>+2</td>
+              </tr>
+              <tr>
+                <td>17-18</td>
+                <td>+3</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="reference-table-wrap">
+          <h4>Difficulty Ratings</h4>
+          <table class="reference-table">
+            <thead>
+              <tr>
+                <th>DR</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>6</td>
+                <td>Incredibly simple</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td>Routine</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td>Pretty simple</td>
+              </tr>
+              <tr>
+                <td>12</td>
+                <td>Normal</td>
+              </tr>
+              <tr>
+                <td>14</td>
+                <td>Difficult</td>
+              </tr>
+              <tr>
+                <td>16</td>
+                <td>Really hard</td>
+              </tr>
+              <tr>
+                <td>18</td>
+                <td>Should not be possible</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="reference-table-wrap">
+          <h4>Broken (0 HP) d4</h4>
+          <table class="reference-table">
+            <thead>
+              <tr>
+                <th>Roll</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Fall unconscious for d4 rounds; wake with d4 HP.</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Roll d6: 1-5 broken/severed limb, 6 lost eye. No action for d4 rounds, then active with d4 HP.</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Haemorrhage: death in d2 hours unless treated. Tests are DR16 first hour, DR18 last hour.</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Dead.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="site-footer" aria-label="Legal and attribution">
+    <div class="site-footer-wrap">
+      <section class="footer-card footer-license">
+        <img class="footer-license-logo" src="assets/logos/CompWith_MORKBORG_horiz.svg" alt="Compatible with MORK BORG"
+          loading="lazy" decoding="async" />
+        <p>
+          Character Reliquary is an independent production by Mane Mike and is not affiliated
+          with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK
+          BORG Third Party License. MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm
+          Kartell.
+        </p>
+      </section>
+      <section class="footer-card footer-meta">
+        <p>
+          © <span id="footer-year"></span>
+          <a href="https://manemike.com" target="_blank" rel="noopener noreferrer">Mane Mike</a>.
+          All rights reserved.
+        </p>
+      </section>
     </div>
+  </footer>
 
-    <footer class="site-footer" aria-label="Legal and attribution">
-      <div class="site-footer-wrap">
-        <section class="footer-card footer-license">
-          <img
-            class="footer-license-logo"
-            src="assets/logos/CompWith_MORKBORG_horiz.svg"
-            alt="Compatible with MORK BORG"
-            loading="lazy"
-            decoding="async"
-          />
-          <p>
-            Character Reliquary is an independent production by Mane Mike and is not affiliated
-            with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK
-            BORG Third Party License. MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm
-            Kartell.
-          </p>
-        </section>
-        <section class="footer-card footer-meta">
-          <p>
-            © <span id="footer-year"></span>
-            <a href="https://manemike.com" target="_blank" rel="noopener noreferrer">Mane Mike</a>.
-            All rights reserved.
-          </p>
-        </section>
-      </div>
-    </footer>
+  <template id="character-item-template">
+    <li>
+      <button class="character-item" type="button">
+        <span class="character-item-name"></span>
+        <span class="character-item-meta"></span>
+      </button>
+    </li>
+  </template>
 
-    <template id="character-item-template">
-      <li>
-        <button class="character-item" type="button">
-          <span class="character-item-name"></span>
-          <span class="character-item-meta"></span>
-        </button>
-      </li>
-    </template>
+  <div id="dice-viewport-overlay" class="dice-viewport-overlay" aria-hidden="true">
+    <canvas id="dice-canvas" aria-label="3D dice canvas" hidden></canvas>
+  </div>
 
-    <div id="dice-viewport-overlay" class="dice-viewport-overlay" aria-hidden="true">
-      <canvas id="dice-canvas" aria-label="3D dice canvas" hidden></canvas>
-    </div>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="app.js?v=20260226-remove-cast-cap" defer></script>
+</body>
 
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-    <script src="app.js?v=20260226-remove-cast-cap" defer></script>
-  </body>
 </html>

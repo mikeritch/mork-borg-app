@@ -329,6 +329,14 @@ html[data-theme="light"] .brand-logo-light {
   font-size: 1.03rem;
 }
 
+.brand-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
 .vault-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -484,6 +492,19 @@ html[data-theme="light"] .brand-logo-light {
   gap: 0.55rem;
 }
 
+.header-actions-note {
+  flex: 1 1 100%;
+  margin: 0.05rem 0 0;
+  padding: 0.4rem 0.62rem;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--status-bg) 88%, transparent 12%);
+  color: var(--field-help);
+  font-size: 0.93rem;
+  line-height: 1.15;
+  text-align: right;
+}
+
 .btn {
   appearance: none;
   border: 1px solid var(--line);
@@ -537,6 +558,20 @@ html[data-theme="light"] .brand-logo-light {
 html[data-theme="dark"] .theme-toggle {
   color: #ffe6d0;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.brand-theme-toggle {
+  margin-top: 0;
+}
+
+.brand-share-tooltip {
+  display: inline-flex;
+}
+
+.brand-share-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .status {
@@ -1496,6 +1531,10 @@ textarea:focus {
     width: 100%;
   }
 
+  .brand-quick-actions {
+    justify-content: flex-start;
+  }
+
   .dice-preview-host {
     height: clamp(6.4rem, 18vh, 8.4rem);
   }
@@ -1528,6 +1567,10 @@ textarea:focus {
   .header-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .header-actions-note {
+    text-align: left;
   }
 
   .power-trackers {

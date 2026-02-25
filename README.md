@@ -30,7 +30,7 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
   - advanced options (`Force 2D Fallback`, `Low Performance`)
 - Lazy-loaded dice module (`dice.js`) for better initial page load performance.
 - Themed quick-reference rules section in-app.
-- Devil/Saint theme toggle with dark mode default.
+- Sinner/Saint theme toggle with dark mode default.
 
 ## Data Storage
 

@@ -619,28 +619,37 @@ function bindDiceLazyLoading() {
 }
 
 function ensureThemeToggleButton() {
-  const actions = document.querySelector(".header-actions");
-  if (!actions) {
+  const brandCopy = document.querySelector(".brand-copy");
+  if (!brandCopy) {
     return;
+  }
+
+  const brandSub = brandCopy.querySelector(".brand-sub");
+  let quickActions = brandCopy.querySelector(".brand-quick-actions");
+  if (!quickActions) {
+    quickActions = document.createElement("div");
+    quickActions.className = "brand-quick-actions";
+    if (brandSub && brandSub.parentElement === brandCopy) {
+      brandCopy.insertBefore(quickActions, brandSub.nextElementSibling);
+    } else {
+      brandCopy.appendChild(quickActions);
+    }
   }
 
   const button = els.themeToggle || document.createElement("button");
   button.id = "theme-toggle";
-  button.className = "btn btn-ghost theme-toggle";
+  button.className = "btn btn-ghost theme-toggle brand-theme-toggle";
   button.type = "button";
   button.setAttribute("aria-pressed", "true");
   button.setAttribute("aria-label", "Switch theme");
   button.title = "Switch theme";
   if (!button.textContent.trim()) {
-    button.textContent = "Devil";
+    button.textContent = "Sinner";
   }
-  const importButton = document.getElementById("import-character");
-  if (importButton && importButton.parentElement === actions) {
-    if (importButton.nextElementSibling !== button) {
-      actions.insertBefore(button, importButton.nextElementSibling);
-    }
-  } else if (button.parentElement !== actions) {
-    actions.appendChild(button);
+  if (button.parentElement !== quickActions) {
+    quickActions.insertBefore(button, quickActions.firstChild);
+  } else if (quickActions.firstElementChild !== button) {
+    quickActions.insertBefore(button, quickActions.firstChild);
   }
   els.themeToggle = button;
 }
@@ -668,9 +677,9 @@ function applyTheme(theme, persist = false) {
 
   if (els.themeToggle) {
     const darkOn = next === "dark";
-    els.themeToggle.textContent = darkOn ? "Devil" : "Saint";
+    els.themeToggle.textContent = darkOn ? "Sinner" : "Saint";
     els.themeToggle.setAttribute("aria-pressed", String(darkOn));
-    const targetLabel = darkOn ? "Switch to Saint mode" : "Switch to Devil mode";
+    const targetLabel = darkOn ? "Switch to Saint mode" : "Switch to Sinner mode";
     els.themeToggle.setAttribute("aria-label", targetLabel);
     els.themeToggle.title = targetLabel;
   }
@@ -910,9 +919,21 @@ function spawnMagicSparks(container) {
   }
 }
 
+function clearCastTrackerEffects(tracker) {
+  if (!tracker || tracker.fieldId !== "powersCastToday") {
+    return;
+  }
+  tracker.card?.classList.remove("is-bloodied", "is-magic-burst", "is-shaking");
+  tracker.display?.classList.remove("is-bloodied", "is-rising");
+}
+
 function applyPowerTrackerSkin(target, count) {
   const tracker = trackerDescriptor(target);
   if (!tracker) {
+    return;
+  }
+  if (target === "cast") {
+    clearCastTrackerEffects(tracker);
     return;
   }
   const isBloodied = count > 3;
@@ -1096,7 +1117,12 @@ function adjustPowerTracker(target, delta) {
   const next = typeof tracker.max === "number" ? clamp(boundedNext, 0, tracker.max) : boundedNext;
   setPowerTrackerValue(target, next);
 
-  if (delta > 0 && next > current) {
+  if (target === "cast") {
+    clearCastTrackerEffects(tracker);
+    if (delta > 0 && next > current) {
+      spawnMagicSparks(tracker.card);
+    }
+  } else if (delta > 0 && next > current) {
     retriggerAnimation(tracker.card, "is-magic-burst");
     retriggerAnimation(tracker.display, "is-rising");
     spawnMagicSparks(tracker.card);
@@ -1435,11 +1461,10 @@ function renderCharacterList() {
     const button = node.querySelector(".character-item");
     const nameEl = node.querySelector(".character-item-name");
     const metaEl = node.querySelector(".character-item-meta");
-    const updatedText = new Date(sheet.updatedAt).toLocaleString([], {
+    const updatedText = new Date(sheet.updatedAt).toLocaleDateString([], {
       month: "short",
       day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+      year: "numeric",
     });
 
     nameEl.textContent = sheet.name || "Unnamed Soul";
@@ -1624,7 +1649,7 @@ function randomizeActiveCharacter() {
   });
   upsertCharacter(randomized, false);
   applyToForm(randomized);
-  setStatus("Generated a classless adventurer from core tables.", "ok");
+  setStatus("A classless soul is forged from the core tables.", "ok");
 }
 
 function deleteActiveCharacter() {
@@ -1692,6 +1717,22 @@ async function importCharacters(file) {
   }
 
   const byId = new Map(state.characters.map((sheet) => [sheet.id, sheet]));
+  const collisions = normalized.filter((sheet) => byId.has(sheet.id));
+  if (collisions.length > 0) {
+    const preview = collisions
+      .slice(0, 3)
+      .map((sheet) => byId.get(sheet.id)?.name || sheet.name || "Unnamed Soul")
+      .join(", ");
+    const suffix = collisions.length > 3 ? ", ..." : "";
+    const confirmed = window.confirm(
+      `Import will overwrite ${collisions.length} existing character(s): ${preview}${suffix}. Continue?`
+    );
+    if (!confirmed) {
+      setStatus("Import canceled. Existing characters were not overwritten.", "warn");
+      return;
+    }
+  }
+
   normalized.forEach((sheet) => {
     byId.set(sheet.id, sheet);
   });
@@ -1900,7 +1941,7 @@ function init() {
   applyToForm(activeCharacter());
   setInlineDiceStatus("Dice tray ready.", "neutral");
   bindEvents();
-  setStatus("Ready. Autosave is local and randomize uses classless core rules.", "ok");
+  setStatus("Ready.", "ok");
 }
 
 init();
