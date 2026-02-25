@@ -10,10 +10,13 @@ const DICE_HISTORY_KEY = "mb_dice_history_v1";
 const DICE_HISTORY_LIMIT = 10;
 const DICE_MAX_FORMULA_LENGTH = 72;
 const DICE_MAX_DICE_PER_ROLL = 40;
-const DICE_SETTLE_FRAMES = 20;
-const DICE_SETTLE_TIMEOUT_MS = 9000;
-const DICE_SETTLE_LINEAR = 0.17;
-const DICE_SETTLE_ANGULAR = 0.27;
+const DICE_SETTLE_FRAMES = 26;
+const DICE_SETTLE_TIMEOUT_MS = 12000;
+const DICE_SETTLE_LINEAR = 0.06;
+const DICE_SETTLE_ANGULAR = 0.1;
+const DICE_VIEWPORT_EDGE_PADDING = 0.9;
+const DICE_PHYSICS_INNER_PADDING = 0.55;
+const DICE_GLOBAL_SCALE = 1.4;
 const DICE_ALLOWED_SIDES = new Set([2, 4, 6, 8, 10, 12, 20, 100]);
 const DICE_MODES = Object.freeze({
   PROCEDURAL: "procedural",
@@ -121,14 +124,22 @@ class RollParser {
 }
 
 function buildD10Geometry(THREE, radius = 1) {
-  const ringRadius = radius * 0.92;
-  const poleHeight = radius * 0.92;
+  const ringRadius = radius * 0.94;
+  const poleHeight = radius * 1.05;
+  // Keep each kite face close to planar so render triangulation doesn't read as extra faces.
+  const ringOffset = poleHeight * 0.106;
+  const step = (Math.PI * 2) / 5;
   const vertices = [];
-  const faces = [];
+  const quadFaces = [];
 
   for (let index = 0; index < 5; index += 1) {
-    const angle = (Math.PI * 2 * index) / 5;
-    vertices.push([Math.cos(angle) * ringRadius, 0, Math.sin(angle) * ringRadius]);
+    const angle = step * index;
+    vertices.push([Math.cos(angle) * ringRadius, ringOffset, Math.sin(angle) * ringRadius]);
+  }
+
+  for (let index = 0; index < 5; index += 1) {
+    const angle = step * index + step / 2;
+    vertices.push([Math.cos(angle) * ringRadius, -ringOffset, Math.sin(angle) * ringRadius]);
   }
 
   const topIndex = vertices.length;
@@ -137,9 +148,15 @@ function buildD10Geometry(THREE, radius = 1) {
   vertices.push([0, -poleHeight, 0]);
 
   for (let index = 0; index < 5; index += 1) {
-    const next = (index + 1) % 5;
-    faces.push([topIndex, index, next]);
-    faces.push([bottomIndex, next, index]);
+    const upper = index;
+    const upperNext = (index + 1) % 5;
+    const lower = 5 + index;
+    const lowerPrev = 5 + ((index + 4) % 5);
+
+    // Top set: 5 kite faces.
+    quadFaces.push([topIndex, upper, lower, upperNext]);
+    // Bottom set: 5 kite faces.
+    quadFaces.push([bottomIndex, lower, upper, lowerPrev]);
   }
 
   const centroid = vertices.reduce(
@@ -155,10 +172,10 @@ function buildD10Geometry(THREE, radius = 1) {
   centroid[1] /= vertices.length;
   centroid[2] /= vertices.length;
 
-  const outwardFaces = faces.map(([a, b, c]) => {
-    const va = vertices[a];
-    const vb = vertices[b];
-    const vc = vertices[c];
+  const orientedQuadFaces = quadFaces.map((face) => {
+    const va = vertices[face[0]];
+    const vb = vertices[face[1]];
+    const vc = vertices[face[2]];
     const ab = [vb[0] - va[0], vb[1] - va[1], vb[2] - va[2]];
     const ac = [vc[0] - va[0], vc[1] - va[1], vc[2] - va[2]];
     const cross = [
@@ -166,14 +183,29 @@ function buildD10Geometry(THREE, radius = 1) {
       ab[2] * ac[0] - ab[0] * ac[2],
       ab[0] * ac[1] - ab[1] * ac[0],
     ];
-    const center = [
-      (va[0] + vb[0] + vc[0]) / 3,
-      (va[1] + vb[1] + vc[1]) / 3,
-      (va[2] + vb[2] + vc[2]) / 3,
-    ];
+    const center = face.reduce(
+      (sum, vertexIndex) => {
+        const vertex = vertices[vertexIndex];
+        sum[0] += vertex[0];
+        sum[1] += vertex[1];
+        sum[2] += vertex[2];
+        return sum;
+      },
+      [0, 0, 0]
+    );
+    center[0] /= face.length;
+    center[1] /= face.length;
+    center[2] /= face.length;
     const out = [center[0] - centroid[0], center[1] - centroid[1], center[2] - centroid[2]];
     const dot = cross[0] * out[0] + cross[1] * out[1] + cross[2] * out[2];
-    return dot < 0 ? [a, c, b] : [a, b, c];
+    return dot < 0 ? [...face].reverse() : [...face];
+  });
+
+  const renderTriangles = [];
+  orientedQuadFaces.forEach((face) => {
+    for (let index = 1; index < face.length - 1; index += 1) {
+      renderTriangles.push([face[0], face[index], face[index + 1]]);
+    }
   });
 
   const geometry = new THREE.BufferGeometry();
@@ -181,9 +213,15 @@ function buildD10Geometry(THREE, radius = 1) {
     "position",
     new THREE.Float32BufferAttribute(vertices.flat(), 3)
   );
-  geometry.setIndex(outwardFaces.flat());
+  geometry.setIndex(renderTriangles.flat());
   geometry.computeVertexNormals();
-  return geometry;
+  return {
+    geometry,
+    convexData: {
+      vertices,
+      faces: orientedQuadFaces,
+    },
+  };
 }
 
 function geometryToConvexData(geometry) {
@@ -242,7 +280,13 @@ function clusterNormals(convexData, targetCount) {
   centroid[2] /= divisor;
 
   const faceNormals = convexData.faces
-    .map(([a, b, c]) => {
+    .map((face) => {
+      if (!Array.isArray(face) || face.length < 3) {
+        return null;
+      }
+      const a = face[0];
+      const b = face[1];
+      const c = face[2];
       const va = convexData.vertices[a];
       const vb = convexData.vertices[b];
       const vc = convexData.vertices[c];
@@ -258,11 +302,22 @@ function clusterNormals(convexData, targetCount) {
         return null;
       }
       let normal = [cross[0] / len, cross[1] / len, cross[2] / len];
-      const center = [
-        (va[0] + vb[0] + vc[0]) / 3,
-        (va[1] + vb[1] + vc[1]) / 3,
-        (va[2] + vb[2] + vc[2]) / 3,
-      ];
+      const center = face.reduce(
+        (sum, vertexIndex) => {
+          const vertex = convexData.vertices[vertexIndex];
+          if (!vertex) {
+            return sum;
+          }
+          sum[0] += vertex[0];
+          sum[1] += vertex[1];
+          sum[2] += vertex[2];
+          return sum;
+        },
+        [0, 0, 0]
+      );
+      center[0] /= face.length;
+      center[1] /= face.length;
+      center[2] /= face.length;
       const out = [center[0] - centroid[0], center[1] - centroid[1], center[2] - centroid[2]];
       const dot = normal[0] * out[0] + normal[1] * out[1] + normal[2] * out[2];
       if (dot < 0) {
@@ -339,10 +394,51 @@ function clusterNormals(convexData, targetCount) {
   }));
 }
 
+function buildD4CornerData(convexData) {
+  const ordered = convexData.vertices
+    .map((vertex, index) => ({ index, vertex }))
+    .sort((left, right) => {
+      if (right.vertex[1] !== left.vertex[1]) {
+        return right.vertex[1] - left.vertex[1];
+      }
+      if (right.vertex[2] !== left.vertex[2]) {
+        return right.vertex[2] - left.vertex[2];
+      }
+      return right.vertex[0] - left.vertex[0];
+    });
+
+  const valueByIndex = new Map();
+  ordered.forEach((entry, order) => {
+    valueByIndex.set(entry.index, order + 1);
+  });
+
+  const cornerValues = convexData.vertices.map((vertex, index) => ({
+    index,
+    vertex,
+    value: valueByIndex.get(index) || index + 1,
+  }));
+
+  const uniqueFaceKeys = new Set();
+  const cornerFaces = [];
+  convexData.faces.forEach((face) => {
+    const key = [...face].sort((a, b) => a - b).join("-");
+    if (uniqueFaceKeys.has(key)) {
+      return;
+    }
+    uniqueFaceKeys.add(key);
+    cornerFaces.push([...face]);
+  });
+
+  return {
+    cornerValues,
+    cornerFaces,
+  };
+}
+
 function createDieTemplates(THREE, CANNON) {
   const templateFromGeometry = (kind, geometry, expectedFaces, options = {}) => {
     geometry.computeVertexNormals();
-    const convex = geometryToConvexData(geometry);
+    const convex = options.convexData || geometryToConvexData(geometry);
     const faceMap = options.faceMap || clusterNormals(convex, expectedFaces);
     const createShape = () =>
       new CANNON.ConvexPolyhedron({
@@ -363,12 +459,40 @@ function createDieTemplates(THREE, CANNON) {
             : new CANNON.Vec3(entry.center.x, entry.center.y, entry.center.z)
           : null,
         value: entry.value,
+        valueLabel: entry.valueLabel ?? entry.value,
       })),
+      cornerValues: Array.isArray(options.cornerValues)
+        ? options.cornerValues
+            .filter((entry) => entry && entry.vertex)
+            .map((entry) => {
+              const vertex = Array.isArray(entry.vertex)
+                ? { x: entry.vertex[0], y: entry.vertex[1], z: entry.vertex[2] }
+                : { x: entry.vertex.x, y: entry.vertex.y, z: entry.vertex.z };
+              return {
+                index: Number.isInteger(entry.index) ? entry.index : 0,
+                value: Number.isInteger(entry.value) ? entry.value : 1,
+                vertex,
+              };
+            })
+        : null,
+      cornerFaces: Array.isArray(options.cornerFaces)
+        ? options.cornerFaces
+            .filter((face) => Array.isArray(face) && face.length === 3)
+            .map((face) => face.map((index) => Math.trunc(index)))
+        : null,
       mass: options.mass ?? 1,
     };
   };
 
   const d2Geometry = new THREE.CylinderGeometry(0.9, 0.9, 0.34, 24);
+  const d4Geometry = new THREE.TetrahedronGeometry(1.2);
+  const d4CornerData = buildD4CornerData(geometryToConvexData(d4Geometry));
+  const d10Data = buildD10Geometry(THREE, 1.03);
+  const d10FaceMap = clusterNormals(d10Data.convexData, 10).map((entry, index) => ({
+    ...entry,
+    value: index === 0 ? 10 : index,
+    valueLabel: index,
+  }));
 
   return {
     d2: {
@@ -381,10 +505,18 @@ function createDieTemplates(THREE, CANNON) {
         { normal: new CANNON.Vec3(0, -1, 0), value: 2 },
       ],
     },
-    d4: templateFromGeometry("d4", new THREE.TetrahedronGeometry(1), 4, { mass: 0.95 }),
-    d6: templateFromGeometry("d6", new THREE.BoxGeometry(1.56, 1.56, 1.56), 6, { mass: 1.1 }),
+    d4: templateFromGeometry("d4", d4Geometry, 4, {
+      mass: 0.95,
+      cornerValues: d4CornerData.cornerValues,
+      cornerFaces: d4CornerData.cornerFaces,
+    }),
+    d6: templateFromGeometry("d6", new THREE.BoxGeometry(1.4, 1.4, 1.4), 6, { mass: 1.1 }),
     d8: templateFromGeometry("d8", new THREE.OctahedronGeometry(1.02), 8, { mass: 1 }),
-    d10: templateFromGeometry("d10", buildD10Geometry(THREE, 1.03), 10, { mass: 1.05 }),
+    d10: templateFromGeometry("d10", d10Data.geometry, 10, {
+      mass: 1.05,
+      faceMap: d10FaceMap,
+      convexData: d10Data.convexData,
+    }),
     d12: templateFromGeometry("d12", new THREE.DodecahedronGeometry(1), 12, { mass: 1.08 }),
     d20: templateFromGeometry("d20", new THREE.IcosahedronGeometry(1.03), 20, { mass: 1.12 }),
   };
@@ -399,6 +531,16 @@ class DicePhysicsEngine {
     this.world.broadphase = new CANNON.SAPBroadphase(this.world);
     this.world.allowSleep = true;
     this.dynamicBodies = [];
+    this.floorBody = null;
+    this.wallBodies = [];
+    this.arena = {
+      centerX: 0,
+      centerZ: 0,
+      halfWidth: 5,
+      halfDepth: 5,
+    };
+    this.innerPadding = DICE_PHYSICS_INNER_PADDING;
+    this.boundaryConstraintsEnabled = true;
 
     this.floorMaterial = new CANNON.Material("dice-floor");
     this.dieMaterial = new CANNON.Material("dice-body");
@@ -419,32 +561,136 @@ class DicePhysicsEngine {
   }
 
   buildArena() {
-    const floor = new this.CANNON.Body({
-      type: this.CANNON.Body.STATIC,
-      material: this.floorMaterial,
-      shape: new this.CANNON.Plane(),
-    });
-    floor.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
-    this.world.addBody(floor);
+    if (!this.floorBody) {
+      const floor = new this.CANNON.Body({
+        type: this.CANNON.Body.STATIC,
+        material: this.floorMaterial,
+        shape: new this.CANNON.Plane(),
+      });
+      floor.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+      this.floorBody = floor;
+      this.world.addBody(floor);
+    }
+    this.rebuildWalls();
+  }
 
-    const wallShape = new this.CANNON.Box(new this.CANNON.Vec3(5, 2, 0.35));
-    const walls = [
-      { x: 0, y: 2, z: -4.9, rx: 0, ry: 0, rz: 0 },
-      { x: 0, y: 2, z: 4.9, rx: 0, ry: 0, rz: 0 },
-      { x: -4.9, y: 2, z: 0, rx: 0, ry: Math.PI / 2, rz: 0 },
-      { x: 4.9, y: 2, z: 0, rx: 0, ry: Math.PI / 2, rz: 0 },
+  clearWalls() {
+    this.wallBodies.forEach((body) => {
+      this.world.removeBody(body);
+    });
+    this.wallBodies = [];
+  }
+
+  rebuildWalls() {
+    this.clearWalls();
+    if (!this.boundaryConstraintsEnabled) {
+      return;
+    }
+
+    const thickness = 0.72;
+    const wallHeight = 4.2;
+    const centerX = this.arena.centerX;
+    const centerZ = this.arena.centerZ;
+    const halfWidth = Math.max(2.3, this.arena.halfWidth);
+    const halfDepth = Math.max(2.3, this.arena.halfDepth);
+
+    const wallSpecs = [
+      {
+        shape: new this.CANNON.Box(
+          new this.CANNON.Vec3(halfWidth + thickness, wallHeight, thickness)
+        ),
+        x: centerX,
+        y: wallHeight,
+        z: centerZ - (halfDepth + thickness),
+      },
+      {
+        shape: new this.CANNON.Box(
+          new this.CANNON.Vec3(halfWidth + thickness, wallHeight, thickness)
+        ),
+        x: centerX,
+        y: wallHeight,
+        z: centerZ + (halfDepth + thickness),
+      },
+      {
+        shape: new this.CANNON.Box(
+          new this.CANNON.Vec3(thickness, wallHeight, halfDepth + thickness)
+        ),
+        x: centerX - (halfWidth + thickness),
+        y: wallHeight,
+        z: centerZ,
+      },
+      {
+        shape: new this.CANNON.Box(
+          new this.CANNON.Vec3(thickness, wallHeight, halfDepth + thickness)
+        ),
+        x: centerX + (halfWidth + thickness),
+        y: wallHeight,
+        z: centerZ,
+      },
     ];
 
-    walls.forEach((wall) => {
+    wallSpecs.forEach((spec) => {
       const body = new this.CANNON.Body({
         type: this.CANNON.Body.STATIC,
-        shape: wallShape,
+        shape: spec.shape,
         material: this.floorMaterial,
       });
-      body.position.set(wall.x, wall.y, wall.z);
-      body.quaternion.setFromEuler(wall.rx, wall.ry, wall.rz);
+      body.position.set(spec.x, spec.y, spec.z);
       this.world.addBody(body);
+      this.wallBodies.push(body);
     });
+  }
+
+  getInnerBounds() {
+    const halfWidth = Math.max(1.8, this.arena.halfWidth - this.innerPadding);
+    const halfDepth = Math.max(1.8, this.arena.halfDepth - this.innerPadding);
+    return {
+      minX: this.arena.centerX - halfWidth,
+      maxX: this.arena.centerX + halfWidth,
+      minZ: this.arena.centerZ - halfDepth,
+      maxZ: this.arena.centerZ + halfDepth,
+      halfWidth,
+      halfDepth,
+    };
+  }
+
+  setArenaBounds(bounds) {
+    if (!bounds || typeof bounds !== "object") {
+      return;
+    }
+
+    const minX = Number.isFinite(bounds.minX) ? bounds.minX : -5;
+    const maxX = Number.isFinite(bounds.maxX) ? bounds.maxX : 5;
+    const minZ = Number.isFinite(bounds.minZ) ? bounds.minZ : -5;
+    const maxZ = Number.isFinite(bounds.maxZ) ? bounds.maxZ : 5;
+
+    const width = Math.max(4.6, maxX - minX);
+    const depth = Math.max(4.6, maxZ - minZ);
+
+    this.arena = {
+      centerX: Number.isFinite(bounds.centerX) ? bounds.centerX : (minX + maxX) / 2,
+      centerZ: Number.isFinite(bounds.centerZ) ? bounds.centerZ : (minZ + maxZ) / 2,
+      halfWidth: width / 2,
+      halfDepth: depth / 2,
+    };
+    if (this.boundaryConstraintsEnabled) {
+      this.rebuildWalls();
+    } else {
+      this.clearWalls();
+    }
+  }
+
+  setBoundaryConstraintsEnabled(enabled) {
+    const next = Boolean(enabled);
+    if (this.boundaryConstraintsEnabled === next) {
+      return;
+    }
+    this.boundaryConstraintsEnabled = next;
+    if (next) {
+      this.rebuildWalls();
+      return;
+    }
+    this.clearWalls();
   }
 
   clearDynamicBodies() {
@@ -459,35 +705,93 @@ class DicePhysicsEngine {
       mass: template.mass,
       material: this.dieMaterial,
       allowSleep: true,
-      sleepSpeedLimit: 0.11,
+      sleepSpeedLimit: 0.06,
       sleepTimeLimit: 0.5,
       linearDamping: 0.2,
-      angularDamping: 0.12,
+      angularDamping: 0.22,
     });
+    if (template.kind === "d10") {
+      body.linearDamping = 0.28;
+      body.angularDamping = 0.34;
+      body.sleepSpeedLimit = 0.045;
+      body.sleepTimeLimit = 0.35;
+    }
     body.addShape(template.createShape());
+
+    const innerBounds = this.getInnerBounds();
+    const spawnX = Math.max(1.0, innerBounds.halfWidth * 0.24);
+    const spawnZ = Math.max(1.0, innerBounds.halfDepth * 0.24);
+    const horizontalSpeed = Math.min(
+      21.5,
+      Math.max(11.8, Math.max(innerBounds.halfWidth, innerBounds.halfDepth) * 1.95)
+    );
+    // Use a topward arc (270° -> 90° through 0°) so throws travel up-screen with spread.
+    const headingRadians = ((Math.random() * 180 - 90) * Math.PI) / 180;
+    const dirX = Math.sin(headingRadians);
+    const dirZ = -Math.cos(headingRadians);
+    const speed = horizontalSpeed * (0.86 + Math.random() * 0.3);
+
     body.position.set(
-      (Math.random() - 0.5) * 3.2,
-      5.6 + orderIndex * 0.24,
-      (Math.random() - 0.5) * 3.2
+      this.arena.centerX + (Math.random() - 0.5) * spawnX,
+      6.8 + orderIndex * 0.24,
+      this.arena.centerZ + (Math.random() - 0.5) * spawnZ
     );
     body.quaternion.setFromEuler(
       Math.random() * Math.PI * 2,
       Math.random() * Math.PI * 2,
       Math.random() * Math.PI * 2
     );
-    body.velocity.set((Math.random() - 0.5) * 6, 1 + Math.random() * 2.3, (Math.random() - 0.5) * 6);
+    body.velocity.set(
+      dirX * speed,
+      2.5 + Math.random() * 4.4,
+      dirZ * speed
+    );
     body.angularVelocity.set(
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20
+      (Math.random() - 0.5) * 40,
+      (Math.random() - 0.5) * 40,
+      (Math.random() - 0.5) * 40
     );
     this.world.addBody(body);
     this.dynamicBodies.push({ body });
     return body;
   }
 
+  constrainDynamicBodies() {
+    const bounds = this.getInnerBounds();
+    const bounce = 0.38;
+    this.dynamicBodies.forEach((entry) => {
+      const { body } = entry;
+      if (body.position.x < bounds.minX) {
+        body.position.x = bounds.minX;
+        if (body.velocity.x < 0) {
+          body.velocity.x *= -bounce;
+        }
+      } else if (body.position.x > bounds.maxX) {
+        body.position.x = bounds.maxX;
+        if (body.velocity.x > 0) {
+          body.velocity.x *= -bounce;
+        }
+      }
+
+      if (body.position.z < bounds.minZ) {
+        body.position.z = bounds.minZ;
+        if (body.velocity.z < 0) {
+          body.velocity.z *= -bounce;
+        }
+      } else if (body.position.z > bounds.maxZ) {
+        body.position.z = bounds.maxZ;
+        if (body.velocity.z > 0) {
+          body.velocity.z *= -bounce;
+        }
+      }
+    });
+  }
+
   step(dtSeconds) {
     this.world.step(1 / 60, dtSeconds, 3);
+    if (this.boundaryConstraintsEnabled) {
+      this.constrainDynamicBodies();
+    }
   }
 
   isSettled() {
@@ -508,6 +812,24 @@ class DiceRenderer {
     this.renderer = null;
     this.scene = null;
     this.camera = null;
+    this.overlayCameraViewHeight = 18;
+    this.previewCameraViewHeight = 8.6;
+    this.cameraViewHeight = this.overlayCameraViewHeight;
+    this.presentationMode = "overlay";
+    this.previewScaleBoost = 1.9;
+    this.groundRaycaster = new THREE.Raycaster();
+    this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    this.pickRaycaster = new THREE.Raycaster();
+    this.pickPointer = new THREE.Vector2();
+    this.dieScale = 1;
+    this.viewportBounds = {
+      minX: -5,
+      maxX: 5,
+      minZ: -5,
+      maxZ: 5,
+      centerX: 0,
+      centerZ: 0,
+    };
     this.meshMap = new Map();
     this.idlePreviewMesh = null;
     this.labelTextureCache = new Map();
@@ -528,62 +850,45 @@ class DiceRenderer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = this.THREE.PCFSoftShadowMap;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
-    this.renderer.setClearColor(0x120d11, 0.98);
+    this.renderer.setClearColor(0x000000, 0);
+    this.updateDieScale();
 
     this.scene = new this.THREE.Scene();
-    this.camera = new this.THREE.PerspectiveCamera(34, 1, 0.1, 120);
-    this.camera.position.set(0, 7.1, 8.7);
-    this.camera.lookAt(0, 0.8, 0);
+    this.camera = new this.THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 220);
+    this.camera.position.set(0, 22, 0);
+    this.camera.up.set(0, 0, -1);
+    this.camera.lookAt(0, 0, 0);
 
     const ambient = new this.THREE.AmbientLight(0xf2dfc8, 0.78);
     this.scene.add(ambient);
 
     const key = new this.THREE.DirectionalLight(0xffe8c7, 1.16);
-    key.position.set(5.8, 10, 4);
+    key.position.set(7.5, 18, 5.5);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 80;
+    key.shadow.camera.left = -22;
+    key.shadow.camera.right = 22;
+    key.shadow.camera.top = 22;
+    key.shadow.camera.bottom = -22;
     this.scene.add(key);
 
-    const fill = new this.THREE.PointLight(0x662631, 0.35, 18);
-    fill.position.set(-4, 3.5, -3.2);
+    const fill = new this.THREE.PointLight(0x662631, 0.35, 32);
+    fill.position.set(-7, 4.8, -5.2);
     this.scene.add(fill);
 
-    const floor = new this.THREE.Mesh(
-      new this.THREE.CircleGeometry(5, 48),
-      new this.THREE.MeshStandardMaterial({
-        color: 0x4b353e,
-        roughness: 0.82,
-        metalness: 0.08,
-      })
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0;
-    floor.receiveShadow = true;
-    this.scene.add(floor);
-
-    const ring = new this.THREE.Mesh(
-      new this.THREE.RingGeometry(4.5, 5, 72),
-      new this.THREE.MeshBasicMaterial({
-        color: 0x6f2a35,
+    const shadowFloor = new this.THREE.Mesh(
+      new this.THREE.PlaneGeometry(220, 220),
+      new this.THREE.ShadowMaterial({
+        opacity: 0.24,
         transparent: true,
-        opacity: 0.18,
       })
     );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.01;
-    this.scene.add(ring);
-
-    const centerSigil = new this.THREE.Mesh(
-      new this.THREE.CircleGeometry(0.38, 24),
-      new this.THREE.MeshBasicMaterial({
-        color: 0xc24856,
-        transparent: true,
-        opacity: 0.65,
-      })
-    );
-    centerSigil.rotation.x = -Math.PI / 2;
-    centerSigil.position.y = 0.02;
-    this.scene.add(centerSigil);
+    shadowFloor.rotation.x = -Math.PI / 2;
+    shadowFloor.position.y = -0.001;
+    shadowFloor.receiveShadow = true;
+    this.scene.add(shadowFloor);
     this.setupIdlePreview();
 
     this.resize();
@@ -594,11 +899,177 @@ class DiceRenderer {
     if (!this.renderer || !this.camera || !this.canvas) {
       return;
     }
-    const width = this.canvas.clientWidth || 720;
-    const height = this.canvas.clientHeight || 270;
-    this.camera.aspect = width / height;
+    const previousScale = this.dieScale;
+    this.updateDieScale();
+    const rect = this.canvas.getBoundingClientRect();
+    const width = Math.max(
+      2,
+      Math.round(rect.width || this.canvas.clientWidth || window.innerWidth || 720)
+    );
+    const height = Math.max(
+      2,
+      Math.round(rect.height || this.canvas.clientHeight || window.innerHeight || 405)
+    );
+    const aspect = width / height;
+    const halfHeight = this.cameraViewHeight / 2;
+    const halfWidth = halfHeight * aspect;
+    this.camera.left = -halfWidth;
+    this.camera.right = halfWidth;
+    this.camera.top = halfHeight;
+    this.camera.bottom = -halfHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.viewportBounds = this.computeArenaBounds();
+    if (Math.abs(previousScale - this.dieScale) > 1e-4) {
+      this.applyDieScaleToScene();
+    }
+  }
+
+  updateDieScale() {
+    this.dieScale = DICE_GLOBAL_SCALE;
+  }
+
+  setPresentationMode(mode) {
+    const next = mode === "preview" ? "preview" : "overlay";
+    this.presentationMode = next;
+    this.cameraViewHeight =
+      next === "preview" ? this.previewCameraViewHeight : this.overlayCameraViewHeight;
+    this.applyDieScaleToScene();
+  }
+
+  applyDieScaleToScene() {
+    if (this.idlePreviewMesh) {
+      const previewScale =
+        this.dieScale * (this.presentationMode === "preview" ? this.previewScaleBoost : 1);
+      this.idlePreviewMesh.scale.setScalar(previewScale);
+    }
+    this.meshMap.forEach((mesh) => {
+      mesh.scale.setScalar(this.dieScale);
+    });
+  }
+
+  projectToGround(ndcX, ndcY, planeY = 0) {
+    if (!this.camera || !this.groundRaycaster || !this.groundPlane) {
+      return null;
+    }
+    const query = new this.THREE.Vector2(ndcX, ndcY);
+    this.groundRaycaster.setFromCamera(query, this.camera);
+    this.groundPlane.set(new this.THREE.Vector3(0, 1, 0), -planeY);
+    const hit = new this.THREE.Vector3();
+    if (!this.groundRaycaster.ray.intersectPlane(this.groundPlane, hit)) {
+      return null;
+    }
+    return hit;
+  }
+
+  computeArenaBounds() {
+    const intersections = [];
+    const ndcValues = [-1, -0.35, 0.35, 1];
+    ndcValues.forEach((ndcX) => {
+      ndcValues.forEach((ndcY) => {
+        const point = this.projectToGround(ndcX, ndcY, 0);
+        if (point) {
+          intersections.push(point);
+        }
+      });
+    });
+
+    if (intersections.length < 4) {
+      return {
+        minX: -5,
+        maxX: 5,
+        minZ: -5,
+        maxZ: 5,
+        centerX: 0,
+        centerZ: 0,
+      };
+    }
+
+    let minX = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+    intersections.forEach((point) => {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minZ = Math.min(minZ, point.z);
+      maxZ = Math.max(maxZ, point.z);
+    });
+
+    const safeMargin = DICE_VIEWPORT_EDGE_PADDING;
+    minX += safeMargin;
+    maxX -= safeMargin;
+    minZ += safeMargin;
+    maxZ -= safeMargin;
+
+    if (!(maxX > minX) || !(maxZ > minZ)) {
+      return {
+        minX: -5,
+        maxX: 5,
+        minZ: -5,
+        maxZ: 5,
+        centerX: 0,
+        centerZ: 0,
+      };
+    }
+
+    return {
+      minX,
+      maxX,
+      minZ,
+      maxZ,
+      centerX: (minX + maxX) / 2,
+      centerZ: (minZ + maxZ) / 2,
+    };
+  }
+
+  getArenaBounds() {
+    return { ...this.viewportBounds };
+  }
+
+  pickDieAtClient(clientX, clientY) {
+    if (!this.camera || !this.canvas || !this.pickRaycaster || !this.pickPointer) {
+      return null;
+    }
+    const rect = this.canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+
+    const ndcX = ((clientX - rect.left) / rect.width) * 2 - 1;
+    const ndcY = -((clientY - rect.top) / rect.height) * 2 + 1;
+    if (ndcX < -1 || ndcX > 1 || ndcY < -1 || ndcY > 1) {
+      return null;
+    }
+
+    const roots = [];
+    if (this.idlePreviewMesh?.visible) {
+      roots.push(this.idlePreviewMesh);
+    }
+    this.meshMap.forEach((mesh) => {
+      if (mesh?.visible) {
+        roots.push(mesh);
+      }
+    });
+    if (roots.length === 0) {
+      return null;
+    }
+
+    this.pickPointer.set(ndcX, ndcY);
+    this.pickRaycaster.setFromCamera(this.pickPointer, this.camera);
+
+    const rootSet = new Set(roots);
+    const hits = this.pickRaycaster.intersectObjects(roots, true);
+    for (const hit of hits) {
+      let node = hit.object;
+      while (node) {
+        if (rootSet.has(node)) {
+          return node;
+        }
+        node = node.parent;
+      }
+    }
+    return null;
   }
 
   render() {
@@ -615,8 +1086,8 @@ class DiceRenderer {
     }
 
     const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 768;
+    canvas.height = 768;
     const context = canvas.getContext("2d");
     if (!context) {
       return null;
@@ -625,23 +1096,47 @@ class DiceRenderer {
     const labelText = String(label);
     const center = canvas.width / 2;
     const fontSize =
-      labelText.length >= 3 ? 208 : labelText.length === 2 ? 272 : 334;
+      labelText.length >= 3
+        ? Math.round(canvas.width * 0.53)
+        : labelText.length === 2
+          ? Math.round(canvas.width * 0.67)
+          : Math.round(canvas.width * 0.82);
 
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.font = `900 ${fontSize}px Cinzel, serif`;
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.lineWidth = labelText.length > 1 ? 26 : 30;
+    context.lineWidth = Math.round(fontSize * (labelText.length > 1 ? 0.11 : 0.09));
     context.strokeStyle = "rgba(18, 6, 9, 0.95)";
     context.fillStyle = "rgba(255, 244, 233, 0.98)";
     context.strokeText(labelText, center, center + 6);
     context.fillText(labelText, center, center + 6);
+    if (labelText === "9") {
+      const underlineHalf = fontSize * 0.24;
+      const underlineY = center + fontSize * 0.34;
+      context.beginPath();
+      context.lineCap = "round";
+      context.lineWidth = Math.max(14, Math.round(fontSize * 0.095));
+      context.strokeStyle = "rgba(18, 6, 9, 0.95)";
+      context.moveTo(center - underlineHalf, underlineY);
+      context.lineTo(center + underlineHalf, underlineY);
+      context.stroke();
+
+      context.beginPath();
+      context.lineCap = "round";
+      context.lineWidth = Math.max(8, Math.round(fontSize * 0.05));
+      context.strokeStyle = "rgba(255, 244, 233, 0.98)";
+      context.moveTo(center - underlineHalf, underlineY);
+      context.lineTo(center + underlineHalf, underlineY);
+      context.stroke();
+    }
 
     const texture = new this.THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
-    texture.generateMipmaps = true;
-    texture.minFilter = this.THREE.LinearMipmapLinearFilter;
+    texture.generateMipmaps = false;
+    texture.minFilter = this.THREE.LinearFilter;
     texture.magFilter = this.THREE.LinearFilter;
+    texture.anisotropy = this.renderer?.capabilities?.getMaxAnisotropy?.() || 1;
     texture.colorSpace = this.THREE.SRGBColorSpace || texture.colorSpace;
     this.labelTextureCache.set(key, texture);
     return texture;
@@ -659,14 +1154,14 @@ class DiceRenderer {
       this.labelPlaneGeometry,
       new this.THREE.MeshBasicMaterial({
         map: texture,
-        transparent: true,
+        transparent: false,
         side: this.THREE.FrontSide,
         depthTest: true,
-        depthWrite: false,
-        alphaTest: 0.06,
+        depthWrite: true,
+        alphaTest: 0.01,
         polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
       })
     );
     mesh.scale.set(size, size, size);
@@ -674,11 +1169,94 @@ class DiceRenderer {
     return mesh;
   }
 
-  faceLabelsForKind(kind, count) {
-    if (kind === "d10") {
-      return Array.from({ length: count }, (_unused, index) => String(index));
+  addD4CornerLabels(mesh, template) {
+    if (!Array.isArray(template.cornerValues) || !Array.isArray(template.cornerFaces)) {
+      return false;
     }
-    return Array.from({ length: count }, (_unused, index) => String(index + 1));
+
+    const cornerMap = new Map();
+    template.cornerValues.forEach((corner) => {
+      if (!corner || !corner.vertex) {
+        return;
+      }
+      const vertex = new this.THREE.Vector3(corner.vertex.x, corner.vertex.y, corner.vertex.z);
+      cornerMap.set(corner.index, {
+        value: corner.value,
+        vertex,
+      });
+    });
+    if (cornerMap.size < 4) {
+      return false;
+    }
+
+    if (!template.geometry.boundingSphere) {
+      template.geometry.computeBoundingSphere();
+    }
+    const radius = template.geometry.boundingSphere?.radius || 1;
+    const labelSize = 0.5667 * radius;
+    const inset = 0.48;
+    const surfaceNudge = radius * 0.04;
+    const zAxis = new this.THREE.Vector3(0, 0, 1);
+    const yAxis = new this.THREE.Vector3(0, 1, 0);
+    const baseQuat = new this.THREE.Quaternion();
+    const twistQuat = new this.THREE.Quaternion();
+    const currentUp = new this.THREE.Vector3();
+    const cornerUp = new this.THREE.Vector3();
+    const cross = new this.THREE.Vector3();
+
+    template.cornerFaces.forEach((face) => {
+      const first = cornerMap.get(face[0]);
+      const second = cornerMap.get(face[1]);
+      const third = cornerMap.get(face[2]);
+      if (!first || !second || !third) {
+        return;
+      }
+
+      const va = first.vertex.clone();
+      const vb = second.vertex.clone();
+      const vc = third.vertex.clone();
+      const center = va.clone().add(vb).add(vc).multiplyScalar(1 / 3);
+      const normal = vb
+        .clone()
+        .sub(va)
+        .cross(vc.clone().sub(va));
+      if (normal.lengthSq() < 1e-8) {
+        return;
+      }
+      normal.normalize();
+      if (normal.dot(center) < 0) {
+        normal.multiplyScalar(-1);
+      }
+
+      [first, second, third].forEach((corner) => {
+        const label = this.createFaceLabelMesh(String(corner.value), labelSize);
+        if (!label) {
+          return;
+        }
+        const surfacePosition = corner.vertex.clone().lerp(center, inset);
+        const position = surfacePosition.clone().addScaledVector(normal, surfaceNudge);
+        label.position.copy(position);
+        baseQuat.setFromUnitVectors(zAxis, normal);
+
+        currentUp.copy(yAxis).applyQuaternion(baseQuat).normalize();
+        cornerUp.copy(corner.vertex).sub(surfacePosition);
+        cornerUp.addScaledVector(normal, -cornerUp.dot(normal));
+
+        if (cornerUp.lengthSq() > 1e-8) {
+          cornerUp.normalize();
+          const sin = normal.dot(cross.copy(currentUp).cross(cornerUp));
+          const cos = Math.max(-1, Math.min(1, currentUp.dot(cornerUp)));
+          const angle = Math.atan2(sin, cos);
+          twistQuat.setFromAxisAngle(normal, angle);
+          label.quaternion.copy(baseQuat).premultiply(twistQuat);
+        } else {
+          label.quaternion.copy(baseQuat);
+        }
+        mesh.add(label);
+      });
+    });
+
+    return true;
   }
 
   addFaceLabels(mesh, template) {
@@ -686,20 +1264,23 @@ class DiceRenderer {
       return;
     }
 
+    if (template.kind === "d4" && this.addD4CornerLabels(mesh, template)) {
+      return;
+    }
+
     const sortedFaces = [...template.faceMap].sort((left, right) => left.value - right.value);
-    const labels = this.faceLabelsForKind(template.kind, sortedFaces.length);
     if (!template.geometry.boundingSphere) {
       template.geometry.computeBoundingSphere();
     }
     const radius = template.geometry.boundingSphere?.radius || 1;
     const scaleMap = {
-      d2: 0.6,
-      d4: 0.56,
-      d6: 0.56,
-      d8: 0.5,
-      d10: 0.42,
-      d12: 0.34,
-      d20: 0.37,
+      d2: 0.8,
+      d4: 1.34,
+      d6: 0.74,
+      d8: 0.66,
+      d10: 0.67,
+      d12: 0.78,
+      d20: 0.58,
     };
     const offsetMap = {
       d2: 0.18,
@@ -712,11 +1293,11 @@ class DiceRenderer {
     };
     const labelSize = (scaleMap[template.kind] || 0.18) * radius;
     const offset = (offsetMap[template.kind] || 0.62) * radius + radius * 0.012;
-    const surfaceNudge = radius * 0.018;
+    const surfaceNudge = radius * 0.038;
     const zAxis = new this.THREE.Vector3(0, 0, 1);
 
     sortedFaces.forEach((entry, index) => {
-      const label = this.createFaceLabelMesh(labels[index] ?? entry.value, labelSize);
+      const label = this.createFaceLabelMesh(String(entry.valueLabel ?? entry.value), labelSize);
       if (!label) {
         return;
       }
@@ -732,7 +1313,7 @@ class DiceRenderer {
     });
   }
 
-  setupIdlePreview() {
+  createFallbackPreviewDie() {
     const preview = new this.THREE.Mesh(
       new this.THREE.IcosahedronGeometry(0.82),
       new this.THREE.MeshStandardMaterial({
@@ -745,7 +1326,7 @@ class DiceRenderer {
     );
     preview.castShadow = true;
     preview.receiveShadow = true;
-    preview.position.set(0, 1.28, 0);
+    preview.position.set(0, 1.14, 0);
 
     const edges = new this.THREE.LineSegments(
       new this.THREE.EdgesGeometry(preview.geometry),
@@ -756,8 +1337,55 @@ class DiceRenderer {
       })
     );
     preview.add(edges);
-    this.scene.add(preview);
-    this.idlePreviewMesh = preview;
+    preview.scale.setScalar(1);
+    return preview;
+  }
+
+  setupIdlePreview() {
+    this.setIdlePreviewTemplate([]);
+  }
+
+  setIdlePreviewMesh(mesh) {
+    if (this.idlePreviewMesh) {
+      this.scene.remove(this.idlePreviewMesh);
+    }
+    this.idlePreviewMesh = mesh;
+    if (this.idlePreviewMesh) {
+      this.scene.add(this.idlePreviewMesh);
+    }
+    this.applyDieScaleToScene();
+  }
+
+  setIdlePreviewTemplate(templateOrTemplates) {
+    const templateList = Array.isArray(templateOrTemplates)
+      ? templateOrTemplates.filter(Boolean)
+      : templateOrTemplates
+        ? [templateOrTemplates]
+        : [];
+
+    const root = new this.THREE.Group();
+    if (templateList.length === 0) {
+      root.add(this.createFallbackPreviewDie());
+      this.setIdlePreviewMesh(root);
+      return;
+    }
+
+    const spread = templateList.length > 1 ? 2.15 : 0;
+    templateList.forEach((template, index) => {
+      const built = this.buildMesh(template.kind, DICE_MODES.PROCEDURAL, template);
+      const preview = built.mesh;
+      preview.castShadow = true;
+      preview.receiveShadow = true;
+      preview.rotation.set(0, 0, 0);
+      preview.scale.setScalar(1);
+
+      const xOffset = (index - (templateList.length - 1) / 2) * spread;
+      const zOffset = 0;
+      preview.position.set(xOffset, 1.14, zOffset);
+      root.add(preview);
+    });
+
+    this.setIdlePreviewMesh(root);
   }
 
   setIdlePreviewVisible(isVisible) {
@@ -852,11 +1480,12 @@ class DiceRenderer {
         emissiveIntensity: 0.1,
         roughness: 0.56,
         metalness: 0.2,
-        side: template.kind === "d10" ? this.THREE.DoubleSide : this.THREE.FrontSide,
+        side: this.THREE.FrontSide,
       })
     );
     base.castShadow = true;
     base.receiveShadow = true;
+    base.scale.setScalar(this.dieScale);
 
     const edges = new this.THREE.LineSegments(
       new this.THREE.EdgesGeometry(template.geometry),
@@ -883,12 +1512,17 @@ class DiceTrayController {
     this.panel = params.panel;
     this.toggle = params.toggle;
     this.body = params.body;
-    this.formula = params.formula;
+    this.previewHost = params.previewHost;
+    this.previewCanvas = params.previewCanvas;
     this.rollButton = params.rollButton;
+    this.clearButton = params.clearButton;
     this.historyEl = params.history;
+    this.purgeButton = params.purgeButton;
     this.advanced = params.advanced;
     this.force2d = params.force2d;
+    this.lowPerformance = params.lowPerformance;
     this.canvas = params.canvas;
+    this.overlay = params.overlay;
     this.fallback = params.fallback;
     this.status = params.status;
     this.root = params.root;
@@ -896,29 +1530,47 @@ class DiceTrayController {
     this.settings = {
       notation: "d20",
       force2d: false,
-      advancedOpen: false,
+      lowPerformance: false,
     };
     this.history = [];
     this.modules = null;
     this.renderer = null;
+    this.previewRenderer = null;
     this.physics = null;
     this.templates = null;
     this.rolling = false;
     this.animationFrame = 0;
     this.idleFrame = 0;
     this.loadPromise = null;
+    this.rollCompletionResolver = null;
+    this.rollCancelRequested = false;
+    this.pendingAction = null;
     this.hasRolled = false;
+    this.activeRecords = [];
+    this.canvasMode = "hidden";
+    this.previewTemplateKey = "";
+    this.onScenePointerDown = null;
+    this.onSceneClick = null;
+    this.pendingDieClickBlock = false;
+    this.chipButtons = [];
 
     this.onResize = () => {
       if (this.renderer) {
         this.renderer.resize();
+        if (this.physics) {
+          this.physics.setArenaBounds(this.renderer.getArenaBounds());
+        }
         this.renderer.render();
+      }
+      if (this.previewRenderer) {
+        this.previewRenderer.resize();
+        this.previewRenderer.render();
       }
     };
   }
 
   init() {
-    if (!this.panel || !this.toggle || !this.body || !this.formula || !this.rollButton) {
+    if (!this.panel || !this.toggle || !this.body || !this.rollButton) {
       return;
     }
 
@@ -928,8 +1580,8 @@ class DiceTrayController {
         typeof storedSettings.notation === "string" && storedSettings.notation.trim()
           ? storedSettings.notation.slice(0, DICE_MAX_FORMULA_LENGTH)
           : this.settings.notation;
-      this.settings.force2d = false;
-      this.settings.advancedOpen = Boolean(storedSettings.advancedOpen);
+      this.settings.force2d = Boolean(storedSettings.force2d);
+      this.settings.lowPerformance = Boolean(storedSettings.lowPerformance);
     }
 
     const storedHistory = readJsonStorage(DICE_HISTORY_KEY, []);
@@ -938,32 +1590,367 @@ class DiceTrayController {
         .filter((entry) => entry && typeof entry === "object")
         .slice(0, DICE_HISTORY_LIMIT);
     }
-
-    this.formula.value = this.settings.notation;
+    this.chipButtons = this.root
+      ? Array.from(this.root.querySelectorAll("[data-dice-chip]"))
+      : [];
+    this.settings.notation = this.normalizeChipNotation(this.settings.notation);
+    this.refreshChipStates();
+    this.updateRollButtonLabel();
     if (this.force2d) {
       this.force2d.checked = this.settings.force2d;
     }
+    if (this.lowPerformance) {
+      this.lowPerformance.checked = this.settings.lowPerformance;
+    }
     if (this.advanced) {
-      this.advanced.open = this.settings.advancedOpen;
+      this.advanced.open = false;
     }
 
     this.panel.dataset.collapsed = "true";
     this.body.hidden = true;
     this.toggle.setAttribute("aria-expanded", "false");
-    let idleFallback = false;
-    if (!this.canUse3D()) {
-      this.showFallbackIdle("2D fallback forced (debug mode).", "warn");
-      idleFallback = true;
-    } else if (this.canvas && this.fallback) {
-      this.canvas.hidden = false;
+    this.setCanvasMode("hidden");
+    this.setPreviewCanvasVisible(false);
+    if (this.fallback) {
       this.fallback.hidden = true;
       this.fallback.innerHTML = "";
     }
     this.renderHistory();
-    if (!idleFallback) {
-      this.writeStatus("Dice tray ready.", "neutral");
-    }
+    this.writeStatus(this.settings.force2d ? "2D fallback enabled." : "Dice tray ready.", "neutral");
     this.bindEvents();
+    this.updateControlAvailability();
+  }
+
+  previewTemplatesFromNotation(notation) {
+    let request;
+    try {
+      request = RollParser.parse(notation);
+    } catch (_error) {
+      return null;
+    }
+    const firstTerm = request.terms.find((term) => term.count > 0);
+    if (!firstTerm) {
+      return null;
+    }
+    if (!this.templates) {
+      return null;
+    }
+    if (firstTerm.sides === 100) {
+      return this.templates.d10 ? [this.templates.d10, this.templates.d10] : null;
+    }
+    const kind = `d${firstTerm.sides}`;
+    return this.templates[kind] ? [this.templates[kind]] : null;
+  }
+
+  normalizeChipNotation(notation) {
+    const fallback = "d20";
+    let parsed;
+    try {
+      parsed = RollParser.parse(notation);
+    } catch (_error) {
+      return fallback;
+    }
+    const firstTerm = parsed.terms.find((term) => term.count > 0 && term.sign > 0);
+    if (!firstTerm) {
+      return fallback;
+    }
+    const candidate = `d${firstTerm.sides}`;
+    const hasCandidateChip = this.chipButtons.some(
+      (chip) => String(chip.dataset.diceChip || "").trim().toLowerCase() === candidate
+    );
+    return hasCandidateChip ? candidate : fallback;
+  }
+
+  refreshChipStates() {
+    const active = String(this.settings.notation || "").trim().toLowerCase();
+    this.chipButtons.forEach((chip) => {
+      const value = String(chip.dataset.diceChip || "").trim().toLowerCase();
+      const isActive = value === active;
+      chip.classList.toggle("is-active", isActive);
+      chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  updateRollButtonLabel() {
+    if (!this.rollButton) {
+      return;
+    }
+    const notation = this.normalizeChipNotation(this.settings.notation);
+    this.rollButton.textContent = `Roll ${notation}`;
+  }
+
+  setCanvasMode(mode) {
+    if (!this.canvas) {
+      return;
+    }
+    const next = mode === "overlay" ? "overlay" : "hidden";
+    this.canvasMode = next;
+
+    if (next === "overlay") {
+      if (this.overlay && this.canvas.parentElement !== this.overlay) {
+        this.overlay.appendChild(this.canvas);
+      }
+      this.canvas.classList.remove("is-preview");
+      this.canvas.hidden = false;
+      if (this.fallback) {
+        this.fallback.hidden = true;
+      }
+      return;
+    }
+
+    this.canvas.classList.remove("is-preview");
+    this.canvas.hidden = true;
+  }
+
+  setPreviewCanvasVisible(isVisible) {
+    if (this.previewCanvas) {
+      this.previewCanvas.hidden = !isVisible;
+    }
+    if (this.previewHost) {
+      this.previewHost.setAttribute("aria-hidden", isVisible ? "false" : "true");
+    }
+  }
+
+  preparePreviewCanvas() {
+    if (!this.canUse3D() || !this.previewRenderer) {
+      this.setPreviewCanvasVisible(false);
+      return;
+    }
+    this.previewRenderer.setPresentationMode("preview");
+    this.previewRenderer.resize();
+    this.setPreviewCanvasVisible(true);
+    if (this.fallback) {
+      this.fallback.hidden = true;
+    }
+  }
+
+  prepareOverlayCanvas() {
+    if (!this.canUse3D()) {
+      this.setCanvasMode("hidden");
+      return;
+    }
+    this.renderer?.setPresentationMode("overlay");
+    this.renderer?.setIdlePreviewVisible(false);
+    this.setCanvasMode("overlay");
+    if (this.renderer) {
+      this.renderer.resize();
+      if (this.physics) {
+        this.physics.setArenaBounds(this.renderer.getArenaBounds());
+      }
+    }
+  }
+
+  clearRenderedDice({ returnToPreview = true } = {}) {
+    this.activeRecords = [];
+    this.physics?.clearDynamicBodies();
+    this.renderer?.clearDice();
+    if (this.fallback) {
+      this.fallback.hidden = true;
+      this.fallback.innerHTML = "";
+    }
+    this.hasRolled = false;
+    if (returnToPreview && this.panel?.dataset.collapsed === "false" && this.canUse3D()) {
+      this.preparePreviewCanvas();
+      this.previewRenderer?.setIdlePreviewVisible(true);
+      this.startIdleRenderLoop();
+      this.previewRenderer?.render();
+      return;
+    }
+    this.stopIdleRenderLoop();
+    this.previewRenderer?.setIdlePreviewVisible(false);
+    this.setPreviewCanvasVisible(false);
+    this.setCanvasMode("hidden");
+  }
+
+  async throwDiceOffScreenAndClear(options = {}) {
+    const {
+      silent = false,
+      returnToPreview = true,
+      allowDuringLowPerformance = false,
+    } = options;
+    if (this.rolling) {
+      if (this.settings.lowPerformance && !allowDuringLowPerformance) {
+        if (!silent) {
+          this.writeStatus("Roll in progress.", "warn");
+        }
+        return;
+      }
+      this.pendingAction = {
+        type: "clear",
+        options: { silent, returnToPreview, allowDuringLowPerformance },
+      };
+      this.interruptActiveRoll();
+      return;
+    }
+
+    if (this.activeRecords.length === 0) {
+      this.clearRenderedDice({ returnToPreview });
+      if (!silent) {
+        this.writeStatus("No rolled dice to clear.", "neutral");
+      }
+      return;
+    }
+
+    this.stopIdleRenderLoop();
+    this.previewRenderer?.setIdlePreviewVisible(false);
+    this.prepareOverlayCanvas();
+    this.renderer?.mark3DActive(true);
+    this.physics?.setBoundaryConstraintsEnabled(false);
+
+    const viewportBounds = this.renderer?.getArenaBounds() || {
+      minX: -5,
+      maxX: 5,
+      minZ: -5,
+      maxZ: 5,
+      centerX: 0,
+      centerZ: 0,
+    };
+    const centerX =
+      Number.isFinite(viewportBounds.centerX)
+        ? viewportBounds.centerX
+        : (viewportBounds.minX + viewportBounds.maxX) / 2;
+    const centerZ =
+      Number.isFinite(viewportBounds.centerZ)
+        ? viewportBounds.centerZ
+        : (viewportBounds.minZ + viewportBounds.maxZ) / 2;
+
+    this.activeRecords.forEach((record) => {
+      const body = record?.body;
+      if (!body) {
+        return;
+      }
+      const outwardAngle =
+        Math.atan2(body.position.z - centerZ, body.position.x - centerX) +
+        (Math.random() - 0.5) * 0.52;
+      const horizontal = 30 + Math.random() * 16;
+      body.velocity.set(
+        Math.cos(outwardAngle) * horizontal,
+        5 + Math.random() * 3.5,
+        Math.sin(outwardAngle) * horizontal
+      );
+      body.angularVelocity.set(
+        (Math.random() - 0.5) * 68,
+        (Math.random() - 0.5) * 68,
+        (Math.random() - 0.5) * 68
+      );
+    });
+
+    await new Promise((resolve) => {
+      const startedAt = performance.now();
+      let previous = startedAt;
+      const outsidePadding = 2.2;
+      const outsideViewport = (body) => {
+        return (
+          body.position.x < viewportBounds.minX - outsidePadding ||
+          body.position.x > viewportBounds.maxX + outsidePadding ||
+          body.position.z < viewportBounds.minZ - outsidePadding ||
+          body.position.z > viewportBounds.maxZ + outsidePadding
+        );
+      };
+      const tick = (now) => {
+        const dt = Math.min(0.05, Math.max(1 / 300, (now - previous) / 1000));
+        previous = now;
+        this.physics?.step(dt);
+        this.renderer?.syncAllBodies(this.activeRecords);
+        this.renderer?.render();
+        const elapsed = now - startedAt;
+        const allOutside =
+          this.activeRecords.length > 0 &&
+          this.activeRecords.every((record) => record?.body && outsideViewport(record.body));
+        if ((allOutside && elapsed > 300) || elapsed >= 5200) {
+          resolve();
+          return;
+        }
+        this.animationFrame = requestAnimationFrame(tick);
+      };
+      this.animationFrame = requestAnimationFrame(tick);
+    });
+
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = 0;
+    }
+    this.physics?.setBoundaryConstraintsEnabled(true);
+    if (this.physics && this.renderer) {
+      this.physics.setArenaBounds(this.renderer.getArenaBounds());
+    }
+
+    this.clearRenderedDice({ returnToPreview });
+    if (!silent) {
+      this.writeStatus("Rolled dice cleared.", "neutral");
+    }
+  }
+
+  purgeHistoryWithFx() {
+    this.history = [];
+    this.persistHistory();
+    this.renderHistory();
+    this.writeStatus("Roll ledger purged.", "warn");
+    if (this.purgeButton) {
+      this.purgeButton.classList.remove("is-pressed");
+      void this.purgeButton.offsetWidth;
+      this.purgeButton.classList.add("is-pressed");
+      window.setTimeout(() => {
+        this.purgeButton?.classList.remove("is-pressed");
+      }, 180);
+    }
+  }
+
+  setActiveNotation(notation, persist = true) {
+    const previous = this.normalizeChipNotation(this.settings.notation);
+    const next = this.normalizeChipNotation(notation);
+    this.settings.notation = next;
+    if (persist) {
+      this.persistSettings();
+    }
+    this.refreshChipStates();
+    this.updateRollButtonLabel();
+    this.updateIdlePreviewFromNotation(next, {
+      forceTemplateRefresh: previous !== next,
+    });
+    return next;
+  }
+
+  updateIdlePreviewFromNotation(notation, options = {}) {
+    if (!this.previewRenderer || !this.templates) {
+      return;
+    }
+    const normalized = this.normalizeChipNotation(notation || this.settings.notation);
+    const shouldRefreshTemplate =
+      Boolean(options.forceTemplateRefresh) || this.previewTemplateKey !== normalized;
+    if (shouldRefreshTemplate) {
+      const templates =
+        this.previewTemplatesFromNotation(normalized) ||
+        this.previewTemplatesFromNotation(this.settings.notation) ||
+        (this.templates.d20 ? [this.templates.d20] : []);
+      this.previewRenderer.setIdlePreviewTemplate(templates);
+      this.previewTemplateKey = normalized;
+    }
+    if (!this.canUse3D()) {
+      this.stopIdleRenderLoop();
+      this.previewRenderer.setIdlePreviewVisible(false);
+      this.setPreviewCanvasVisible(false);
+      return;
+    }
+    if (this.panel.dataset.collapsed === "true") {
+      this.previewRenderer.setIdlePreviewVisible(false);
+      this.setPreviewCanvasVisible(false);
+      return;
+    }
+    const lowPerformanceBlocked =
+      this.settings.lowPerformance &&
+      (this.rolling || (this.activeRecords.length > 0 && this.hasRolled));
+    if (lowPerformanceBlocked) {
+      this.stopIdleRenderLoop();
+      this.previewRenderer.setIdlePreviewVisible(false);
+      this.setPreviewCanvasVisible(false);
+      this.previewRenderer.render();
+      return;
+    }
+    this.preparePreviewCanvas();
+    this.previewRenderer.setIdlePreviewVisible(true);
+    this.startIdleRenderLoop();
+    this.previewRenderer.render();
   }
 
   bindEvents() {
@@ -975,35 +1962,40 @@ class DiceTrayController {
       if (open) {
         if (this.canUse3D()) {
           this.ensure3DEngine().then((ready) => {
-            if (ready && !this.hasRolled) {
-              this.startIdleRenderLoop();
+            if (!ready || !this.renderer) {
+              return;
             }
+            this.renderer.mark3DActive(true);
+            this.updateIdlePreviewFromNotation(this.settings.notation);
           });
         } else {
-          this.showFallbackIdle("2D fallback forced (debug mode).", "warn");
+          this.showFallbackIdle("2D fallback enabled.", "neutral");
         }
       } else {
         this.stopIdleRenderLoop();
-      }
-      if (open && this.renderer) {
-        window.setTimeout(() => {
-          this.renderer.resize();
-          this.renderer.render();
-        }, 20);
+        this.previewRenderer?.setIdlePreviewVisible(false);
+        this.setPreviewCanvasVisible(false);
+        this.throwDiceOffScreenAndClear({
+          silent: true,
+          returnToPreview: false,
+          allowDuringLowPerformance: true,
+        });
       }
     });
 
     this.rollButton.addEventListener("click", () => {
       this.roll();
     });
-
-    this.formula.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") {
-        return;
-      }
-      event.preventDefault();
-      this.roll();
-    });
+    if (this.clearButton) {
+      this.clearButton.addEventListener("click", () => {
+        this.throwDiceOffScreenAndClear();
+      });
+    }
+    if (this.purgeButton) {
+      this.purgeButton.addEventListener("click", () => {
+        this.purgeHistoryWithFx();
+      });
+    }
 
     if (this.root) {
       this.root.addEventListener("click", (event) => {
@@ -1019,11 +2011,10 @@ class DiceTrayController {
         if (!value) {
           return;
         }
-        this.formula.value = value;
-        this.settings.notation = value;
-        this.persistSettings();
-        chip.classList.add("is-used");
-        window.setTimeout(() => chip.classList.remove("is-used"), 220);
+        const activeNotation = this.setActiveNotation(value, true);
+        if (!this.rolling) {
+          this.writeStatus(`Ready to roll ${activeNotation}.`, "neutral");
+        }
       });
     }
 
@@ -1033,26 +2024,100 @@ class DiceTrayController {
         this.persistSettings();
         if (this.settings.force2d) {
           this.stopIdleRenderLoop();
-          this.showFallbackIdle("2D fallback forced (debug mode).", "warn");
+          this.previewRenderer?.setIdlePreviewVisible(false);
+          this.setPreviewCanvasVisible(false);
+          if (this.panel.dataset.collapsed === "false") {
+            this.showFallbackIdle("2D fallback enabled.", "neutral");
+          } else if (this.canvas && this.fallback) {
+            this.setCanvasMode("hidden");
+            this.fallback.hidden = true;
+            this.fallback.innerHTML = "";
+            this.writeStatus("2D fallback enabled.", "neutral");
+          }
         } else {
-          this.writeStatus("3D mode restored when available.", "warn");
+          if (this.fallback) {
+            this.fallback.hidden = true;
+            this.fallback.innerHTML = "";
+          }
+          this.writeStatus("Dice tray ready.", "neutral");
           if (this.panel.dataset.collapsed === "false" && this.canUse3D()) {
             this.ensure3DEngine().then((ready) => {
-              if (ready && !this.hasRolled) {
-                this.startIdleRenderLoop();
+              if (!ready || !this.renderer) {
+                return;
               }
+              this.renderer.mark3DActive(true);
+              this.updateIdlePreviewFromNotation(this.settings.notation);
             });
           }
         }
       });
     }
 
-    if (this.advanced) {
-      this.advanced.addEventListener("toggle", () => {
-        this.settings.advancedOpen = this.advanced.open;
+    if (this.lowPerformance) {
+      this.lowPerformance.addEventListener("change", () => {
+        this.settings.lowPerformance = Boolean(this.lowPerformance.checked);
         this.persistSettings();
+        this.updateControlAvailability();
+        if (this.panel.dataset.collapsed !== "false") {
+          return;
+        }
+        if (this.settings.force2d) {
+          this.showFallbackIdle("2D fallback enabled.", "neutral");
+          return;
+        }
+        if (!this.canUse3D()) {
+          return;
+        }
+        this.ensure3DEngine().then((ready) => {
+          if (!ready || !this.renderer) {
+            return;
+          }
+          this.renderer.mark3DActive(true);
+          this.updateIdlePreviewFromNotation(this.settings.notation);
+        });
       });
     }
+
+    this.onScenePointerDown = (event) => {
+      if (this.rolling && this.settings.lowPerformance) {
+        return;
+      }
+      if (this.panel?.dataset.collapsed === "true" || !this.canUse3D()) {
+        return;
+      }
+      let picked = null;
+      if (this.renderer && this.canvas && !this.canvas.hidden) {
+        picked = this.renderer.pickDieAtClient(event.clientX, event.clientY);
+      }
+      if (!picked && this.previewRenderer && this.previewCanvas && !this.previewCanvas.hidden) {
+        picked = this.previewRenderer.pickDieAtClient(event.clientX, event.clientY);
+      }
+      if (!picked) {
+        return;
+      }
+      this.pendingDieClickBlock = true;
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation();
+      }
+      this.roll();
+    };
+    window.addEventListener("pointerdown", this.onScenePointerDown, true);
+
+    this.onSceneClick = (event) => {
+      const shouldBlock = this.pendingDieClickBlock;
+      this.pendingDieClickBlock = false;
+      if (!shouldBlock) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener("click", this.onSceneClick, true);
 
     window.addEventListener("resize", this.onResize);
   }
@@ -1063,24 +2128,58 @@ class DiceTrayController {
       this.animationFrame = 0;
     }
     this.stopIdleRenderLoop();
+    if (this.onScenePointerDown) {
+      window.removeEventListener("pointerdown", this.onScenePointerDown, true);
+      this.onScenePointerDown = null;
+    }
+    if (this.onSceneClick) {
+      window.removeEventListener("click", this.onSceneClick, true);
+      this.onSceneClick = null;
+    }
+    this.pendingDieClickBlock = false;
     window.removeEventListener("resize", this.onResize);
   }
 
   startIdleRenderLoop() {
-    if (this.idleFrame || !this.renderer || this.hasRolled) {
+    if (this.idleFrame || !this.previewRenderer) {
       return;
     }
-    this.renderer.setIdlePreviewVisible(true);
+    if (this.panel.dataset.collapsed === "true" || !this.canUse3D()) {
+      return;
+    }
+    const hasRolledDice = this.activeRecords.length > 0 && this.hasRolled;
+    const lowPerformanceBlocked =
+      this.settings.lowPerformance && (this.rolling || hasRolledDice);
+    if (lowPerformanceBlocked) {
+      return;
+    }
+    this.preparePreviewCanvas();
+    this.previewRenderer.setIdlePreviewVisible(true);
     let last = performance.now();
     const tick = (now) => {
       this.idleFrame = 0;
-      if (!this.renderer || this.rolling || this.panel.dataset.collapsed === "true") {
+      if (
+        !this.previewRenderer ||
+        this.panel.dataset.collapsed === "true" ||
+        !this.canUse3D()
+      ) {
+        this.previewRenderer?.setIdlePreviewVisible(false);
+        this.setPreviewCanvasVisible(false);
         return;
       }
+      const rollingWithLowPerformance =
+        this.settings.lowPerformance &&
+        (this.rolling || (this.hasRolled && this.activeRecords.length > 0));
+      if (rollingWithLowPerformance) {
+        this.previewRenderer.setIdlePreviewVisible(false);
+        this.setPreviewCanvasVisible(false);
+        return;
+      }
+      this.setPreviewCanvasVisible(true);
       const dt = Math.min(0.05, Math.max(1 / 300, (now - last) / 1000));
       last = now;
-      this.renderer.animateIdlePreview(dt);
-      this.renderer.render();
+      this.previewRenderer.animateIdlePreview(dt);
+      this.previewRenderer.render();
       this.idleFrame = requestAnimationFrame(tick);
     };
     this.idleFrame = requestAnimationFrame(tick);
@@ -1092,6 +2191,47 @@ class DiceTrayController {
     }
     cancelAnimationFrame(this.idleFrame);
     this.idleFrame = 0;
+  }
+
+  updateControlAvailability() {
+    const shouldLock = this.settings.lowPerformance && this.rolling;
+    if (this.rollButton) {
+      this.rollButton.disabled = shouldLock;
+    }
+    if (this.clearButton) {
+      this.clearButton.disabled = shouldLock;
+    }
+  }
+
+  interruptActiveRoll() {
+    if (!this.rolling) {
+      return;
+    }
+    this.rollCancelRequested = true;
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = 0;
+    }
+    if (typeof this.rollCompletionResolver === "function") {
+      const resolve = this.rollCompletionResolver;
+      this.rollCompletionResolver = null;
+      resolve();
+    }
+  }
+
+  flushPendingAction() {
+    if (this.rolling || !this.pendingAction) {
+      return;
+    }
+    const action = this.pendingAction;
+    this.pendingAction = null;
+    if (action.type === "clear") {
+      this.throwDiceOffScreenAndClear(action.options || {});
+      return;
+    }
+    if (action.type === "roll") {
+      this.roll(action.notation || this.settings.notation);
+    }
   }
 
   writeStatus(message, tone = "neutral") {
@@ -1114,8 +2254,13 @@ class DiceTrayController {
   }
 
   showFallbackIdle(message, tone = "neutral") {
-    if (this.canvas && this.fallback) {
-      this.canvas.hidden = true;
+    if (this.fallback) {
+      this.activeRecords = [];
+      this.setCanvasMode("hidden");
+      this.setPreviewCanvasVisible(false);
+      if (this.previewHost) {
+        this.previewHost.setAttribute("aria-hidden", "false");
+      }
       this.fallback.hidden = false;
       const labels = ["d20", "d12", "d8", "d6"];
       this.fallback.innerHTML = "";
@@ -1196,30 +2341,48 @@ class DiceTrayController {
         };
         this.templates = createDieTemplates(this.modules.THREE, this.modules.CANNON);
         this.physics = new DicePhysicsEngine(this.modules.CANNON);
-        this.renderer = new DiceRenderer(
-          this.modules.THREE,
-          this.canvas,
-          this.fallback
-        );
+        this.renderer = new DiceRenderer(this.modules.THREE, this.canvas, null);
         if (!this.renderer.init()) {
           throw new Error("Renderer failed to initialize.");
         }
-        this.renderer.mark3DActive(true);
-        this.renderer.render();
-        this.writeStatus("3D engine ready.", "ok");
-        if (this.panel.dataset.collapsed !== "true" && !this.hasRolled) {
-          this.startIdleRenderLoop();
+        this.renderer.setPresentationMode("overlay");
+        this.renderer.setIdlePreviewVisible(false);
+
+        if (this.previewCanvas) {
+          this.previewRenderer = new DiceRenderer(this.modules.THREE, this.previewCanvas, null);
+          if (!this.previewRenderer.init()) {
+            throw new Error("Preview renderer failed to initialize.");
+          }
+          this.previewRenderer.setPresentationMode("preview");
+          this.previewTemplateKey = "";
+        } else {
+          this.previewRenderer = null;
+          this.previewTemplateKey = "";
         }
+
+        const isOpen = this.panel?.dataset.collapsed === "false";
+        if (isOpen) {
+          this.renderer.mark3DActive(true);
+          this.physics.setArenaBounds(this.renderer.getArenaBounds());
+          this.updateIdlePreviewFromNotation(this.settings.notation);
+        } else {
+          this.previewRenderer?.setIdlePreviewVisible(false);
+          this.setPreviewCanvasVisible(false);
+          this.setCanvasMode("hidden");
+        }
+        this.renderer.render();
+        this.previewRenderer?.render();
         return true;
       } catch (error) {
         this.renderer = null;
+        this.previewRenderer = null;
+        this.previewTemplateKey = "";
         this.physics = null;
         this.templates = null;
         this.modules = null;
-        const detail = error instanceof Error ? error.message : "Unknown load failure.";
-        this.showFallbackIdle(`3D load failed (${detail}). Rolling with 2D fallback.`, "warn");
+        this.showFallbackIdle("3D failed to load. Using 2D fallback.", "warn");
         if (typeof this.setGlobalStatus === "function") {
-          this.setGlobalStatus(`3D load failed: ${detail}`, "error");
+          this.setGlobalStatus("3D failed to load. Using 2D fallback.", "warn");
         }
         return false;
       }
@@ -1263,21 +2426,81 @@ class DiceTrayController {
     return dice;
   }
 
-  resolveFaceUp(record) {
+  getBestFaceUp(record) {
     const { body, template } = record;
-    let bestValue = template.faceMap[0]?.value ?? 1;
+    if (!template?.faceMap?.length) {
+      return { face: null, dot: Number.NEGATIVE_INFINITY };
+    }
+
+    let bestFace = template.faceMap[0] || null;
     let bestDot = Number.NEGATIVE_INFINITY;
 
     template.faceMap.forEach((face) => {
       const worldNormal = new this.modules.CANNON.Vec3();
       body.quaternion.vmult(face.normal, worldNormal);
-      if (worldNormal.y > bestDot) {
-        bestDot = worldNormal.y;
-        bestValue = face.value;
+      const length = Math.hypot(worldNormal.x, worldNormal.y, worldNormal.z) || 1;
+      const dot = worldNormal.y / length;
+      if (dot > bestDot) {
+        bestDot = dot;
+        bestFace = face;
       }
     });
 
-    return bestValue;
+    return { face: bestFace, dot: bestDot };
+  }
+
+  resolveFaceUp(record) {
+    const { body, template } = record;
+
+    if (template.kind === "d4" && Array.isArray(template.cornerValues) && template.cornerValues.length) {
+      let cameraPosition = null;
+      const camera = this.renderer?.camera || null;
+      if (camera) {
+        cameraPosition = new this.modules.CANNON.Vec3(
+          Number.isFinite(camera.position.x) ? camera.position.x : 0,
+          Number.isFinite(camera.position.y) ? camera.position.y : 0,
+          Number.isFinite(camera.position.z) ? camera.position.z : 0
+        );
+      }
+
+      let bestCornerValue = template.cornerValues[0]?.value ?? 1;
+      let bestMetric = cameraPosition ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+      template.cornerValues.forEach((corner) => {
+        if (!corner?.vertex) {
+          return;
+        }
+        const localCorner = new this.modules.CANNON.Vec3(
+          corner.vertex.x,
+          corner.vertex.y,
+          corner.vertex.z
+        );
+        const worldCorner = new this.modules.CANNON.Vec3();
+        body.quaternion.vmult(localCorner, worldCorner);
+        worldCorner.x += body.position.x;
+        worldCorner.y += body.position.y;
+        worldCorner.z += body.position.z;
+
+        let metric;
+        if (cameraPosition) {
+          const dx = worldCorner.x - cameraPosition.x;
+          const dy = worldCorner.y - cameraPosition.y;
+          const dz = worldCorner.z - cameraPosition.z;
+          metric = dx * dx + dy * dy + dz * dz;
+        } else {
+          metric = worldCorner.y;
+        }
+
+        const isBetter = cameraPosition ? metric < bestMetric : metric > bestMetric;
+        if (isBetter) {
+          bestMetric = metric;
+          bestCornerValue = corner.value;
+        }
+      });
+      return bestCornerValue;
+    }
+
+    const best = this.getBestFaceUp(record);
+    return best.face?.value ?? 1;
   }
 
   resolveFromRecords(request, records) {
@@ -1286,14 +2509,14 @@ class DiceTrayController {
     let total = request.modifier;
 
     records.forEach((record) => {
-      const value = this.resolveFaceUp(record);
+      const rawValue = this.resolveFaceUp(record);
       if (record.spec.groupId) {
         const existing = grouped.get(record.spec.groupId) || {
           sign: record.spec.sign,
           tens: 0,
           ones: 0,
         };
-        const digit = value % 10;
+        const digit = rawValue % 10;
         if (record.spec.groupPart === "tens") {
           existing.tens = digit;
         } else {
@@ -1302,6 +2525,7 @@ class DiceTrayController {
         grouped.set(record.spec.groupId, existing);
         return;
       }
+      const value = rawValue;
       rolls.push({
         die: record.spec.displayDie,
         value,
@@ -1360,16 +2584,17 @@ class DiceTrayController {
     };
   }
 
-  async runFallback(request, reason = "") {
+  async runFallback(request, warning = "") {
     const result = this.rollWithRng(request);
     const labels = result.rolls.map((entry) => entry.die);
     const values = result.rolls.map((entry) => String(entry.value));
 
-    if (this.renderer) {
-      this.renderer.mark3DActive(false);
-      this.renderer.writeFallbackTokens(labels, null, true);
-    } else if (this.canvas && this.fallback) {
-      this.canvas.hidden = true;
+    this.stopIdleRenderLoop();
+    this.previewRenderer?.setIdlePreviewVisible(false);
+    this.setPreviewCanvasVisible(false);
+    this.setCanvasMode("hidden");
+    if (this.fallback) {
+      this.setCanvasMode("hidden");
       this.fallback.hidden = false;
       this.fallback.innerHTML = "";
       const tokenList = document.createElement("div");
@@ -1387,9 +2612,7 @@ class DiceTrayController {
       window.setTimeout(resolve, 520);
     });
 
-    if (this.renderer) {
-      this.renderer.writeFallbackTokens(labels, values, false);
-    } else if (this.fallback) {
+    if (this.fallback) {
       const tokens = Array.from(this.fallback.querySelectorAll(".dice-fallback-token"));
       tokens.forEach((token, index) => {
         token.classList.remove("is-rolling");
@@ -1397,25 +2620,20 @@ class DiceTrayController {
       });
     }
 
-    const fallbackStatus = reason
-      ? `${reason} ${result.notation} = ${result.total}`
-      : `2D fallback result. ${result.notation} = ${result.total}`;
-    this.commitResult(result, fallbackStatus);
+    const fallbackStatus = warning
+      ? `${warning} Rolled ${result.notation} = ${result.total}`
+      : `Rolled ${result.notation} = ${result.total}`;
+    this.commitResult(result, fallbackStatus, warning ? "warn" : "neutral");
   }
 
-  commitResult(result, statusMessage) {
+  commitResult(result, statusMessage, tone = "neutral") {
     this.history.unshift(result);
     this.history = this.history.slice(0, DICE_HISTORY_LIMIT);
     this.persistHistory();
     this.renderHistory();
-    const sourceSuffix = result.source === "physics-face-up" ? " [3D]" : " [2D fallback]";
-    this.writeStatus(
-      `${statusMessage || `Rolled ${result.notation} = ${result.total}`}${sourceSuffix}`,
-      "neutral"
-    );
+    this.writeStatus(statusMessage || `Rolled ${result.notation} = ${result.total}`, tone);
     if (typeof this.setGlobalStatus === "function") {
-      const globalSuffix = result.source === "physics-face-up" ? " (3D)" : " (2D fallback)";
-      this.setGlobalStatus(`Rolled ${result.notation} = ${result.total}${globalSuffix}.`, "ok");
+      this.setGlobalStatus(`Rolled ${result.notation} = ${result.total}.`, "ok");
     }
   }
 
@@ -1439,37 +2657,41 @@ class DiceTrayController {
       const main = document.createElement("div");
       main.className = "dice-history-main";
       const notation = document.createElement("span");
-      notation.textContent = entry.notation || "roll";
+      notation.className = "dice-history-die";
+      const singleDie =
+        Array.isArray(entry.rolls) && entry.rolls.length === 1
+          ? entry.rolls[0]?.die
+          : null;
+      notation.textContent = singleDie || entry.notation || "roll";
       const total = document.createElement("span");
       total.className = "dice-history-total";
-      total.textContent = `= ${entry.total}`;
+      total.textContent = String(entry.total);
       main.appendChild(notation);
       main.appendChild(total);
 
-      const meta = document.createElement("div");
-      meta.className = "dice-history-meta";
-      const breakdown = Array.isArray(entry.rolls)
-        ? entry.rolls
-            .map((roll) => `${roll.sign < 0 ? "-" : "+"}${roll.die}:${roll.value}`)
-            .join(" ")
-        : "";
-      const modeLabel = entry.mode === DICE_MODES.FALLBACK ? "2D fallback" : entry.mode;
-      meta.textContent = `${modeLabel} | ${breakdown}`;
-
       item.appendChild(main);
-      item.appendChild(meta);
       this.historyEl.appendChild(item);
     });
   }
 
-  async roll() {
+  async roll(forcedNotation = null) {
     if (this.rolling) {
+      if (this.settings.lowPerformance) {
+        return;
+      }
+      this.pendingAction = {
+        type: "roll",
+        notation: forcedNotation || this.settings.notation,
+      };
+      this.interruptActiveRoll();
       return;
     }
 
+    const CANCELLED_ERROR = "__ROLL_CANCELLED__";
+    const notation = this.setActiveNotation(forcedNotation || this.settings.notation, true);
     let request;
     try {
-      request = RollParser.parse(this.formula.value);
+      request = RollParser.parse(notation);
     } catch (error) {
       this.writeStatus(error.message, "error");
       if (typeof this.setGlobalStatus === "function") {
@@ -1481,24 +2703,43 @@ class DiceTrayController {
     this.settings.notation = request.notation;
     this.persistSettings();
     this.hasRolled = true;
-    this.stopIdleRenderLoop();
-    this.renderer?.setIdlePreviewVisible(false);
+    this.activeRecords = [];
+    if (this.settings.lowPerformance) {
+      this.stopIdleRenderLoop();
+      this.previewRenderer?.setIdlePreviewVisible(false);
+      this.setPreviewCanvasVisible(false);
+    } else if (this.panel?.dataset.collapsed === "false" && this.canUse3D()) {
+      this.preparePreviewCanvas();
+      this.previewRenderer?.setIdlePreviewVisible(true);
+      this.startIdleRenderLoop();
+      this.previewRenderer?.render();
+    }
     this.rolling = true;
-    this.rollButton.disabled = true;
+    this.rollCancelRequested = false;
+    this.updateControlAvailability();
     this.writeStatus("Rolling...", "neutral");
 
     try {
+      if (this.rollCancelRequested) {
+        throw new Error(CANCELLED_ERROR);
+      }
       if (!this.canUse3D()) {
-        await this.runFallback(request, "2D fallback forced by debug toggle.");
+        await this.runFallback(request);
+        this.activeRecords = [];
         return;
       }
 
       const ready = await this.ensure3DEngine();
+      if (this.rollCancelRequested) {
+        throw new Error(CANCELLED_ERROR);
+      }
       if (!ready || !this.renderer || !this.physics || !this.templates) {
-        await this.runFallback(request, "3D engine unavailable, using 2D fallback.");
+        await this.runFallback(request, "3D failed to load. Using 2D fallback.");
+        this.activeRecords = [];
         return;
       }
 
+      this.prepareOverlayCanvas();
       this.renderer.mark3DActive(true);
       this.physics.clearDynamicBodies();
       this.renderer.clearDice();
@@ -1517,6 +2758,7 @@ class DiceTrayController {
         this.renderer.addMesh(body, built.mesh);
         records.push({ body, template, spec });
       }
+      this.activeRecords = records;
 
       await new Promise((resolve) => {
         const startedAt = performance.now();
@@ -1524,14 +2766,16 @@ class DiceTrayController {
         let settledFrames = 0;
 
         const tick = (now) => {
+          if (this.rollCancelRequested) {
+            resolve();
+            return;
+          }
           const dt = Math.min(0.05, Math.max(1 / 300, (now - previous) / 1000));
           previous = now;
           this.physics.step(dt);
           this.renderer.syncAllBodies(records);
 
-          if (this.panel.dataset.collapsed !== "true") {
-            this.renderer.render();
-          }
+          this.renderer.render();
 
           if (this.physics.isSettled()) {
             settledFrames += 1;
@@ -1541,29 +2785,51 @@ class DiceTrayController {
 
           const timedOut = now - startedAt > DICE_SETTLE_TIMEOUT_MS;
           if (settledFrames >= DICE_SETTLE_FRAMES || timedOut) {
-            if (timedOut) {
-              this.writeStatus("Roll timeout reached; resolved with current orientation.", "warn");
-            }
             resolve();
             return;
           }
           this.animationFrame = requestAnimationFrame(tick);
         };
 
+        this.rollCompletionResolver = resolve;
         this.animationFrame = requestAnimationFrame(tick);
       });
+      this.rollCompletionResolver = null;
+      if (this.rollCancelRequested) {
+        throw new Error(CANCELLED_ERROR);
+      }
+
+      this.renderer.syncAllBodies(records);
+      this.renderer.render();
+      this.activeRecords = records;
 
       const result = this.resolveFromRecords(request, records);
       this.commitResult(result, `Rolled ${result.notation} = ${result.total}`);
-    } catch (_error) {
-      await this.runFallback(request, "3D simulation error, using 2D fallback.");
+    } catch (error) {
+      const isCancelled = error instanceof Error && error.message === CANCELLED_ERROR;
+      if (!isCancelled) {
+        await this.runFallback(request);
+        this.activeRecords = [];
+      }
     } finally {
       this.rolling = false;
-      this.rollButton.disabled = false;
+      this.rollCompletionResolver = null;
+      this.rollCancelRequested = false;
+      this.updateControlAvailability();
       if (this.animationFrame) {
         cancelAnimationFrame(this.animationFrame);
         this.animationFrame = 0;
       }
+      const hasPendingAction = Boolean(this.pendingAction);
+      if (
+        !hasPendingAction &&
+        this.panel?.dataset.collapsed === "false" &&
+        this.canUse3D() &&
+        this.renderer
+      ) {
+        this.updateIdlePreviewFromNotation(this.settings.notation);
+      }
+      this.flushPendingAction();
     }
   }
 }

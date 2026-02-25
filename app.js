@@ -6,7 +6,7 @@ const POWER_TRACKER_LENGTH = 12;
 const KNOWN_POWERS_MAX = 99;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
-const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260225n-lazy-split";
+const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260225ap-d4-scale-20";
 
 const FIELD_IDS = [
   "name",
@@ -365,6 +365,7 @@ const state = {
   diceTray: null,
   diceLoadPromise: null,
   diceInitPromise: null,
+  hpMaxHintVisible: false,
 };
 
 const els = {
@@ -386,6 +387,12 @@ const els = {
   weaponCustomDieWrap: document.getElementById("weapon-custom-die-wrap"),
   armorCustomNameWrap: document.getElementById("armor-custom-name-wrap"),
   armorCustomDieWrap: document.getElementById("armor-custom-die-wrap"),
+  hpCurrentCard: document.getElementById("hp-current-card"),
+  hpCurrentCounter: document.getElementById("hp-current-counter"),
+  hpCurrentDisplay: document.getElementById("hp-current-display"),
+  hpCurrentValue: document.getElementById("hp-current-value"),
+  hpCurrentSkull: document.getElementById("hp-current-skull"),
+  hpCurrentHint: document.getElementById("hp-current-hint"),
   powersCastCard: document.getElementById("powers-cast-card"),
   powersKnownCounter: document.getElementById("powers-known-counter"),
   powersCastCounter: document.getElementById("powers-cast-counter"),
@@ -393,16 +400,23 @@ const els = {
   knownPowersList: document.getElementById("known-powers-list"),
   addKnownPower: document.getElementById("add-known-power"),
   dicePanel: document.getElementById("dice-panel"),
+  dicePanelDesktopSlot: document.getElementById("dice-panel-desktop-slot"),
   diceToggle: document.getElementById("dice-toggle"),
   dicePanelBody: document.getElementById("dice-panel-body"),
+  dicePreviewHost: document.getElementById("dice-preview-host"),
+  dicePreviewCanvas: document.getElementById("dice-preview-canvas"),
   diceCanvas: document.getElementById("dice-canvas"),
+  diceOverlay: document.getElementById("dice-viewport-overlay"),
   diceFallback: document.getElementById("dice-fallback"),
-  diceFormula: document.getElementById("dice-formula"),
   diceRollBtn: document.getElementById("dice-roll-btn"),
+  diceClearBtn: document.getElementById("dice-clear-btn"),
   diceHistory: document.getElementById("dice-history"),
+  dicePurgeBtn: document.getElementById("dice-purge-btn"),
   diceAdvanced: document.getElementById("dice-advanced"),
   diceForce2d: document.getElementById("dice-force-2d"),
+  diceLowPerformance: document.getElementById("dice-low-performance"),
   diceStatus: document.getElementById("dice-status"),
+  footerYear: document.getElementById("footer-year"),
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, document.getElementById(id)])),
 };
 
@@ -420,16 +434,31 @@ function diceControllerParams() {
     panel: els.dicePanel,
     toggle: els.diceToggle,
     body: els.dicePanelBody,
-    formula: els.diceFormula,
+    previewHost: els.dicePreviewHost,
+    previewCanvas: els.dicePreviewCanvas,
     rollButton: els.diceRollBtn,
+    clearButton: els.diceClearBtn,
     history: els.diceHistory,
+    purgeButton: els.dicePurgeBtn,
     advanced: els.diceAdvanced,
     force2d: els.diceForce2d,
+    lowPerformance: els.diceLowPerformance,
     canvas: els.diceCanvas,
+    overlay: els.diceOverlay,
     fallback: els.diceFallback,
     status: els.diceStatus,
     root: els.dicePanel,
   };
+}
+
+function placeDicePanelByViewport() {
+  if (!els.dicePanel || !els.dicePanelDesktopSlot) {
+    return;
+  }
+  const targetSlot = els.dicePanelDesktopSlot;
+  if (els.dicePanel.parentElement !== targetSlot) {
+    targetSlot.appendChild(els.dicePanel);
+  }
 }
 
 function getDiceFactory() {
@@ -522,7 +551,7 @@ async function ensureDiceTrayInitialized() {
   }
 
   state.diceInitPromise = (async () => {
-    setInlineDiceStatus("Loading 3D dice tray...", "neutral");
+    setInlineDiceStatus("Loading dice tray...", "neutral");
     if (els.diceRollBtn) {
       els.diceRollBtn.disabled = true;
     }
@@ -834,9 +863,9 @@ function trackerDescriptor(target) {
       return {
         label: "cast attempts",
         fieldId: "powersCastToday",
-        marksFieldId: "powersCastMarks",
-        max: POWER_TRACKER_LENGTH,
-        showMax: true,
+        marksFieldId: null,
+        max: null,
+        showMax: false,
         card: els.powersCastCard,
         display: els.powersCastDisplay,
         counter: els.powersCastCounter,
@@ -896,9 +925,12 @@ function getTrackerCount(target) {
   if (!tracker) {
     return 0;
   }
-  const max = typeof tracker.max === "number" ? tracker.max : POWER_TRACKER_LENGTH;
   const source = els.fields[tracker.fieldId];
-  return clamp(Math.trunc(toSafeNumber(source?.value, 0)), 0, max);
+  const value = Math.max(0, Math.trunc(toSafeNumber(source?.value, 0)));
+  if (typeof tracker.max === "number") {
+    return clamp(value, 0, tracker.max);
+  }
+  return value;
 }
 
 function setPowerTrackerValue(target, count) {
@@ -906,8 +938,9 @@ function setPowerTrackerValue(target, count) {
   if (!tracker) {
     return 0;
   }
-  const max = typeof tracker.max === "number" ? tracker.max : POWER_TRACKER_LENGTH;
-  const safe = clamp(Math.trunc(toSafeNumber(count, 0)), 0, max);
+  const raw = Math.max(0, Math.trunc(toSafeNumber(count, 0)));
+  const safe = typeof tracker.max === "number" ? clamp(raw, 0, tracker.max) : raw;
+  const maxLabel = typeof tracker.max === "number" ? tracker.max : null;
 
   if (els.fields[tracker.fieldId]) {
     els.fields[tracker.fieldId].value = String(safe);
@@ -920,10 +953,92 @@ function setPowerTrackerValue(target, count) {
     tracker.display.textContent = String(safe);
   }
   if (tracker.counter) {
-    tracker.counter.textContent = tracker.showMax ? `${safe} / ${max}` : String(safe);
+    tracker.counter.textContent = tracker.showMax && maxLabel !== null ? `${safe} / ${maxLabel}` : String(safe);
   }
   applyPowerTrackerSkin(target, safe);
   return safe;
+}
+
+function syncCurrentHpTracker() {
+  const hpMax = clamp(Math.trunc(toSafeNumber(els.fields.hpMax?.value, DEFAULTS.hpMax)), 1, 30);
+  const hpCurrent = clamp(
+    Math.trunc(toSafeNumber(els.fields.hpCurrent?.value, DEFAULTS.hpCurrent)),
+    0,
+    hpMax
+  );
+  const healthRatio = hpMax > 0 ? hpCurrent / hpMax : 1;
+  const isBloodied = healthRatio < 0.2;
+  const isBroken = hpCurrent === 0;
+
+  if (els.fields.hpMax) {
+    els.fields.hpMax.value = String(hpMax);
+  }
+  if (els.fields.hpCurrent) {
+    els.fields.hpCurrent.value = String(hpCurrent);
+  }
+  if (els.hpCurrentValue) {
+    els.hpCurrentValue.textContent = String(hpCurrent);
+  } else if (els.hpCurrentDisplay) {
+    els.hpCurrentDisplay.textContent = String(hpCurrent);
+  }
+  if (els.hpCurrentCounter) {
+    els.hpCurrentCounter.textContent = `${hpCurrent} / ${hpMax}`;
+  }
+  if (els.hpCurrentCard) {
+    els.hpCurrentCard.classList.toggle("is-bloodied", isBloodied);
+  }
+  if (els.hpCurrentDisplay) {
+    els.hpCurrentDisplay.classList.toggle("is-bloodied", isBloodied);
+  }
+  if (els.hpCurrentSkull) {
+    els.hpCurrentSkull.hidden = !isBroken;
+  }
+  if (els.hpCurrentHint) {
+    if (isBroken) {
+      els.hpCurrentHint.hidden = false;
+      els.hpCurrentHint.textContent = "BROKEN";
+      els.hpCurrentHint.classList.add("is-broken");
+      state.hpMaxHintVisible = false;
+    } else if (state.hpMaxHintVisible) {
+      els.hpCurrentHint.hidden = false;
+      els.hpCurrentHint.textContent = "Current HP cannot exceed Max HP.";
+      els.hpCurrentHint.classList.remove("is-broken");
+    } else {
+      els.hpCurrentHint.hidden = true;
+      els.hpCurrentHint.classList.remove("is-broken");
+    }
+  }
+
+  return { hpCurrent, hpMax };
+}
+
+function adjustCurrentHp(delta) {
+  const { hpCurrent, hpMax } = syncCurrentHpTracker();
+  const next = clamp(hpCurrent + delta, 0, hpMax);
+  if (next === hpCurrent) {
+    if (delta > 0 && hpCurrent >= hpMax) {
+      state.hpMaxHintVisible = true;
+      syncCurrentHpTracker();
+      setStatus("Hit points are already at max.", "warn");
+      return;
+    }
+    state.hpMaxHintVisible = false;
+    syncCurrentHpTracker();
+    setStatus("Hit points are already at 0.", "warn");
+    return;
+  }
+
+  state.hpMaxHintVisible = false;
+  if (els.fields.hpCurrent) {
+    els.fields.hpCurrent.value = String(next);
+  }
+  syncCurrentHpTracker();
+  if (delta > 0) {
+    retriggerAnimation(els.hpCurrentDisplay, "is-rising");
+  } else {
+    retriggerAnimation(els.hpCurrentCard, "is-shaking");
+  }
+  setStatus(`Current HP: ${next}/${hpMax}.`, "ok");
 }
 
 function trackerCountFromCharacter(character, target) {
@@ -931,13 +1046,24 @@ function trackerCountFromCharacter(character, target) {
   if (!tracker) {
     return 0;
   }
-  const max = typeof tracker.max === "number" ? tracker.max : POWER_TRACKER_LENGTH;
 
   if (target === "known") {
     const fromList = parseKnownPowersText(character?.powersKnown).length;
     if (fromList > 0) {
-      return clamp(fromList, 0, max);
+      return typeof tracker.max === "number" ? clamp(fromList, 0, tracker.max) : Math.max(0, fromList);
     }
+  }
+
+  if (target === "cast") {
+    const hasStoredValue = String(character?.powersCastToday ?? "").trim() !== "";
+    if (hasStoredValue) {
+      return Math.max(0, Math.trunc(toSafeNumber(character.powersCastToday, 0)));
+    }
+    const hasStoredMarks = String(character?.powersCastMarks ?? "").trim() !== "";
+    if (hasStoredMarks) {
+      return countMarked(normalizePowerMarks(character.powersCastMarks));
+    }
+    return 0;
   }
 
   const hasStoredMarks = tracker.marksFieldId
@@ -946,7 +1072,8 @@ function trackerCountFromCharacter(character, target) {
   if (tracker.marksFieldId && hasStoredMarks) {
     return countMarked(normalizePowerMarks(character[tracker.marksFieldId]));
   }
-  return clamp(Math.trunc(toSafeNumber(character[tracker.fieldId], 0)), 0, max);
+  const value = Math.max(0, Math.trunc(toSafeNumber(character[tracker.fieldId], 0)));
+  return typeof tracker.max === "number" ? clamp(value, 0, tracker.max) : value;
 }
 
 function syncPowerTrackersFromCharacter(character) {
@@ -965,7 +1092,8 @@ function adjustPowerTracker(target, delta) {
     return;
   }
   const current = getTrackerCount(target);
-  const next = clamp(current + delta, 0, POWER_TRACKER_LENGTH);
+  const boundedNext = Math.max(0, current + delta);
+  const next = typeof tracker.max === "number" ? clamp(boundedNext, 0, tracker.max) : boundedNext;
   setPowerTrackerValue(target, next);
 
   if (delta > 0 && next > current) {
@@ -986,7 +1114,7 @@ function adjustPowerTracker(target, delta) {
   }
 
   setStatus(
-    `${target === "known" ? "Known powers" : "Cast attempts"}: ${next}/${POWER_TRACKER_LENGTH}.`,
+    target === "known" ? `Known powers: ${next}/${KNOWN_POWERS_MAX}.` : `Cast attempts: ${next}.`,
     "ok"
   );
 }
@@ -1132,25 +1260,21 @@ function normalizeCharacter(candidate) {
   merged.weaponCustomDie = clampCustomDie(merged.weaponCustomDie, DEFAULTS.weaponCustomDie);
   merged.armorCustomDie = clampCustomDie(merged.armorCustomDie, DEFAULTS.armorCustomDie);
   merged.powersKnownCount = clamp(Math.trunc(merged.powersKnownCount), 0, KNOWN_POWERS_MAX);
-  merged.powersCastToday = clamp(Math.trunc(merged.powersCastToday), 0, POWER_TRACKER_LENGTH);
+  merged.powersCastToday = Math.max(0, Math.trunc(merged.powersCastToday));
   merged.sacredScrolls = clamp(Math.trunc(merged.sacredScrolls), 0, 99);
   merged.uncleanScrolls = clamp(Math.trunc(merged.uncleanScrolls), 0, 99);
   merged.powersKnownMarks = normalizePowerMarks(merged.powersKnownMarks);
   merged.powersCastMarks = normalizePowerMarks(merged.powersCastMarks);
-  if (!candidate || !candidate.powersCastMarks) {
-    merged.powersCastMarks = `${"1".repeat(
-      clamp(merged.powersCastToday, 0, POWER_TRACKER_LENGTH)
-    )}${"0".repeat(
-      POWER_TRACKER_LENGTH - clamp(merged.powersCastToday, 0, POWER_TRACKER_LENGTH)
-    )}`;
-  }
+  const hasStoredCastCount = String(candidate?.powersCastToday ?? "").trim() !== "";
   const knownFromList = parseKnownPowersText(merged.powersKnown).length;
   if (knownFromList > 0) {
     merged.powersKnownCount = clamp(knownFromList, 0, KNOWN_POWERS_MAX);
   } else if (candidate && String(candidate.powersKnownMarks ?? "").trim() !== "") {
     merged.powersKnownCount = clamp(countMarked(merged.powersKnownMarks), 0, KNOWN_POWERS_MAX);
   }
-  merged.powersCastToday = countMarked(merged.powersCastMarks);
+  if (!hasStoredCastCount && String(candidate?.powersCastMarks ?? "").trim() !== "") {
+    merged.powersCastToday = countMarked(merged.powersCastMarks);
+  }
   normalizeLegacyWeapon(merged);
   normalizeLegacyArmor(merged);
   if (!merged.className) {
@@ -1232,6 +1356,8 @@ function applyToForm(character) {
     field.value = value;
   });
   syncCustomEquipmentFields();
+  state.hpMaxHintVisible = false;
+  syncCurrentHpTracker();
   syncPowerTrackersFromCharacter(character);
   updateSheetTitle(character);
 }
@@ -1318,6 +1444,25 @@ function renderCharacterList() {
 function setStatus(message, tone = "neutral") {
   els.status.textContent = message;
   els.status.dataset.tone = tone;
+}
+
+function renderFooterYear() {
+  if (!els.footerYear) {
+    return;
+  }
+  els.footerYear.textContent = String(new Date().getFullYear());
+}
+
+function renderLucideIcons() {
+  const lucideApi = window.lucide;
+  if (!lucideApi || typeof lucideApi.createIcons !== "function") {
+    return;
+  }
+  lucideApi.createIcons({
+    attrs: {
+      "stroke-width": "2",
+    },
+  });
 }
 
 function createNewCharacter() {
@@ -1553,6 +1698,7 @@ function clampFieldValue(fieldId, min, max) {
 }
 
 function bindEvents() {
+  placeDicePanelByViewport();
   els.form.addEventListener("input", (event) => {
     if (event.target.id === "name") {
       updateSheetTitle({ name: event.target.value });
@@ -1567,16 +1713,12 @@ function bindEvents() {
     }
 
     if (event.target.id === "hpMax") {
-      const hpMax = Math.max(1, toSafeNumber(els.fields.hpMax.value, 1));
-      els.fields.hpMax.value = hpMax;
-      if (toSafeNumber(els.fields.hpCurrent.value, 0) > hpMax) {
-        els.fields.hpCurrent.value = hpMax;
-      }
+      state.hpMaxHintVisible = false;
+      syncCurrentHpTracker();
     }
     if (event.target.id === "hpCurrent") {
-      const hpMax = Math.max(1, toSafeNumber(els.fields.hpMax.value, 1));
-      const hpCurrent = clamp(toSafeNumber(els.fields.hpCurrent.value, 0), 0, hpMax);
-      els.fields.hpCurrent.value = hpCurrent;
+      state.hpMaxHintVisible = false;
+      syncCurrentHpTracker();
     }
     if (event.target.id === "omens") {
       clampFieldValue("omens", 0, 9);
@@ -1592,7 +1734,8 @@ function bindEvents() {
       syncPowerTrackersFromUI();
     }
     if (event.target.id === "powersCastToday") {
-      clampFieldValue("powersCastToday", 0, POWER_TRACKER_LENGTH);
+      const castAttempts = Math.max(0, Math.trunc(toSafeNumber(els.fields.powersCastToday.value, 0)));
+      els.fields.powersCastToday.value = String(castAttempts);
       syncPowerTrackersFromUI();
     }
     if (event.target.id === "sacredScrolls") {
@@ -1628,6 +1771,16 @@ function bindEvents() {
   els.form.addEventListener("click", (event) => {
     const origin = event.target;
     if (!(origin instanceof Element)) {
+      return;
+    }
+    const hpButton = origin.closest("[data-hp-action]");
+    if (hpButton instanceof HTMLElement) {
+      const action = hpButton.dataset.hpAction;
+      if (!action) {
+        return;
+      }
+      adjustCurrentHp(action === "increment" ? 1 : -1);
+      scheduleAutoSave();
       return;
     }
     const button = origin.closest("[data-power-action][data-power-target]");
@@ -1700,6 +1853,7 @@ function bindEvents() {
     }
   });
   bindDiceLazyLoading();
+  window.addEventListener("resize", placeDicePanelByViewport);
 
   window.addEventListener("beforeunload", () => {
     if (state.diceTray) {
@@ -1715,10 +1869,12 @@ function bindEvents() {
 function init() {
   ensureThemeToggleButton();
   applyTheme(resolveTheme(), false);
+  renderFooterYear();
+  renderLucideIcons();
   loadState();
   renderCharacterList();
   applyToForm(activeCharacter());
-  setInlineDiceStatus("Dice tray idle. Open to load 3D engine.", "neutral");
+  setInlineDiceStatus("Dice tray ready.", "neutral");
   bindEvents();
   setStatus("Ready. Autosave is local and randomize uses classless core rules.", "ok");
 }

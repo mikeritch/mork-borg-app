@@ -157,6 +157,71 @@ body::before {
   gap: 1.2rem;
 }
 
+.site-footer {
+  width: min(1220px, 94vw);
+  margin: 0 auto 2.1rem;
+}
+
+.site-footer-wrap {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.footer-card {
+  border: 1px solid color-mix(in srgb, var(--line) 76%, var(--gold) 24%);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--gold) 13%, transparent 87%), transparent 48%),
+    color-mix(in srgb, var(--panel-bg) 92%, transparent 8%);
+  box-shadow: var(--shadow);
+  padding: 0.82rem 0.9rem;
+}
+
+.footer-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.24;
+}
+
+.footer-license p {
+  font-size: 0.95rem;
+}
+
+.footer-license-logo {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  margin: 0 auto 0.7rem;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.22));
+}
+
+html[data-theme="dark"] .footer-license-logo {
+  filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.32));
+}
+
+.footer-meta {
+  text-align: center;
+}
+
+.footer-meta p {
+  font: 700 0.86rem/1.2 "Cinzel", serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kicker);
+}
+
+.footer-meta a {
+  color: var(--accent-soft);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-soft) 70%, transparent 30%);
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.footer-meta a:hover {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 72%, transparent 28%);
+}
+
 .vault-panel,
 .sheet-panel {
   background: var(--panel-bg);
@@ -164,7 +229,6 @@ body::before {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   position: relative;
-  overflow: hidden;
   animation: rise 360ms ease-out;
 }
 
@@ -184,6 +248,11 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow: visible;
+}
+
+.sheet-panel {
+  overflow: hidden;
 }
 
 .brand {
@@ -225,6 +294,22 @@ body::before {
   border-radius: 12px;
   padding: 0.85rem;
   background: var(--vault-bg);
+}
+
+.dice-panel-slot {
+  min-width: 0;
+}
+
+.dice-panel-slot-desktop {
+  position: sticky;
+  top: 0.85rem;
+  width: 100%;
+  align-self: stretch;
+  z-index: 3;
+}
+
+.dice-panel-slot-mobile {
+  display: none;
 }
 
 .vault-list-wrap h2 {
@@ -304,10 +389,46 @@ body::before {
   font-weight: 700;
 }
 
-#sheet-title {
+.heading-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.heading-lucide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--gold);
+  stroke-width: 2.1;
+  flex: 0 0 auto;
+}
+
+.sheet-title-row {
   margin: 0.1rem 0 0;
+}
+
+#sheet-title {
+  display: inline-block;
   font-family: "Cinzel", serif;
   font-size: clamp(1.4rem, 2.2vw, 2rem);
+  line-height: 1.1;
+}
+
+.label-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stat-lucide {
+  width: 0.92rem;
+  height: 0.92rem;
+  color: color-mix(in srgb, var(--gold) 70%, var(--ink) 30%);
+  stroke-width: 2;
+  flex: 0 0 auto;
 }
 
 .header-actions {
@@ -397,7 +518,8 @@ html[data-theme="dark"] .theme-toggle {
 .dice-panel {
   border: 1px solid color-mix(in srgb, var(--line) 76%, var(--gold) 24%);
   border-radius: 12px;
-  margin: 0 0 0.9rem;
+  margin: 0;
+  width: 100%;
   background: var(--dice-panel-bg);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 62%, transparent 38%);
   overflow: clip;
@@ -449,30 +571,32 @@ html[data-theme="dark"] .theme-toggle {
   display: none !important;
 }
 
+.dice-preview-host {
+  position: relative;
+  height: clamp(4.2rem, 13vh, 6.1rem);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--gold) 28%);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--gold) 24%, transparent 76%), transparent 56%),
+    color-mix(in srgb, var(--section-bg) 70%, transparent 30%);
+  overflow: hidden;
+}
+
 .dice-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.65rem;
-  align-items: end;
-}
-
-.dice-formula-label {
-  font-family: "Cinzel", serif;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.76rem;
-}
-
-.dice-formula-label input {
-  margin-top: 0.25rem;
-  text-transform: none;
-  font: 700 1rem/1.2 "Cormorant Garamond", serif;
-  letter-spacing: 0.02em;
+  display: flex;
+  gap: 0.45rem;
+  align-items: stretch;
 }
 
 .dice-roll-btn {
-  min-height: 2.4rem;
-  min-width: 6.6rem;
+  min-height: 2.55rem;
+  flex: 1 1 auto;
+}
+
+.dice-clear-btn {
+  min-height: 2.55rem;
+  min-width: 5.35rem;
+  flex: 0 0 auto;
 }
 
 .dice-chip-row {
@@ -504,7 +628,8 @@ html[data-theme="dark"] .theme-toggle {
   transform: translateY(0);
 }
 
-.dice-chip.is-used {
+.dice-chip.is-active,
+.dice-chip[aria-pressed="true"] {
   color: #fff4f1;
   border-color: color-mix(in srgb, var(--accent) 64%, var(--gold) 36%);
   background: var(--dice-chip-active);
@@ -537,16 +662,20 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .dice-switch-label {
-  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.42rem;
   justify-content: flex-start;
   font: 700 0.8rem/1.1 "Cinzel", serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .dice-switch-label input {
   width: auto;
-  margin: 0.05rem 0.4rem 0 0;
+  margin: 0;
   accent-color: var(--accent);
 }
 
@@ -555,8 +684,9 @@ html[data-theme="dark"] .theme-toggle {
   border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
   border-radius: 8px;
   background: color-mix(in srgb, var(--status-bg) 86%, transparent 14%);
-  padding: 0.4rem 0.58rem;
-  font-size: 0.92rem;
+  padding: 0.62rem 0.72rem;
+  font: 700 1.05rem/1.2 "Cinzel", serif;
+  letter-spacing: 0.025em;
   color: var(--field-help);
 }
 
@@ -568,19 +698,27 @@ html[data-theme="dark"] .theme-toggle {
   border-color: color-mix(in srgb, #904d1d 56%, var(--line) 44%);
 }
 
-.dice-stage-shell {
-  position: relative;
-  min-height: 340px;
-  border: 1px solid color-mix(in srgb, var(--line) 76%, var(--gold) 24%);
-  border-radius: 11px;
-  background: var(--dice-shell-bg);
-  overflow: hidden;
+#dice-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100vh;
 }
 
-#dice-canvas {
+#dice-canvas.is-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#dice-preview-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: 340px;
+  height: 100%;
 }
 
 .dice-fallback {
@@ -588,7 +726,16 @@ html[data-theme="dark"] .theme-toggle {
   inset: 0;
   display: grid;
   place-content: center;
-  padding: 1rem;
+  padding: 0.45rem;
+  background: color-mix(in srgb, var(--section-bg) 74%, transparent 26%);
+}
+
+.dice-viewport-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 28;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .dice-fallback-list {
@@ -619,6 +766,8 @@ html[data-theme="dark"] .theme-toggle {
   border-radius: 9px;
   padding: 0.55rem 0.58rem;
   background: color-mix(in srgb, var(--section-bg) 77%, transparent 23%);
+  display: grid;
+  gap: 0.45rem;
 }
 
 .dice-history-wrap h4 {
@@ -640,26 +789,38 @@ html[data-theme="dark"] .theme-toggle {
   border: 1px solid color-mix(in srgb, var(--line) 74%, transparent 26%);
   border-radius: 8px;
   background: color-mix(in srgb, var(--dice-surface) 65%, transparent 35%);
-  padding: 0.37rem 0.45rem;
-  display: grid;
-  gap: 0.14rem;
+  padding: 0.45rem 0.55rem;
 }
 
 .dice-history-main {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.45rem;
-  font-size: 0.92rem;
+  gap: 0.6rem;
+  font: 700 1rem/1.1 "Cinzel", serif;
+  letter-spacing: 0.03em;
+}
+
+.dice-history-die {
+  text-transform: uppercase;
 }
 
 .dice-history-total {
-  font: 700 1rem/1 "Cinzel", serif;
+  font: 700 1.1rem/1 "Cinzel", serif;
+  color: color-mix(in srgb, var(--gold) 75%, var(--text) 25%);
 }
 
-.dice-history-meta {
-  color: var(--field-help);
-  font-size: 0.83rem;
+.dice-purge-btn {
+  width: 100%;
+  min-height: 2.35rem;
+  transition: transform 120ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.dice-purge-btn:active,
+.dice-purge-btn.is-pressed {
+  transform: translateY(1px);
+  filter: brightness(0.98) saturate(1.02);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 66%, transparent 34%);
 }
 
 @keyframes dice-fallback-bounce {
@@ -861,6 +1022,30 @@ html[data-theme="dark"] .theme-toggle {
   text-shadow: var(--tracker-value-shadow);
 }
 
+.hp-tracker-card {
+  border-color: color-mix(in srgb, var(--line) 72%, var(--gold) 28%);
+  background: color-mix(in srgb, var(--power-card-bg) 82%, var(--section-bg) 18%);
+}
+
+.hp-tracker-value {
+  font-size: 2.2rem;
+  gap: 0.35rem;
+}
+
+.hp-current-skull {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6em;
+  line-height: 1;
+  color: #ffd7d8;
+  text-shadow: 0 0 8px rgba(127, 27, 34, 0.45);
+}
+
+.hp-current-skull[hidden] {
+  display: none !important;
+}
+
 .tracker-value.is-bloodied {
   color: #ffecec;
   border-color: #7f1b22;
@@ -887,6 +1072,17 @@ html[data-theme="dark"] .theme-toggle {
   color: var(--field-help);
   font-size: 0.9rem;
   line-height: 1.1;
+}
+
+.tracker-hint.is-broken {
+  color: #8b1e24;
+  font: 700 0.92rem/1.1 "Cinzel", serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+html[data-theme="dark"] .tracker-hint.is-broken {
+  color: #ffd5d6;
 }
 
 .known-powers-block {
@@ -1212,19 +1408,28 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .site-footer {
+    margin-bottom: 1.3rem;
+  }
+
   .sheet-panel,
   .vault-panel {
     padding: 1rem;
   }
+
+  .dice-panel-slot-desktop {
+    display: block;
+    position: static;
+  }
+
+  .dice-panel-slot-mobile {
+    display: none;
+  }
 }
 
 @media (max-width: 700px) {
-  .dice-controls {
-    grid-template-columns: 1fr;
-  }
-
-  .dice-roll-btn {
-    width: 100%;
+  .dice-preview-host {
+    height: clamp(6.4rem, 18vh, 8.4rem);
   }
 
   .dice-advanced-grid {
@@ -1232,7 +1437,8 @@ textarea:focus {
   }
 
   #dice-canvas {
-    height: 290px;
+    width: 100vw;
+    height: 100vh;
   }
 
   .two-col {
