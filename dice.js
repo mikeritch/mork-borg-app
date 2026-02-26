@@ -23,8 +23,8 @@ const DICE_MODES = Object.freeze({
   FALLBACK: "2d-fallback",
 });
 const DICE_MODULE_URLS = Object.freeze({
-  three: "assets/vendor/three-0.161.0.module.js",
-  cannon: "assets/vendor/cannon-es-0.20.0.module.js",
+  three: "./assets/vendor/three-0.161.0.module.js",
+  cannon: "./assets/vendor/cannon-es-0.20.0.module.js",
 });
 
 function readJsonStorage(key, fallback) {
