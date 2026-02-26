@@ -39,19 +39,19 @@ LIBRARIES: List[LibrarySpec] = [
     LibrarySpec(
         label="three.js",
         package="three",
-        pattern="assets/vendor/three-*.module.js",
+        pattern="public/assets/vendor/three-*.module.js",
         version_regex=r"three-(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\.module\.js",
     ),
     LibrarySpec(
         label="cannon-es",
         package="cannon-es",
-        pattern="assets/vendor/cannon-es-*.module.js",
+        pattern="public/assets/vendor/cannon-es-*.module.js",
         version_regex=r"cannon-es-(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\.module\.js",
     ),
     LibrarySpec(
         label="lucide",
         package="lucide",
-        pattern="assets/vendor/lucide-*.min.js",
+        pattern="public/assets/vendor/lucide-*.min.js",
         version_regex=r"lucide-(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\.min\.js",
     ),
 ]

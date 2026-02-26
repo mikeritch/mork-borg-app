@@ -18,8 +18,8 @@ Options:
   -h, --help                 Show this help
 
 Examples:
-  scripts/prepare-responsive-image.sh --input assets/logos/CRBanner.png
-  scripts/prepare-responsive-image.sh --input assets/logos/CRBanner.png --mobile 800 --desktop 2000 --quality 85
+  scripts/prepare-responsive-image.sh --input public/assets/logos/CRBanner.png
+  scripts/prepare-responsive-image.sh --input public/assets/logos/CRBanner.png --mobile 800 --desktop 2000 --quality 85
 EOF
 }
 

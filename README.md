@@ -1,16 +1,16 @@
 # MORK BORG Character Reliquary
 
 <p align="center">
-  <img src="assets/logos/CRBanner.webp" alt="Character Reliquary logo" width="560" />
+  <img src="public/assets/logos/CRBanner.webp" alt="Character Reliquary logo" width="560" />
 </p>
 
 A lightweight web app for generating, editing, and storing MORK BORG character sheets.
 
 ## Run
 
-1. Open `index.html` directly in your browser.
+1. Open `public/index.html` directly in your browser.
 2. Optional local server:
-   - `python3 -m http.server` (from this directory)
+   - `python3 -m http.server --directory public`
    - Open `http://localhost:8000`
 
 ## Responsive Images
@@ -18,7 +18,7 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
 Use the helper script to generate mobile and desktop variants from one source image:
 
 ```bash
-scripts/prepare-responsive-image.sh --input assets/logos/CRBanner.png
+scripts/prepare-responsive-image.sh --input public/assets/logos/CRBanner.png
 ```
 
 Defaults:
