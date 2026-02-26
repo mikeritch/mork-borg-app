@@ -37,3 +37,9 @@ pnpm-debug.log*
 # IDE/editor
 .vscode/
 .idea/
+
+# Notes
+/notes/
+
+# Notes
+/notes/
