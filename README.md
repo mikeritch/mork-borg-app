@@ -13,6 +13,20 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
    - `python3 -m http.server --directory public`
    - Open `http://localhost:8000`
 
+## Deploy
+
+- Cloudflare Pages:
+  - Framework preset: `None` (or `Static HTML`)
+  - Build command: leave empty (or `exit 0`)
+  - Build output directory: `public`
+- Cloudflare Workers (`npx wrangler deploy`):
+  - `wrangler.jsonc` is configured to serve static assets from `public`
+  - Run from repo root: `npx wrangler deploy`
+- GitHub Pages (GitHub Actions):
+  - Workflow: `.github/workflows/deploy-github-pages.yml`
+  - Repository setting: **Settings -> Pages -> Build and deployment -> Source = GitHub Actions**
+  - Deploy trigger: push to `main` (or run workflow manually)
+
 ## Responsive Images
 
 Use the helper script to generate mobile and desktop variants from one source image:
