@@ -13,6 +13,25 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
    - `python3 -m http.server` (from this directory)
    - Open `http://localhost:8000`
 
+## Responsive Images
+
+Use the helper script to generate mobile and desktop variants from one source image:
+
+```bash
+scripts/prepare-responsive-image.sh --input assets/logos/CRBanner.png
+```
+
+Defaults:
+
+- mobile max size: `900`
+- desktop max size: `1800`
+- output dir: same as source
+- output format: `webp`
+- quality: `82` (`--quality` to override)
+- requires `cwebp` (libwebp)
+
+The script prints a ready-to-paste `<picture>` snippet after generation.
+
 ## Features
 
 - Gothic-themed responsive UI (desktop + mobile).
