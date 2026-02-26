@@ -32,6 +32,20 @@ Defaults:
 
 The script prints a ready-to-paste `<picture>` snippet after generation.
 
+## Vendor Update Monitor
+
+A scheduled GitHub Action checks vendored libraries against npm latest versions:
+
+- workflow: `.github/workflows/vendor-update-check.yml`
+- schedule: weekly (Mondays, 14:00 UTC)
+- manual run: Actions tab -> **Vendor Update Check** -> **Run workflow**
+
+If updates or lookup errors are detected, the workflow creates or updates one GitHub issue:
+
+- `Vendor library updates available`
+
+When no updates/errors remain, the workflow closes that issue automatically.
+
 ## Features
 
 - Gothic-themed responsive UI (desktop + mobile).

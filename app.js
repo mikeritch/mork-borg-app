@@ -6,7 +6,7 @@ const POWER_TRACKER_LENGTH = 12;
 const KNOWN_POWERS_MAX = 99;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
-const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260225-cache-iter-1";
+const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules";
 
 const FIELD_IDS = [
   "name",

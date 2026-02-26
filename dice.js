@@ -23,8 +23,8 @@ const DICE_MODES = Object.freeze({
   FALLBACK: "2d-fallback",
 });
 const DICE_MODULE_URLS = Object.freeze({
-  three: "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
-  cannon: "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js",
+  three: "assets/vendor/three-0.161.0.module.js",
+  cannon: "assets/vendor/cannon-es-0.20.0.module.js",
 });
 
 function readJsonStorage(key, fallback) {
@@ -2303,16 +2303,8 @@ class DiceTrayController {
         };
 
         const [threeModuleRaw, cannonModuleRaw] = await Promise.all([
-          importFirst([
-            DICE_MODULE_URLS.three,
-            "https://unpkg.com/three@0.161.0/build/three.module.js",
-            "https://esm.sh/three@0.161.0",
-          ]),
-          importFirst([
-            DICE_MODULE_URLS.cannon,
-            "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js",
-            "https://esm.sh/cannon-es@0.20.0",
-          ]),
+          importFirst([DICE_MODULE_URLS.three]),
+          importFirst([DICE_MODULE_URLS.cannon]),
         ]);
 
         const normalizeNamespace = (rawModule, requiredMember) => {
