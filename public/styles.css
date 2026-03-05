@@ -611,13 +611,55 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .brand-share-tooltip {
+  position: relative;
   display: inline-flex;
+  align-items: center;
 }
 
 .brand-share-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.brand-share-tooltip-note {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  z-index: 8;
+  transform: translate(-50%, -0.35rem);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0.28rem 0.52rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--gold) 30%);
+  background: color-mix(in srgb, var(--paper-strong) 84%, black 16%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+  color: var(--ink-soft);
+  font: 700 0.68rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.brand-share-tooltip-note::before {
+  content: "";
+  position: absolute;
+  top: -0.35rem;
+  left: 50%;
+  width: 0.52rem;
+  height: 0.52rem;
+  background: inherit;
+  border-top: 1px solid color-mix(in srgb, var(--line) 70%, var(--gold) 30%);
+  border-left: 1px solid color-mix(in srgb, var(--line) 70%, var(--gold) 30%);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.brand-share-tooltip:hover .brand-share-tooltip-note,
+.brand-share-tooltip:focus-within .brand-share-tooltip-note {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .brand-install-btn {
