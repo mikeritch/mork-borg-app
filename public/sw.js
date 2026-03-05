@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-03-05-v1";
+const CACHE_VERSION = "2026-03-05-v2";
 const APP_SHELL_CACHE = `cr-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `cr-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `cr-images-${CACHE_VERSION}`;
@@ -7,8 +7,8 @@ const IMAGE_CACHE_MAX_ENTRIES = 40;
 const APP_SHELL_URLS = [
   "/",
   "/index.html",
-  "/styles.css?v=20260225-cache-iter-1",
-  "/app.js?v=20260225-cache-iter-1",
+  "/styles.css?v=20260305-cache-iter-2",
+  "/app.js?v=20260305-cache-iter-2",
   "/dice.js?v=20260226-local-dice-modules-fix1",
   "/assets/vendor/lucide-0.468.0.min.js",
   "/assets/vendor/three-0.161.0.module.js",
@@ -29,6 +29,7 @@ const APP_SHELL_URLS = [
   "/assets/pwa/icon-512-maskable.png",
   "/assets/pwa/apple-touch-icon.png",
 ];
+const APP_SHELL_URL_SET = new Set(APP_SHELL_URLS);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(precacheAppShell());
@@ -69,6 +70,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const appShellKey = appShellCacheKeyFor(url);
+  if (appShellKey) {
+    event.respondWith(cacheFirstAppShell(request, appShellKey));
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(handleNavigationRequest(request));
     return;
@@ -87,6 +94,39 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(networkFirst(request, RUNTIME_CACHE));
 });
+
+function appShellCacheKeyFor(url) {
+  const pathWithSearch = `${url.pathname}${url.search}`;
+  if (APP_SHELL_URL_SET.has(pathWithSearch)) {
+    return pathWithSearch;
+  }
+  if (APP_SHELL_URL_SET.has(url.pathname)) {
+    return url.pathname;
+  }
+  return null;
+}
+
+async function cacheFirstAppShell(request, cacheKey) {
+  const cache = await caches.open(APP_SHELL_CACHE);
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(request);
+    if (isCacheableResponse(response)) {
+      await cache.put(cacheKey, response.clone());
+    }
+    return response;
+  } catch (_error) {
+    return new Response("Offline", {
+      status: 503,
+      statusText: "Service Unavailable",
+      headers: { "Content-Type": "text/plain; charset=UTF-8" },
+    });
+  }
+}
 
 async function handleNavigationRequest(request) {
   const cached = await caches.match(request);

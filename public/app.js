@@ -1574,6 +1574,9 @@ function applyToForm(character) {
   }
   FIELD_IDS.forEach((id) => {
     const field = els.fields[id];
+    if (!field) {
+      return;
+    }
     const value = character[id] ?? "";
     if (field instanceof HTMLInputElement && field.type === "checkbox") {
       field.checked = toSafeBoolean(value, false);
@@ -1604,6 +1607,9 @@ function pullFromForm(existing) {
   const source = existing ? { ...existing } : createBlankCharacter();
   FIELD_IDS.forEach((id) => {
     const element = els.fields[id];
+    if (!element) {
+      return;
+    }
     if (BOOLEAN_FIELDS.has(id)) {
       if (element instanceof HTMLInputElement && element.type === "checkbox") {
         source[id] = element.checked;
@@ -2127,34 +2133,46 @@ function bindEvents() {
     });
   }
 
-  els.newCharacter.addEventListener("click", createNewCharacter);
-  els.randomCharacter.addEventListener("click", randomizeActiveCharacter);
+  if (els.newCharacter) {
+    els.newCharacter.addEventListener("click", createNewCharacter);
+  }
+  if (els.randomCharacter) {
+    els.randomCharacter.addEventListener("click", randomizeActiveCharacter);
+  }
   if (els.themeToggle) {
     els.themeToggle.addEventListener("click", toggleTheme);
   }
   if (els.installApp) {
     els.installApp.addEventListener("click", handleInstallAppClick);
   }
-  els.saveCharacter.addEventListener("click", () => saveActiveCharacter(true));
-  els.deleteCharacter.addEventListener("click", deleteActiveCharacter);
-  els.exportCharacter.addEventListener("click", exportActiveCharacter);
-  els.importCharacter.addEventListener("click", () => {
-    els.importFile.value = "";
-    els.importFile.click();
-  });
-  els.importFile.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    try {
-      await importCharacters(file);
-    } catch (error) {
-      setStatus(`Import failed: ${error.message}`, "error");
-    } finally {
+  if (els.saveCharacter) {
+    els.saveCharacter.addEventListener("click", () => saveActiveCharacter(true));
+  }
+  if (els.deleteCharacter) {
+    els.deleteCharacter.addEventListener("click", deleteActiveCharacter);
+  }
+  if (els.exportCharacter) {
+    els.exportCharacter.addEventListener("click", exportActiveCharacter);
+  }
+  if (els.importCharacter && els.importFile) {
+    els.importCharacter.addEventListener("click", () => {
       els.importFile.value = "";
-    }
-  });
+      els.importFile.click();
+    });
+    els.importFile.addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+      try {
+        await importCharacters(file);
+      } catch (error) {
+        setStatus(`Import failed: ${error.message}`, "error");
+      } finally {
+        els.importFile.value = "";
+      }
+    });
+  }
   bindDiceLazyLoading();
   window.addEventListener("resize", placeDicePanelByViewport);
 
