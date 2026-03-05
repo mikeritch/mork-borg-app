@@ -1468,6 +1468,78 @@ label {
   font-size: 0.97rem;
 }
 
+.equipment-toggle {
+  gap: 0.46rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.52rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin-top: 0.1rem;
+  inline-size: 1rem;
+  block-size: 1rem;
+  accent-color: var(--accent-soft);
+}
+
+.equipment-summary-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.72rem 0.8rem;
+  background: var(--power-card-bg);
+}
+
+.equipment-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.equipment-summary-head h4 {
+  margin: 0;
+  font-family: "Cinzel", serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.equipment-warning {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: -0.1rem;
+  border: 1px solid color-mix(in srgb, #8b1e24 52%, var(--line) 48%);
+  border-radius: 10px;
+  padding: 0.48rem 0.6rem;
+  color: color-mix(in srgb, #8b1e24 72%, var(--ink) 28%);
+  background: color-mix(in srgb, #8b1e24 10%, transparent 90%);
+}
+
+.equipment-warning-text {
+  display: block;
+}
+
+.equipment-warning-dismiss {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: 700 1.05rem/1 "Cinzel", serif;
+  cursor: pointer;
+  padding: 0 0.12rem;
+}
+
+.equipment-warning-dismiss:hover {
+  opacity: 0.8;
+}
+
 .is-hidden {
   display: none !important;
 }

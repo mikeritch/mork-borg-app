@@ -468,9 +468,6 @@
                 <option value="Heavy armor (-d6 damage, DR +4 Agility tests)">
                   Heavy armor (-d6 damage, DR +4 Agility tests)
                 </option>
-                <option value="Shield (-1 damage or break to ignore one attack)">
-                  Shield (-1 damage or break to ignore one attack)
-                </option>
                 <option value="__custom__">Custom armor...</option>
               </select>
             </label>
@@ -482,6 +479,36 @@
               Custom Armor Reduction Die (dX)
               <input id="armorCustomDie" type="number" min="2" max="20" step="1" disabled />
             </label>
+            <label class="equipment-toggle">
+              <span class="label-with-icon">
+                <i class="stat-lucide" data-lucide="shield" aria-hidden="true"></i>
+                <span>Shield Equipped</span>
+              </span>
+              <span class="checkbox-row">
+                <input id="shieldEquipped" type="checkbox" />
+                <span>Apply shield protection (-1 damage, can break to ignore one attack)</span>
+              </span>
+            </label>
+            <article class="equipment-summary-card span-2" id="armor-summary-card">
+              <div class="equipment-summary-head">
+                <h4 class="heading-with-icon">
+                  <i class="stat-lucide" data-lucide="shield-check" aria-hidden="true"></i>
+                  <span>Total Armor</span>
+                </h4>
+                <output id="armor-total-value" class="tracker-count">None</output>
+              </div>
+              <p id="armor-total-meta" class="tracker-hint">No armor or shield equipped.</p>
+            </article>
+            <div id="scroll-gear-warning" class="tracker-hint equipment-warning span-2" hidden>
+              <span class="equipment-warning-text">
+                Warning: scroll Powers normally fail while using a zweihander or medium/heavy armor.
+                This may be overridden by the GM.
+              </span>
+              <button id="scroll-gear-warning-dismiss" class="equipment-warning-dismiss" type="button"
+                aria-label="Dismiss scroll equipment warning" title="Dismiss warning">
+                ×
+              </button>
+            </div>
             <label class="span-2">
               <span class="label-with-icon">
                 <i class="stat-lucide" data-lucide="gem" aria-hidden="true"></i>
@@ -508,6 +535,13 @@
               </span>
               <textarea id="inventory" rows="5" placeholder="Rope, torch, stale bread, cursed mirror..."></textarea>
             </label>
+            <article class="power-summary-chip span-2">
+              <span class="power-summary-label label-with-icon">
+                <i class="stat-lucide" data-lucide="backpack" aria-hidden="true"></i>
+                <span>Carry Limit (Items)</span>
+              </span>
+              <output id="carry-limit-readout" class="tracker-count">8</output>
+            </article>
           </div>
         </section>
 

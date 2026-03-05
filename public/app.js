@@ -34,6 +34,7 @@ const FIELD_IDS = [
   "weaponCustomDie",
   "armorCustomName",
   "armorCustomDie",
+  "shieldEquipped",
   "powersKnownCount",
   "powersCastToday",
   "sacredScrolls",
@@ -68,6 +69,8 @@ const NUMERIC_FIELDS = new Set([
   "uncleanScrolls",
 ]);
 
+const BOOLEAN_FIELDS = new Set(["shieldEquipped"]);
+
 const DEFAULTS = {
   name: "",
   epithet: "",
@@ -90,6 +93,7 @@ const DEFAULTS = {
   weaponCustomDie: 6,
   armorCustomName: "",
   armorCustomDie: 2,
+  shieldEquipped: false,
   powersKnownCount: 0,
   powersCastToday: 0,
   sacredScrolls: 0,
@@ -127,7 +131,6 @@ const ARMOR_DATA = {
   "Light armor (-d2 damage)": { tier: 1, reductionDie: 2 },
   "Medium armor (-d4 damage, DR +2 Agility tests)": { tier: 2, reductionDie: 4 },
   "Heavy armor (-d6 damage, DR +4 Agility tests)": { tier: 3, reductionDie: 6 },
-  "Shield (-1 damage or break to ignore one attack)": { tier: 0, reductionDie: 1 },
 };
 
 const WEAPON_CHOICES = new Set(["", CUSTOM_OPTION_VALUE, ...Object.keys(WEAPON_DATA)]);
@@ -372,6 +375,7 @@ const state = {
   diceLoadPromise: null,
   diceInitPromise: null,
   hpMaxHintVisible: false,
+  scrollWarningDismissed: false,
 };
 
 let didReloadOnServiceWorkerControllerChange = false;
@@ -399,6 +403,11 @@ const els = {
   weaponCustomDieWrap: document.getElementById("weapon-custom-die-wrap"),
   armorCustomNameWrap: document.getElementById("armor-custom-name-wrap"),
   armorCustomDieWrap: document.getElementById("armor-custom-die-wrap"),
+  armorTotalValue: document.getElementById("armor-total-value"),
+  armorTotalMeta: document.getElementById("armor-total-meta"),
+  scrollGearWarning: document.getElementById("scroll-gear-warning"),
+  scrollGearWarningDismiss: document.getElementById("scroll-gear-warning-dismiss"),
+  carryLimitReadout: document.getElementById("carry-limit-readout"),
   hpCurrentCard: document.getElementById("hp-current-card"),
   hpCurrentCounter: document.getElementById("hp-current-counter"),
   hpCurrentDisplay: document.getElementById("hp-current-display"),
@@ -804,6 +813,25 @@ function createBlankCharacter() {
 function toSafeNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toSafeBoolean(value, fallback = false) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  if (typeof value === "string") {
+    const clean = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(clean)) {
+      return true;
+    }
+    if (["false", "0", "no", "off", ""].includes(clean)) {
+      return false;
+    }
+  }
+  return fallback;
 }
 
 function dieText(sides) {
@@ -1230,6 +1258,14 @@ function normalizeLegacyWeapon(character) {
 }
 
 function normalizeLegacyArmor(character) {
+  if (
+    character.armor === "Shield (-1 damage or break to ignore one attack)" ||
+    character.armor === "Shield (-1 damage, or break to ignore one attack)"
+  ) {
+    character.shieldEquipped = true;
+    character.armor = "No armor";
+    return;
+  }
   if (ARMOR_CHOICES.has(character.armor)) {
     return;
   }
@@ -1299,13 +1335,116 @@ function resolvedArmor(character) {
 function applyDerivedEquipment(character) {
   const weapon = resolvedWeapon(character);
   const armor = resolvedArmor(character);
+  const shieldEquipped = toSafeBoolean(character.shieldEquipped, DEFAULTS.shieldEquipped);
+  let armorTotalReduction = armor.reductionDie > 0 ? `-${dieText(armor.reductionDie)}` : "";
+  if (shieldEquipped) {
+    armorTotalReduction = armorTotalReduction ? `${armorTotalReduction} -1` : "-1";
+  }
   character.damage = weapon.damage || DEFAULTS.damage;
   character.armorTier = armor.tier;
   character.weaponLabel = weapon.label;
-  character.armorLabel = armor.label;
+  character.armorLabel = [armor.label, shieldEquipped ? "Shield" : ""].filter(Boolean).join(" + ");
+  character.armorTotalReduction = armorTotalReduction || "none";
+  character.shieldEquipped = shieldEquipped;
   if (!["Strength", "Presence", "Strength or Presence"].includes(character.attack)) {
     character.attack = weapon.attack || "Strength";
   }
+}
+
+function armorBlocksScrolls(character) {
+  if (character.armor === "Medium armor (-d4 damage, DR +2 Agility tests)") {
+    return true;
+  }
+  if (character.armor === "Heavy armor (-d6 damage, DR +4 Agility tests)") {
+    return true;
+  }
+  if (character.armor === CUSTOM_OPTION_VALUE) {
+    const die = clampCustomDie(character.armorCustomDie, DEFAULTS.armorCustomDie);
+    return die >= 4;
+  }
+  return false;
+}
+
+function weaponBlocksScrolls(character) {
+  return character.weapon === "Zweihander (d10)";
+}
+
+function hasAnyScrolls(character) {
+  const sacred = Math.max(0, Math.trunc(toSafeNumber(character.sacredScrolls, 0)));
+  const unclean = Math.max(0, Math.trunc(toSafeNumber(character.uncleanScrolls, 0)));
+  return sacred + unclean > 0;
+}
+
+function syncCarryLimitReadout() {
+  if (!els.carryLimitReadout || !els.fields.strength) {
+    return;
+  }
+  const strength = clamp(Math.trunc(toSafeNumber(els.fields.strength.value, DEFAULTS.strength)), -3, 6);
+  const carryLimit = Math.max(0, strength + 8);
+  els.carryLimitReadout.textContent = String(carryLimit);
+}
+
+function equipmentSnapshotFromFields() {
+  return {
+    weapon: els.fields.weapon?.value || "",
+    armor: els.fields.armor?.value || "",
+    armorCustomName: els.fields.armorCustomName?.value || "",
+    armorCustomDie: toSafeNumber(els.fields.armorCustomDie?.value, DEFAULTS.armorCustomDie),
+    sacredScrolls: toSafeNumber(els.fields.sacredScrolls?.value, 0),
+    uncleanScrolls: toSafeNumber(els.fields.uncleanScrolls?.value, 0),
+    shieldEquipped:
+      els.fields.shieldEquipped instanceof HTMLInputElement ? els.fields.shieldEquipped.checked : false,
+  };
+}
+
+function setScrollWarningVisible(visible) {
+  if (!els.scrollGearWarning) {
+    return;
+  }
+  els.scrollGearWarning.hidden = !visible;
+  els.scrollGearWarning.classList.toggle("is-hidden", !visible);
+}
+
+function armorSummaryFromCharacter(character) {
+  const armor = resolvedArmor(character);
+  const shieldEquipped = toSafeBoolean(character.shieldEquipped, DEFAULTS.shieldEquipped);
+  const baseDie = armor.reductionDie;
+  let value = "None";
+  let detail = "No armor or shield equipped.";
+
+  if (baseDie > 0 && shieldEquipped) {
+    value = `-${dieText(baseDie)} -1`;
+    detail = `${armor.label}; shield subtracts an additional 1 damage.`;
+  } else if (baseDie > 0) {
+    value = `-${dieText(baseDie)}`;
+    detail = `${armor.label}.`;
+  } else if (shieldEquipped) {
+    value = "-1";
+    detail = "Shield only: -1 damage.";
+  }
+
+  return { value, detail };
+}
+
+function syncEquipmentDerivedUi() {
+  const snapshot = equipmentSnapshotFromFields();
+  const armorSummary = armorSummaryFromCharacter(snapshot);
+  if (els.armorTotalValue) {
+    els.armorTotalValue.textContent = armorSummary.value;
+  }
+  if (els.armorTotalMeta) {
+    els.armorTotalMeta.textContent = armorSummary.detail;
+  }
+  if (!els.scrollGearWarning) {
+    return;
+  }
+  const shouldWarn = hasAnyScrolls(snapshot) && (weaponBlocksScrolls(snapshot) || armorBlocksScrolls(snapshot));
+  if (!shouldWarn) {
+    state.scrollWarningDismissed = false;
+    setScrollWarningVisible(false);
+    return;
+  }
+  setScrollWarningVisible(!state.scrollWarningDismissed);
 }
 
 function setFieldVisibility(element, isVisible) {
@@ -1326,13 +1465,16 @@ function syncCustomEquipmentFields() {
   setFieldVisibility(els.weaponCustomDieWrap, isWeaponCustom);
   setFieldVisibility(els.armorCustomNameWrap, isArmorCustom);
   setFieldVisibility(els.armorCustomDieWrap, isArmorCustom);
+  syncEquipmentDerivedUi();
 }
 
 function normalizeCharacter(candidate) {
   const baseline = createBlankCharacter();
   const merged = { ...baseline, ...(candidate || {}) };
   FIELD_IDS.forEach((id) => {
-    if (NUMERIC_FIELDS.has(id)) {
+    if (BOOLEAN_FIELDS.has(id)) {
+      merged[id] = toSafeBoolean(merged[id], baseline[id]);
+    } else if (NUMERIC_FIELDS.has(id)) {
       merged[id] = toSafeNumber(merged[id], baseline[id]);
     } else {
       merged[id] = String(merged[id] ?? "");
@@ -1433,6 +1575,10 @@ function applyToForm(character) {
   FIELD_IDS.forEach((id) => {
     const field = els.fields[id];
     const value = character[id] ?? "";
+    if (field instanceof HTMLInputElement && field.type === "checkbox") {
+      field.checked = toSafeBoolean(value, false);
+      return;
+    }
     if (
       field instanceof HTMLSelectElement &&
       value &&
@@ -1445,7 +1591,9 @@ function applyToForm(character) {
     }
     field.value = value;
   });
+  state.scrollWarningDismissed = false;
   syncCustomEquipmentFields();
+  syncCarryLimitReadout();
   state.hpMaxHintVisible = false;
   syncCurrentHpTracker();
   syncPowerTrackersFromCharacter(character);
@@ -1456,7 +1604,13 @@ function pullFromForm(existing) {
   const source = existing ? { ...existing } : createBlankCharacter();
   FIELD_IDS.forEach((id) => {
     const element = els.fields[id];
-    if (NUMERIC_FIELDS.has(id)) {
+    if (BOOLEAN_FIELDS.has(id)) {
+      if (element instanceof HTMLInputElement && element.type === "checkbox") {
+        source[id] = element.checked;
+      } else {
+        source[id] = toSafeBoolean(element?.value, DEFAULTS[id]);
+      }
+    } else if (NUMERIC_FIELDS.has(id)) {
       source[id] = toSafeNumber(element.value, DEFAULTS[id]);
     } else {
       source[id] = element.value.trim();
@@ -1471,6 +1625,9 @@ function hasCharacterData(character) {
   }
   return FIELD_IDS.some((id) => {
     const baseline = DEFAULTS[id];
+    if (BOOLEAN_FIELDS.has(id)) {
+      return toSafeBoolean(character[id], baseline) !== toSafeBoolean(baseline, false);
+    }
     if (NUMERIC_FIELDS.has(id)) {
       return toSafeNumber(character[id], baseline) !== toSafeNumber(baseline, 0);
     }
@@ -1640,6 +1797,9 @@ function randomCharacterPatch() {
   const gearA = withPresenceScaling(pick(generators.classlessGearD12A), presence);
   const gearB = pick(generators.classlessGearD12B);
   const reducedStart = gearA.toLowerCase().includes("scroll") || gearB.toLowerCase().includes("scroll");
+  const uncleanScrolls = /random unclean scroll/i.test(gearA) ? 1 : 0;
+  const sacredScrolls = /random sacred scroll/i.test(gearB) ? 1 : 0;
+  const shieldEquipped = /^shield\b/i.test(gearB);
 
   const weapon = rollClasslessWeapon(reducedStart);
   const armor = rollClasslessArmor(reducedStart);
@@ -1673,12 +1833,13 @@ function randomCharacterPatch() {
     weaponCustomDie: DEFAULTS.weaponCustomDie,
     armorCustomName: "",
     armorCustomDie: DEFAULTS.armorCustomDie,
+    shieldEquipped,
     powersKnownCount: 0,
     powersCastToday: 0,
     powersKnownMarks: "",
     powersCastMarks: "",
-    sacredScrolls: 0,
-    uncleanScrolls: 0,
+    sacredScrolls,
+    uncleanScrolls,
     powersKnown: "",
     powersNotes: "",
     attack: weapon.attack,
@@ -1884,6 +2045,8 @@ function bindEvents() {
       syncKnownPowersFromUI();
     }
 
+    syncCarryLimitReadout();
+    syncEquipmentDerivedUi();
     scheduleAutoSave();
     if (els.fields.className.value !== "Classless Scvm") {
       setStatus(
@@ -1953,6 +2116,14 @@ function bindEvents() {
       syncKnownPowersFromUI();
       scheduleAutoSave();
       setStatus("Known power removed.", "warn");
+    });
+  }
+  if (els.scrollGearWarningDismiss) {
+    els.scrollGearWarningDismiss.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      state.scrollWarningDismissed = true;
+      setScrollWarningVisible(false);
     });
   }
 
