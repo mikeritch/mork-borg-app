@@ -372,6 +372,7 @@ const state = {
 };
 
 let didReloadOnServiceWorkerControllerChange = false;
+let deferredInstallPrompt = null;
 
 const els = {
   form: document.getElementById("character-form"),
@@ -383,6 +384,7 @@ const els = {
   newCharacter: document.getElementById("new-character"),
   randomCharacter: document.getElementById("random-character"),
   themeToggle: document.getElementById("theme-toggle"),
+  installApp: document.getElementById("install-app"),
   saveCharacter: document.getElementById("save-character"),
   deleteCharacter: document.getElementById("delete-character"),
   exportCharacter: document.getElementById("export-character"),
@@ -1902,6 +1904,9 @@ function bindEvents() {
   if (els.themeToggle) {
     els.themeToggle.addEventListener("click", toggleTheme);
   }
+  if (els.installApp) {
+    els.installApp.addEventListener("click", handleInstallAppClick);
+  }
   els.saveCharacter.addEventListener("click", () => saveActiveCharacter(true));
   els.deleteCharacter.addEventListener("click", deleteActiveCharacter);
   els.exportCharacter.addEventListener("click", exportActiveCharacter);
@@ -1934,6 +1939,90 @@ function bindEvents() {
       saveActiveCharacter(false);
     }
   });
+}
+
+function isStandaloneDisplayMode() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const iosStandalone = window.navigator && window.navigator.standalone === true;
+  const displayModeStandalone =
+    typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches;
+  return Boolean(iosStandalone || displayModeStandalone);
+}
+
+function isAppleMobile() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function setInstallButtonState() {
+  if (!els.installApp) {
+    return;
+  }
+
+  if (isStandaloneDisplayMode()) {
+    els.installApp.textContent = "Installed";
+    els.installApp.disabled = true;
+    els.installApp.setAttribute("aria-disabled", "true");
+    els.installApp.title = "App is already installed";
+    return;
+  }
+
+  els.installApp.textContent = "Install App";
+  els.installApp.disabled = false;
+  els.installApp.removeAttribute("aria-disabled");
+  if (deferredInstallPrompt) {
+    els.installApp.title = "Install app locally";
+  } else if (isAppleMobile()) {
+    els.installApp.title = "Use Share then Add to Home Screen";
+  } else {
+    els.installApp.title = "Install options depend on browser support";
+  }
+}
+
+function setupInstallAppButton() {
+  setInstallButtonState();
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    setInstallButtonState();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    setInstallButtonState();
+    setStatus("App installed locally.", "ok");
+  });
+}
+
+async function handleInstallAppClick() {
+  if (isStandaloneDisplayMode()) {
+    setStatus("App is already installed on this device.", "ok");
+    return;
+  }
+
+  if (deferredInstallPrompt && typeof deferredInstallPrompt.prompt === "function") {
+    deferredInstallPrompt.prompt();
+    const outcome = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    setInstallButtonState();
+    if (outcome && outcome.outcome === "accepted") {
+      setStatus("Install accepted. Finishing setup...", "ok");
+      return;
+    }
+    setStatus("Install dismissed.", "warn");
+    return;
+  }
+
+  if (isAppleMobile()) {
+    setStatus("On iOS: Share -> Add to Home Screen.", "warn");
+    return;
+  }
+
+  setStatus("Install is unavailable right now. Try browser menu install options.", "warn");
 }
 
 function canRegisterServiceWorker() {
@@ -1998,6 +2087,7 @@ async function registerServiceWorker() {
 
 function init() {
   ensureThemeToggleButton();
+  setupInstallAppButton();
   applyTheme(resolveTheme(), false);
   renderFooterYear();
   renderLucideIcons();
