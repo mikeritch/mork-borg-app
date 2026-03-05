@@ -620,6 +620,15 @@ html[data-theme="dark"] .theme-toggle {
   pointer-events: none;
 }
 
+.brand-install-btn {
+  min-width: 6.35rem;
+}
+
+.brand-install-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .status {
   margin: 0.7rem 0 0.8rem;
   border: 1px solid var(--line);
