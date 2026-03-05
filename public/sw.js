@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-03-05-v2";
+const CACHE_VERSION = "2026-03-05-v3";
 const APP_SHELL_CACHE = `cr-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `cr-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `cr-images-${CACHE_VERSION}`;
@@ -7,6 +7,7 @@ const IMAGE_CACHE_MAX_ENTRIES = 40;
 const APP_SHELL_URLS = [
   "/",
   "/index.html",
+  "/theme-init.js?v=20260305-csp-init-1",
   "/styles.css?v=20260305-cache-iter-2",
   "/app.js?v=20260305-cache-iter-2",
   "/dice.js?v=20260226-local-dice-modules-fix1",

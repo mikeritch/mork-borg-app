@@ -28,6 +28,13 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
   - Repository setting: **Settings -> Pages -> Build and deployment -> Source = GitHub Actions**
   - Deploy trigger: push to `main` (or run workflow manually)
 
+## Security Hardening
+
+- A restrictive Content Security Policy is set in `public/index.html` via a `<meta http-equiv="Content-Security-Policy">` tag.
+- `Referrer-Policy` is set via `<meta name="referrer" content="strict-origin-when-cross-origin">`.
+- For GitHub Pages, this is the practical option because custom HTTP response headers are not configurable per site.
+- When fronted by a host/CDN that supports response headers, move CSP and related security headers to HTTP headers for stronger coverage.
+
 ## PWA (Install + Offline)
 
 - Install support:

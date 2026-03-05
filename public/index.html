@@ -4,6 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'sha256-rhWmlvLJFRKJzymhoEOUZwun7pP+y8pGT35VsnEVZ4U='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'"
+  />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>MORK BORG Character Sheet Generator | Character Reliquary</title>
   <meta name="description"
     content="Generate, edit, and store MORK BORG character sheets in Character Reliquary. Randomize classless builds, track stats, and export JSON backups." />
@@ -48,21 +53,7 @@
         }
       }
     </script>
-  <script>
-    (() => {
-      const key = "morkborg-reliquary.theme.v1";
-      let theme = "dark";
-      try {
-        const saved = localStorage.getItem(key);
-        if (saved === "light" || saved === "dark") {
-          theme = saved;
-        }
-      } catch (_error) {
-        theme = "dark";
-      }
-      document.documentElement.setAttribute("data-theme", theme);
-    })();
-  </script>
+  <script src="theme-init.js?v=20260305-csp-init-1"></script>
   <link rel="stylesheet" href="styles.css?v=20260305-cache-iter-2" />
 </head>
 
