@@ -7,6 +7,9 @@ const KNOWN_POWERS_MAX = 99;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
 const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules-fix1";
+const DICE_MODULE_LOAD_MAX_ATTEMPTS = 3;
+const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
+const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
 const SERVICE_WORKER_PATH = "/sw.js";
 const SERVICE_WORKER_SCOPE = "/";
 const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -482,6 +485,89 @@ function getDiceFactory() {
   return null;
 }
 
+function waitFor(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function removeDiceModuleScript() {
+  const existingScript = document.getElementById(DICE_MODULE_SCRIPT_ID);
+  if (existingScript) {
+    existingScript.remove();
+  }
+}
+
+function buildDiceModuleScriptSrc(attempt) {
+  if (attempt <= 1) {
+    return DICE_MODULE_SCRIPT_SRC;
+  }
+  // Retry marker helps avoid reusing a transient failed response path.
+  const separator = DICE_MODULE_SCRIPT_SRC.includes("?") ? "&" : "?";
+  return `${DICE_MODULE_SCRIPT_SRC}${separator}retry=${Date.now()}-${attempt}`;
+}
+
+function loadDiceModuleScriptAttempt(attempt) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.id = DICE_MODULE_SCRIPT_ID;
+    script.src = buildDiceModuleScriptSrc(attempt);
+    script.async = true;
+    script.defer = true;
+    script.setAttribute("data-loaded", "false");
+    script.setAttribute("data-error", "false");
+
+    let timeoutId = 0;
+    let settled = false;
+
+    const settle = (handler) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      script.removeEventListener("load", handleLoad);
+      script.removeEventListener("error", handleError);
+      handler();
+    };
+
+    const handleLoad = () => {
+      settle(() => {
+        script.setAttribute("data-loaded", "true");
+        const factory = getDiceFactory();
+        if (!factory) {
+          script.setAttribute("data-error", "true");
+          reject(new Error("Dice module loaded, but controller factory was missing."));
+          return;
+        }
+        resolve(factory);
+      });
+    };
+
+    const handleError = () => {
+      settle(() => {
+        script.setAttribute("data-error", "true");
+        script.remove();
+        reject(new Error("Failed to load dice module script."));
+      });
+    };
+
+    timeoutId = window.setTimeout(() => {
+      settle(() => {
+        script.setAttribute("data-error", "true");
+        script.remove();
+        reject(new Error("Failed to load dice module script."));
+      });
+    }, DICE_MODULE_LOAD_TIMEOUT_MS);
+
+    script.addEventListener("load", handleLoad, { once: true });
+    script.addEventListener("error", handleError, { once: true });
+    document.head.appendChild(script);
+  });
+}
+
 function loadDiceModuleScript() {
   const existingFactory = getDiceFactory();
   if (existingFactory) {
@@ -491,56 +577,25 @@ function loadDiceModuleScript() {
     return state.diceLoadPromise;
   }
 
-  state.diceLoadPromise = new Promise((resolve, reject) => {
-    let script = document.getElementById(DICE_MODULE_SCRIPT_ID);
-
-    const handleLoad = () => {
-      script?.setAttribute("data-loaded", "true");
+  state.diceLoadPromise = (async () => {
+    let lastError = null;
+    for (let attempt = 1; attempt <= DICE_MODULE_LOAD_MAX_ATTEMPTS; attempt += 1) {
       const factory = getDiceFactory();
-      if (!factory) {
-        script?.setAttribute("data-error", "true");
-        reject(new Error("Dice module loaded, but controller factory was missing."));
-        return;
+      if (factory) {
+        return factory;
       }
-      resolve(factory);
-    };
-
-    const handleError = () => {
-      script?.setAttribute("data-error", "true");
-      reject(new Error("Failed to load dice module script."));
-    };
-
-    if (!script) {
-      script = document.createElement("script");
-      script.id = DICE_MODULE_SCRIPT_ID;
-      script.src = DICE_MODULE_SCRIPT_SRC;
-      script.async = true;
-      script.defer = true;
-      script.addEventListener("load", handleLoad, { once: true });
-      script.addEventListener("error", handleError, { once: true });
-      document.head.appendChild(script);
-      return;
+      removeDiceModuleScript();
+      try {
+        return await loadDiceModuleScriptAttempt(attempt);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < DICE_MODULE_LOAD_MAX_ATTEMPTS) {
+          await waitFor(DICE_MODULE_RETRY_BASE_DELAY_MS * attempt);
+        }
+      }
     }
-
-    if (script.getAttribute("data-loaded") === "true") {
-      handleLoad();
-      return;
-    }
-    if (script.getAttribute("data-error") === "true") {
-      script.remove();
-      script = document.createElement("script");
-      script.id = DICE_MODULE_SCRIPT_ID;
-      script.src = DICE_MODULE_SCRIPT_SRC;
-      script.async = true;
-      script.defer = true;
-      script.addEventListener("load", handleLoad, { once: true });
-      script.addEventListener("error", handleError, { once: true });
-      document.head.appendChild(script);
-      return;
-    }
-    script.addEventListener("load", handleLoad, { once: true });
-    script.addEventListener("error", handleError, { once: true });
-  }).catch((error) => {
+    throw lastError || new Error("Failed to load dice module script.");
+  })().catch((error) => {
     state.diceLoadPromise = null;
     throw error;
   });
