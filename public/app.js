@@ -7,6 +7,9 @@ const KNOWN_POWERS_MAX = 99;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
 const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules-fix1";
+const SERVICE_WORKER_PATH = "/sw.js";
+const SERVICE_WORKER_SCOPE = "/";
+const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 const FIELD_IDS = [
   "name",
@@ -367,6 +370,8 @@ const state = {
   diceInitPromise: null,
   hpMaxHintVisible: false,
 };
+
+let didReloadOnServiceWorkerControllerChange = false;
 
 const els = {
   form: document.getElementById("character-form"),
@@ -1931,6 +1936,66 @@ function bindEvents() {
   });
 }
 
+function canRegisterServiceWorker() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
+  if (!("serviceWorker" in navigator)) {
+    return false;
+  }
+  if (window.location.protocol === "https:") {
+    return true;
+  }
+  return window.location.protocol === "http:" && LOCALHOST_HOSTNAMES.has(window.location.hostname);
+}
+
+function requestServiceWorkerActivation(worker) {
+  if (!worker || typeof worker.postMessage !== "function") {
+    return;
+  }
+  worker.postMessage({ type: "SKIP_WAITING" });
+}
+
+async function registerServiceWorker() {
+  if (!canRegisterServiceWorker()) {
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register(SERVICE_WORKER_PATH, {
+      scope: SERVICE_WORKER_SCOPE,
+      updateViaCache: "none",
+    });
+
+    if (registration.waiting) {
+      requestServiceWorkerActivation(registration.waiting);
+    }
+
+    registration.addEventListener("updatefound", () => {
+      const installing = registration.installing;
+      if (!installing) {
+        return;
+      }
+
+      installing.addEventListener("statechange", () => {
+        if (installing.state === "installed" && navigator.serviceWorker.controller) {
+          requestServiceWorkerActivation(registration.waiting || installing);
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (didReloadOnServiceWorkerControllerChange) {
+        return;
+      }
+      didReloadOnServiceWorkerControllerChange = true;
+      window.location.reload();
+    });
+  } catch (error) {
+    console.warn("Service worker registration failed:", error);
+  }
+}
+
 function init() {
   ensureThemeToggleButton();
   applyTheme(resolveTheme(), false);
@@ -1941,6 +2006,7 @@ function init() {
   applyToForm(activeCharacter());
   setInlineDiceStatus("Dice tray ready.", "neutral");
   bindEvents();
+  registerServiceWorker();
   setStatus("Ready.", "ok");
 }
 

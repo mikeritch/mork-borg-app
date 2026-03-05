@@ -12,6 +12,7 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
 2. Optional local server:
    - `python3 -m http.server --directory public`
    - Open `http://localhost:8000`
+3. For service worker/PWA testing, use `http://localhost` or `https` (not `file://`).
 
 ## Deploy
 
@@ -26,6 +27,18 @@ A lightweight web app for generating, editing, and storing MORK BORG character s
   - Workflow: `.github/workflows/deploy-github-pages.yml`
   - Repository setting: **Settings -> Pages -> Build and deployment -> Source = GitHub Actions**
   - Deploy trigger: push to `main` (or run workflow manually)
+
+## PWA (Install + Offline)
+
+- Install support:
+  - Chromium browsers: use the install button in the address bar/menu.
+  - iOS/iPadOS Safari: **Share -> Add to Home Screen**.
+- Offline guarantee:
+  - After one successful online load, the app shell is cached and should reload offline.
+  - Sheet editing, saves, theme toggle, and dice tray remain available offline once cached.
+- Troubleshooting stale assets:
+  - In browser site settings, clear site data for the app origin and reload online.
+  - If needed, unregister the service worker in DevTools (`Application -> Service Workers`) and reload.
 
 ## Responsive Images
 

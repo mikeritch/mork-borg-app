@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#120e11" />
+  <title>Offline | Character Reliquary</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #120e11;
+      --panel: #1a1418;
+      --ink: #efe4d5;
+      --muted: #baaaa0;
+      --line: #4f3c41;
+      --accent: #a4202a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      font-family: "Cormorant Garamond", serif;
+      background: radial-gradient(circle at 12% 18%, rgba(164, 32, 42, 0.28), transparent 42%),
+        linear-gradient(128deg, #09070a 0%, #120d12 52%, #171015 100%);
+      color: var(--ink);
+    }
+
+    .offline-card {
+      width: min(34rem, 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.4rem;
+      background: linear-gradient(180deg, rgba(24, 19, 22, 0.96), rgba(17, 13, 16, 0.96));
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(1.7rem, 3.8vw, 2.1rem);
+      letter-spacing: 0.03em;
+    }
+
+    p {
+      margin: 0.35rem 0;
+      font-size: 1.1rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 1rem;
+      text-decoration: none;
+      color: #fff2f0;
+      background: linear-gradient(180deg, #8d2129, #b53038);
+      border: 1px solid #6d1620;
+      border-radius: 10px;
+      padding: 0.55rem 0.95rem;
+      font-weight: 600;
+    }
+
+    a:focus-visible,
+    a:hover {
+      filter: brightness(1.05);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="offline-card" aria-labelledby="offline-title">
+    <h1 id="offline-title">You are offline.</h1>
+    <p>Character Reliquary can run offline after it has been loaded online at least once.</p>
+    <p>Reconnect and reload if this is your first visit on this device.</p>
+    <a href="/">Retry</a>
+  </main>
+</body>
+
+</html>
