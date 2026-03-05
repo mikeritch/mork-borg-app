@@ -657,7 +657,8 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .brand-share-tooltip:hover .brand-share-tooltip-note,
-.brand-share-tooltip:focus-within .brand-share-tooltip-note {
+.brand-share-tooltip:focus-within .brand-share-tooltip-note,
+.brand-share-tooltip[data-open="true"] .brand-share-tooltip-note {
   opacity: 1;
   transform: translate(-50%, 0);
 }

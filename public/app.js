@@ -373,6 +373,7 @@ const state = {
 
 let didReloadOnServiceWorkerControllerChange = false;
 let deferredInstallPrompt = null;
+let joinPartyTooltipCloseTimer = null;
 
 const els = {
   form: document.getElementById("character-form"),
@@ -384,6 +385,7 @@ const els = {
   newCharacter: document.getElementById("new-character"),
   randomCharacter: document.getElementById("random-character"),
   themeToggle: document.getElementById("theme-toggle"),
+  joinPartyTooltip: document.getElementById("join-party-tooltip"),
   installApp: document.getElementById("install-app"),
   saveCharacter: document.getElementById("save-character"),
   deleteCharacter: document.getElementById("delete-character"),
@@ -1958,6 +1960,70 @@ function isAppleMobile() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
+function isCoarsePointerDevice() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia("(hover: none)").matches || window.matchMedia("(pointer: coarse)").matches;
+}
+
+function closeJoinPartyTooltip() {
+  if (!els.joinPartyTooltip) {
+    return;
+  }
+  els.joinPartyTooltip.removeAttribute("data-open");
+  if (joinPartyTooltipCloseTimer) {
+    window.clearTimeout(joinPartyTooltipCloseTimer);
+    joinPartyTooltipCloseTimer = null;
+  }
+}
+
+function openJoinPartyTooltip() {
+  if (!els.joinPartyTooltip) {
+    return;
+  }
+  els.joinPartyTooltip.setAttribute("data-open", "true");
+  if (joinPartyTooltipCloseTimer) {
+    window.clearTimeout(joinPartyTooltipCloseTimer);
+  }
+  joinPartyTooltipCloseTimer = window.setTimeout(() => {
+    closeJoinPartyTooltip();
+  }, 2200);
+}
+
+function setupJoinPartyTooltip() {
+  const tooltip = els.joinPartyTooltip;
+  if (!tooltip) {
+    return;
+  }
+
+  tooltip.addEventListener("click", (event) => {
+    if (!isCoarsePointerDevice()) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (tooltip.getAttribute("data-open") === "true") {
+      closeJoinPartyTooltip();
+      return;
+    }
+    openJoinPartyTooltip();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Node)) {
+      return;
+    }
+    if (!tooltip.contains(event.target)) {
+      closeJoinPartyTooltip();
+    }
+  });
+
+  window.addEventListener("scroll", () => {
+    closeJoinPartyTooltip();
+  }, { passive: true });
+}
+
 function isMobileUserAgent() {
   if (typeof navigator === "undefined") {
     return false;
@@ -2124,6 +2190,7 @@ async function registerServiceWorker() {
 
 function init() {
   ensureThemeToggleButton();
+  setupJoinPartyTooltip();
   setupInstallAppButton();
   applyTheme(resolveTheme(), false);
   renderFooterYear();
