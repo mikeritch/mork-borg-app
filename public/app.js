@@ -1958,10 +1958,47 @@ function isAppleMobile() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
+function isMobileUserAgent() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+  return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+}
+
+function isFirefoxDesktop() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+  return /firefox/i.test(navigator.userAgent) && !isMobileUserAgent();
+}
+
+function isSafariDesktop() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+  const userAgent = navigator.userAgent;
+  const hasSafariToken = /safari/i.test(userAgent);
+  const excluded = /chrome|chromium|crios|edg|opr|opera|fxios|firefox/i.test(userAgent);
+  return hasSafariToken && !excluded && !isMobileUserAgent();
+}
+
+function shouldHideInstallButton() {
+  return isFirefoxDesktop() || isSafariDesktop();
+}
+
 function setInstallButtonState() {
   if (!els.installApp) {
     return;
   }
+
+  if (shouldHideInstallButton()) {
+    els.installApp.hidden = true;
+    els.installApp.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  els.installApp.hidden = false;
+  els.installApp.removeAttribute("aria-hidden");
 
   if (isStandaloneDisplayMode()) {
     els.installApp.textContent = "Installed";
