@@ -3,231 +3,231 @@
     {
       "id": "gravebound-pilgrim",
       "origin": [
-        "{name} was buried outside {homeland}, then clawed back before dawn.",
-        "The plague pits of {homeland} spat out {name}, and nobody welcomed them home.",
-        "A failed funeral in {homeland} ended with {name} breathing again."
+        "{name} was buried outside {homeland} and dug back out before dawn.",
+        "They tipped {name} into a plague pit in {homeland}; by morning they had climbed free.",
+        "A funeral in {homeland} stopped when {name} coughed dirt onto the shroud."
       ],
       "fracture": [
-        "{scar} is where the grave nails held too long.",
-        "Only {trinket} came back from the pit with them.",
+        "{scar} is where the coffin nails bit deepest.",
+        "They came out of the pit with nothing but {trinket}.",
         "{notesHook}"
       ],
       "drive": [
-        "{name} follows every rumor of a saint who can explain why they returned.",
-        "They keep moving, certain the grave wants payment for lost time.",
-        "Their vow is simple: leave every crypt emptier than they found it."
+        "{name} hunts for the priest who signed the burial.",
+        "They keep moving because the grave was already paid for once.",
+        "They leave crypts lighter than they found them."
       ],
       "doom": [
-        "Dogs howl before {name} enters a village.",
-        "Each new moon, they wake with soil under their nails.",
-        "Someday the earth will remember where to put them."
+        "Dogs start whining when {name} reaches a village.",
+        "At each new moon, they wake with dirt packed under their nails.",
+        "Sooner or later, someone will finish the burial."
       ]
     },
     {
       "id": "apostate-hunter",
       "origin": [
-        "{name} served the altar until the altar fed someone they loved to fire.",
-        "Once praised as {epithet}, {name} was cast out after asking the wrong prayer.",
-        "{name} walked from {homeland} with scripture ash in their lungs."
+        "{name} served the altar until it burned someone they loved.",
+        "The church hailed {name} as {epithet} until one wrong question got them cast out.",
+        "{name} left {homeland} coughing soot and scripture ash."
       ],
       "fracture": [
-        "They keep {trinket} as proof that faith can rot.",
-        "{scar} was burned in as a warning to other doubters.",
-        "Their old order posted a bounty and called it absolution."
+        "They keep {trinket} to remember what faith cost.",
+        "{scar} was burned in for asking the wrong thing.",
+        "Their old order nailed bounty notices to chapel doors."
       ],
       "drive": [
-        "Now they hunt apostates, bishops, and liars with equal zeal.",
-        "They chase every rumor of the priest who signed the execution list.",
-        "Their only prayer now is made with {weapon} drawn."
+        "They hunt priests, apostates, and liars with the same patience.",
+        "They follow any rumor of the priest who signed the pyre order.",
+        "{weapon} is the only prayer they still trust."
       ],
       "doom": [
-        "When bells ring at dusk, {name} counts exits before doors.",
-        "A choir follows in dreams, always one note short of mercy.",
-        "Sooner or later, the old church will send someone they cannot kill."
+        "At dusk, {name} checks the doors before the windows.",
+        "They still hear choirboys in their sleep.",
+        "The church will send someone they cannot bring themselves to kill."
       ]
     },
     {
       "id": "plague-survivor",
       "origin": [
-        "{name} watched {homeland} collapse under carts of the dead.",
-        "The fever took everyone in {homeland} except {name}.",
-        "In the quarantine fires, {name} learned to sleep with smoke in their teeth."
+        "{name} watched {homeland} fill with corpse carts.",
+        "The fever took everyone in {homeland} but {name}.",
+        "{name} learned to sleep in quarantine sheds with smoke in their lungs."
       ],
       "fracture": [
-        "{scar} was carved while fever dreams argued over their fate.",
-        "Their quarantine tag was replaced by {trinket}, hidden under cloth.",
-        "No innkeeper forgets their face for long."
+        "{scar} came from a fever knife and a shaking hand.",
+        "Their plague tag hangs under their shirt beside {trinket}.",
+        "Innkeepers remember the cough before they remember the face."
       ],
       "drive": [
-        "They gather coin for medicine they no longer trust.",
-        "They escort the sick when nobody else will touch the job.",
-        "They never pass a burning pyre without checking the names."
+        "They save coin for medicines they no longer believe in.",
+        "They carry the sick when no one else will touch the job.",
+        "They stop at every pyre long enough to read the names."
       ],
       "doom": [
-        "Each cough nearby sounds like a prophecy.",
-        "They can smell sickness before the first symptom appears.",
-        "One day they will realize the plague never left them."
+        "Every cough nearby turns their stomach.",
+        "They smell sickness before the first sweat breaks.",
+        "They are sure the plague is only waiting."
       ]
     },
     {
       "id": "deserter-oathbreaker",
       "origin": [
-        "{name} marched as {className} until the command turned butchery into duty.",
-        "A border war made {name} famous in {homeland} for all the wrong reasons.",
-        "Their company vanished in swamp fog, leaving {name} and silence."
+        "{name} marched as {className} until an order went too far.",
+        "A border war put {name}'s face on handbills in {homeland}.",
+        "Marsh fog took their company and left {name} with the blame."
       ],
       "fracture": [
-        "{scar} came from a captain's blade when they refused one last order.",
-        "{trinket} is the only banner scrap they did not burn.",
-        "The quartermaster sold their name and called it paperwork."
+        "{scar} came from a captain's sword when they disobeyed.",
+        "They kept {trinket}; the rest of the banner burned.",
+        "A quartermaster sold their name for extra pay."
       ],
       "drive": [
-        "They take mercenary work only against tyrants and cults.",
-        "They track surviving squadmates to settle old debts in person.",
+        "They sell steel, but never to tyrants.",
+        "They look for old squadmates one by one.",
         "They refuse to sleep twice in the same camp."
       ],
       "doom": [
-        "The sound of marching feet still wakes them armed.",
-        "Someone always recognizes their face from wanted posters.",
-        "The war ended, but their sentence did not."
+        "Marching boots still pull them awake.",
+        "Someone always knows the face from an old notice.",
+        "The war ended. The sentence did not."
       ]
     },
     {
       "id": "bog-seer",
       "origin": [
-        "{name} wandered into the marsh near {homeland} and returned hearing voices in water.",
-        "After three nights lost in black reeds, {name} came back with {epithet}.",
-        "{name} was found at dawn, kneeling in mud around {trinket}."
+        "{name} got lost in the marsh outside {homeland} and came back talking to the water.",
+        "After three nights in the reeds, {name} returned wearing the name {epithet}.",
+        "{name} was found at dawn knee-deep in mud with {trinket} in both hands."
       ],
       "fracture": [
-        "{scar} glows pale whenever storms gather.",
-        "Neighbors in {homeland} call them cursed, then pay for prophecies.",
-        "Even sober, they hear frogs chant funeral hymns."
+        "{scar} goes white before a storm.",
+        "People in {homeland} call them cursed until they need an omen.",
+        "Even sober, they hear frogs calling from dry ground."
       ],
       "drive": [
-        "They seek the drowned oracle that whispered their true name.",
-        "They trade omens for shelter, coin, and information.",
-        "They follow floodwater trails to graves nobody mapped."
+        "They are trying to find the drowned thing that first spoke to them.",
+        "They sell omens for shelter, food, and coin.",
+        "They follow floodwater to graves the maps forgot."
       ],
       "doom": [
-        "Reflections show a different face if looked at too long.",
-        "Rain always starts when they lie.",
-        "One day the marsh will ask for its messenger back."
+        "Still water shows their face wrong.",
+        "Rain starts soon after they tell a lie.",
+        "One day the marsh will keep them."
       ]
     },
     {
       "id": "relic-thief",
       "origin": [
-        "{name} learned to rob catacombs before learning to read.",
-        "In {homeland}, tomb work paid better than honest labor.",
-        "{name} made a living selling saints in pieces to desperate nobles."
+        "{name} learned grave-robbing before letters.",
+        "In {homeland}, tomb work paid better than honest work.",
+        "{name} sold saint bones to nobles who wanted luck more than grace."
       ],
       "fracture": [
-        "{trinket} was never meant to leave its shrine.",
-        "{scar} came from a trap that should have ended them.",
-        "A rival gang marked their name in blood on chapel doors."
+        "{trinket} came off an altar that should have stayed shut.",
+        "{scar} came from a trap set by someone who knew the vault well.",
+        "A rival gang wrote their name on chapel doors in blood."
       ],
       "drive": [
-        "They want one final score large enough to disappear forever.",
+        "They want one haul big enough to vanish.",
         "They now steal relics only to return them for a price.",
-        "They hunt maps to ruined vaults beneath {homeland}."
+        "They hunt old vault maps under {homeland}."
       ],
       "doom": [
-        "Priests and thieves both want them dead.",
+        "Priests and thieves both ask after them.",
         "Every relic they carry feels heavier at sunset.",
-        "The dead seem to know exactly what was taken."
+        "The dead know when something is missing."
       ]
     },
     {
       "id": "witch-hunted",
       "origin": [
-        "{name} survived a witch trial by naming names no one could verify.",
-        "They fled {homeland} when the magistrate ran out of neighbors to burn.",
-        "The gallows snapped, and {name} called it permission to keep living."
+        "{name} survived a witch trial by naming people already dead.",
+        "They fled {homeland} when the magistrate ran short of wood and suspects.",
+        "The rope snapped, and {name} ran before it could be tied again."
       ],
       "fracture": [
-        "{scar} is where the noose bit deepest.",
-        "Their only witness now is {trinket}, blackened by court fire.",
-        "The magistrate's seal still appears on bounty notices."
+        "{scar} circles the neck where the rope burned.",
+        "{trinket} is all that came through the court fire.",
+        "The magistrate's seal still turns up on bounty sheets."
       ],
       "drive": [
-        "They expose inquisitors town by town, one confession at a time.",
-        "They protect hedge-witches and charlatans alike from rope justice.",
-        "They promised to drag every false judge into daylight."
+        "They expose inquisitors town by town.",
+        "They hide hedge-witches, frauds, and anyone else marked for burning.",
+        "They mean to drag every false judge into daylight."
       ],
       "doom": [
-        "Crowds get quiet when they enter a square.",
-        "Any bonfire smell makes their hands shake.",
-        "The same judge keeps appearing in their dreams, always smiling."
+        "Crowds go quiet when they step into a square.",
+        "Smoke from green wood makes their hands shake.",
+        "They still dream of the magistrate smiling."
       ]
     },
     {
       "id": "bell-ringer",
       "origin": [
-        "{name} rang death bells in {homeland} until nobody was left to mourn.",
-        "When plague came, {name} became {epithet} by counting corpses aloud.",
-        "The belfry collapsed, and only {name} walked out."
+        "{name} rang death bells in {homeland} until no one came to listen.",
+        "Plague made {name} into {epithet}, counting the dead from the belfry.",
+        "The bell tower fell, and {name} crawled out first."
       ],
       "fracture": [
-        "{scar} formed the night the clapper split and shrapnel filled the tower.",
-        "They keep {trinket} because it still hums at midnight.",
-        "Their hearing never recovered; silence sounds like threats."
+        "{scar} came when the clapper burst and iron tore through the tower.",
+        "They keep {trinket} because it hums when bells start.",
+        "Too much ringing left them listening for trouble."
       ],
       "drive": [
-        "They follow rumors of cursed bells that summon the dead.",
-        "They record every battlefield name in a ledger nobody may read.",
-        "They refuse to let the forgotten die unnamed."
+        "They follow rumors of bells rung over mass graves.",
+        "They write down the names of the dead when no one else will.",
+        "They will not let the forgotten go unnamed."
       ],
       "doom": [
-        "Whenever church bells ring, {name} tastes iron.",
-        "Birds drop from rafters when they sing old hymns.",
-        "The next bell they ring might be their own."
+        "Church bells leave iron on {name}'s tongue.",
+        "Birds drop from rafters when they sing the old measures.",
+        "The next bell may ring for them."
       ]
     },
     {
       "id": "corpse-cart-drover",
       "origin": [
-        "{name} drove corpse carts through {homeland} until the roads learned their face.",
-        "A magistrate in {homeland} paid {name} in silence and stale bread to haul the dead.",
-        "The last winter in {homeland}, {name} stacked bodies higher than wagon rails."
+        "Every road in {homeland} knew {name} behind a corpse cart.",
+        "A magistrate in {homeland} paid {name} in bread and silence to haul the dead.",
+        "In the last winter at {homeland}, {name} stacked bodies higher than the wagon rails."
       ],
       "fracture": [
-        "{scar} came from a wheel pin snapping downhill into a ditch of bones.",
+        "{scar} came when a wheel pin snapped and pitched them into a ditch of bones.",
         "They kept {trinket} from a pauper no priest would bless.",
-        "Now every rattling axle sounds like a prayer unfinished."
+        "Every axle squeal sounds like someone trying to pray."
       ],
       "drive": [
-        "They seek roads no plague cart ever returned from.",
+        "They seek roads no plague cart ever came back from.",
         "They bury strangers for coin and enemies for free.",
-        "They swear no corpse under their watch will feed crows."
+        "They swear no body under their care will feed crows."
       ],
       "doom": [
-        "Wheels creak in the dark even when their cart stands still.",
-        "Mules refuse to cross bridges after seeing {name}.",
+        "Wheels creak at night even when the cart is still.",
+        "Mules shy at bridges when {name} takes the reins.",
         "One night, their old cargo will sit up and ask for names."
       ]
     },
     {
       "id": "failed-exorcist",
       "origin": [
-        "{name} studied rites beneath cracked altar stones in {homeland}.",
-        "Once called {epithet}, {name} was sent to cast out a devil and returned alone.",
-        "{name} burned their own prayer book after the bells would not stop."
+        "{name} learned rites under the cracked altars of {homeland}.",
+        "The church called {name} {epithet} until an exorcism went bad.",
+        "{name} burned their prayer book when the bells would not stop."
       ],
       "fracture": [
-        "{scar} marks where holy oil caught fire on skin.",
-        "Their order gave them {trinket} and called it pardon.",
-        "They still mouth old liturgies when thunder begins."
+        "{scar} is where holy oil caught on skin.",
+        "Their order gave them {trinket} instead of an apology.",
+        "They still mouth old liturgies when thunder starts."
       ],
       "drive": [
-        "They hunt whispers of possessions no bishop dares name.",
-        "They gather forbidden rites to finish the exorcism that failed.",
-        "They offer mercy first, steel second, and flame last."
+        "They hunt possessions no bishop will name.",
+        "They collect forbidden rites to finish what failed.",
+        "They offer mercy first, steel second, and fire last."
       ],
       "doom": [
-        "Children smile at empty corners when {name} enters a room.",
-        "Candles gutter black wherever they sleep.",
-        "The thing they failed to cast out still knows their true name."
+        "Children grin at empty corners when {name} enters.",
+        "Candles burn low wherever they sleep.",
+        "What they failed to cast out still knows their name."
       ]
     },
     {
@@ -235,68 +235,68 @@
       "origin": [
         "{name} learned the salt roads of {homeland} by outrunning tax blades.",
         "Before the wars, {name} smuggled flour and relics between starving towns.",
-        "{name} crossed marsh ferries at midnight with sacks and lies."
+        "{name} crossed marsh ferries at midnight with sacks and bad lies."
       ],
       "fracture": [
         "{scar} came from customs men with hooked pikes.",
-        "They hid {trinket} inside a cargo of bones and never sold it.",
-        "A drowned partner still knocks on their dreams for unpaid shares."
+        "They hid {trinket} in a cargo of bones and never sold it.",
+        "A drowned partner still knocks in their dreams for an unpaid share."
       ],
       "drive": [
-        "They move contraband medicine to villages written off as dead.",
-        "They seek one last route through the old checkpoints.",
-        "They trade secrets faster than goods and trust neither."
+        "They carry contraband medicine to villages marked as lost.",
+        "They want one last route through the old checkpoints.",
+        "They buy secrets cheap and sell them dear."
       ],
       "doom": [
         "Every toll bell sounds like a verdict.",
-        "Dogs along the road bark before {name} appears.",
-        "Soon, every border post will carry their likeness in charcoal."
+        "Road dogs bark before {name} comes into view.",
+        "Soon every border post will carry their face in charcoal."
       ]
     },
     {
       "id": "catacomb-lampbearer",
       "origin": [
-        "{name} lit oil lamps in catacombs beneath {homeland} where nobles hid their dead.",
+        "{name} lit oil lamps in the catacombs below {homeland}.",
         "As a child, {name} memorized every tunnel where the lantern smoke would not rise.",
-        "{name} kept vigil underground while cities above forgot the names below."
+        "{name} kept watch below while the city forgot who lay there."
       ],
       "fracture": [
-        "{scar} formed when hot oil spilled during a cave-in.",
+        "{scar} came from hot oil and falling stone.",
         "They found {trinket} in a chamber sealed with wax and teeth.",
-        "Darkness no longer frightens them; silence does."
+        "Darkness does not frighten them. Silence does."
       ],
       "drive": [
-        "They map forgotten ossuaries before looters can reach them.",
+        "They map forgotten ossuaries before looters find them.",
         "They guide pilgrims through tombs for coin and confession.",
-        "They swear to return every stolen bone to its shelf."
+        "They mean to return every stolen bone to its shelf."
       ],
       "doom": [
-        "Their lamp burns low whenever the dead are restless.",
+        "Their lamp gutters when the dead grow restless.",
         "Bats roost in rooms where {name} says no word.",
-        "One night, the tunnels will close behind them for good."
+        "One night the tunnels will close behind them."
       ]
     },
     {
       "id": "false-saint",
       "origin": [
-        "{name} was crowned a miracle-worker in {homeland} after a lucky lie.",
-        "Pilgrims touched {name}'s hands and called blisters stigmata.",
-        "The title {epithet} began as mockery and became a procession."
+        "{name} became a miracle-worker in {homeland} because one lie spread too far.",
+        "Pilgrims kissed {name}'s blistered hands and called it stigmata.",
+        "The name {epithet} started as mockery and stuck."
       ],
       "fracture": [
-        "{scar} came from zealots demanding proof in iron.",
-        "They wear {trinket} because followers would kill for it.",
-        "When famine struck, their miracles failed and the mob remembered."
+        "{scar} came when zealots asked for proof in iron.",
+        "They wear {trinket} because an old follower would kill to get it back.",
+        "When famine came, the crowd remembered what hunger does to faith."
       ],
       "drive": [
-        "They seek a true sign to justify every false sermon.",
-        "They steal relics to keep worse hands from wielding them.",
-        "They feed shrines with silver and leave before dawn."
+        "They want one real sign to excuse all the false ones.",
+        "They steal relics before worse hands can take them.",
+        "They leave silver at shrines and never stay for thanks."
       ],
       "doom": [
-        "Crowds still kneel when they should run.",
-        "Any blessing they speak now sounds like a curse.",
-        "One day their oldest devotee will come to collect salvation."
+        "Crowds still kneel when they should back away.",
+        "Every blessing sounds wrong in their mouth.",
+        "One day their oldest devotee will come collecting miracles."
       ]
     },
     {
@@ -304,22 +304,22 @@
       "origin": [
         "{name} stitched soldiers in mud camps outside {homeland} until thread ran out.",
         "Armies hired {name} for quick hands and fewer questions.",
-        "In siege winters, {name} traded surgery for firewood and prayers."
+        "In siege winters, {name} traded surgery for wood and prayer."
       ],
       "fracture": [
         "{scar} marks where a patient woke with a knife still inside.",
         "They keep {trinket} from the first life they failed to save.",
-        "The smell of vinegar and blood never leaves their coat."
+        "Their coat never lost the smell of vinegar and blood."
       ],
       "drive": [
-        "They search for herbs that might undo old battlefield fevers.",
-        "They take any contract that keeps scalpels in hand.",
+        "They look for herbs that might break old battlefield fevers.",
+        "They take any contract that keeps a scalpel in hand.",
         "They hunt the general who ordered wounded men burned."
       ],
       "doom": [
-        "Hands shake only when the wound is familiar.",
-        "They hear groans at night from beds long empty.",
-        "One day they will face a patient they cannot cut away from memory."
+        "Their hands only shake when the wound looks familiar.",
+        "They hear groaning from empty cots at night.",
+        "One day a patient they failed will walk back in."
       ]
     }
   ]
