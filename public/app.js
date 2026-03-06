@@ -609,18 +609,48 @@ function ensureThemeToggleButton() {
   button.id = "theme-toggle";
   button.className = "btn btn-ghost theme-toggle brand-theme-toggle";
   button.type = "button";
+  button.setAttribute("role", "switch");
   button.setAttribute("aria-pressed", "true");
+  button.setAttribute("aria-checked", "true");
   button.setAttribute("aria-label", "Switch theme");
   button.title = "Switch theme";
-  if (!button.textContent.trim()) {
-    button.textContent = "Sinner";
-  }
+  ensureThemeToggleContents(button);
   if (button.parentElement !== quickActions) {
     quickActions.insertBefore(button, quickActions.firstChild);
   } else if (quickActions.firstElementChild !== button) {
     quickActions.insertBefore(button, quickActions.firstChild);
   }
   els.themeToggle = button;
+}
+
+function ensureThemeToggleContents(button) {
+  if (!(button instanceof HTMLElement)) {
+    return null;
+  }
+  const existingLabel = button.querySelector(".theme-toggle-label");
+  const existingGlyph = button.querySelector(".theme-toggle-glyph");
+  if (existingLabel && existingGlyph) {
+    return existingLabel;
+  }
+
+  const fallbackLabel = existingLabel?.textContent?.trim() || button.textContent.trim() || "Sinner";
+  button.textContent = "";
+
+  const glyph = document.createElement("span");
+  glyph.className = "theme-toggle-glyph";
+  glyph.setAttribute("aria-hidden", "true");
+
+  const icon = document.createElement("i");
+  icon.className = "stat-lucide theme-toggle-icon";
+  icon.setAttribute("data-lucide", "sun-moon");
+  glyph.appendChild(icon);
+
+  const label = document.createElement("span");
+  label.className = "theme-toggle-label";
+  label.textContent = fallbackLabel;
+
+  button.append(glyph, label);
+  return label;
 }
 
 function currentTheme() {
@@ -646,8 +676,12 @@ function applyTheme(theme, persist = false) {
 
   if (els.themeToggle) {
     const darkOn = next === "dark";
-    els.themeToggle.textContent = darkOn ? "Sinner" : "Saint";
+    const label = ensureThemeToggleContents(els.themeToggle);
+    if (label) {
+      label.textContent = darkOn ? "Sinner" : "Saint";
+    }
     els.themeToggle.setAttribute("aria-pressed", String(darkOn));
+    els.themeToggle.setAttribute("aria-checked", String(darkOn));
     const targetLabel = darkOn ? "Switch to Saint mode" : "Switch to Sinner mode";
     els.themeToggle.setAttribute("aria-label", targetLabel);
     els.themeToggle.title = targetLabel;

@@ -79,8 +79,11 @@
           <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
           <div class="brand-quick-actions">
             <button id="theme-toggle" class="btn btn-ghost theme-toggle brand-theme-toggle" type="button"
-              aria-pressed="true" aria-label="Switch theme" title="Switch theme">
-              Sinner
+              role="switch" aria-pressed="true" aria-checked="true" aria-label="Switch theme" title="Switch theme">
+              <span class="theme-toggle-glyph" aria-hidden="true">
+                <i class="stat-lucide theme-toggle-icon" data-lucide="sun-moon"></i>
+              </span>
+              <span class="theme-toggle-label">Sinner</span>
             </button>
             <span id="join-party-tooltip" class="brand-share-tooltip" aria-label="Join Party coming soon" tabindex="0">
               <button class="btn btn-ghost brand-share-btn" type="button" disabled aria-disabled="true" tabindex="-1">
