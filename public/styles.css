@@ -185,6 +185,10 @@ body {
   background: var(--bg-radial-a), var(--bg-radial-b), var(--bg-linear);
 }
 
+body.app-modal-open {
+  overflow: hidden;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -546,8 +550,9 @@ html[data-theme="light"] .brand-logo-light {
 }
 
 .header-actions-note {
-  flex: 1 1 100%;
-  margin: 0.05rem 0 0;
+  flex: 0 1 auto;
+  max-width: min(100%, 19rem);
+  margin: 0.05rem 0 0 auto;
   padding: 0.4rem 0.62rem;
   border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
   border-radius: 8px;
@@ -556,6 +561,48 @@ html[data-theme="light"] .brand-logo-light {
   font-size: 0.93rem;
   line-height: 1.15;
   text-align: right;
+}
+
+.autosave-indicator {
+  min-width: 6.7rem;
+  justify-content: center;
+  pointer-events: none;
+  cursor: default;
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 18%, transparent 82%);
+}
+
+.autosave-indicator[disabled] {
+  opacity: 1;
+  color: inherit;
+}
+
+.autosave-indicator[data-state="saving"] {
+  border-color: color-mix(in srgb, var(--gold) 58%, var(--line) 42%);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--btn-ghost-bg) 82%, var(--gold) 18%),
+    color-mix(in srgb, var(--btn-ghost-bg) 70%, var(--accent-soft) 30%)
+  );
+}
+
+.autosave-indicator[data-state="saved"] {
+  border-color: color-mix(in srgb, #2f6946 56%, var(--line) 44%);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--btn-ghost-bg) 82%, #2f6946 18%),
+    color-mix(in srgb, var(--btn-ghost-bg) 90%, var(--gold) 10%)
+  );
+}
+
+.autosave-indicator[data-state="error"] {
+  border-color: color-mix(in srgb, #8b1e24 72%, var(--line) 28%);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--btn-ghost-bg) 68%, #8b1e24 32%),
+    color-mix(in srgb, var(--btn-ghost-bg) 82%, var(--accent) 18%)
+  );
+  color: var(--btn-primary-ink);
 }
 
 .btn {
@@ -703,6 +750,86 @@ html[data-theme="dark"] .theme-toggle {
 
 .status[data-tone="error"] {
   border-left-color: #8b1e24;
+}
+
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 36;
+  display: grid;
+  place-items: center;
+  padding: 1.15rem;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(164, 32, 42, 0.18), transparent 34%),
+    rgba(9, 6, 8, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.confirm-modal[hidden] {
+  display: none;
+}
+
+.confirm-dialog {
+  width: min(100%, 29rem);
+  border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--gold) 16%, transparent 84%), transparent 42%),
+    var(--panel-bg);
+  box-shadow: var(--shadow);
+  overflow: clip;
+  position: relative;
+}
+
+.confirm-dialog::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--accent-soft), var(--gold));
+}
+
+.confirm-dialog[data-tone="danger"]::before {
+  background: linear-gradient(90deg, #d36d63, var(--accent), #5a0e14);
+}
+
+.confirm-dialog-body {
+  display: grid;
+  gap: 0.72rem;
+  padding: 1rem 1rem 1.05rem;
+}
+
+.confirm-kicker {
+  margin: 0;
+  font: 700 0.74rem/1 "Cinzel", serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kicker);
+}
+
+.confirm-title {
+  margin: 0;
+  font: 700 clamp(1.35rem, 2vw, 1.6rem) / 1.04 "Cinzel", serif;
+  letter-spacing: 0.02em;
+}
+
+.confirm-message {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.32;
+  white-space: pre-wrap;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.58rem;
+}
+
+.confirm-actions .btn {
+  min-width: 7.25rem;
 }
 
 .dice-panel {
@@ -1690,6 +1817,14 @@ textarea:focus {
 }
 
 @media (max-width: 700px) {
+  .confirm-modal {
+    padding: 0.9rem;
+  }
+
+  .confirm-actions .btn {
+    flex: 1 1 10rem;
+  }
+
   .brand {
     display: grid;
     grid-template-columns: minmax(5.8rem, 34vw) minmax(0, 1fr);
@@ -1751,6 +1886,8 @@ textarea:focus {
   }
 
   .header-actions-note {
+    max-width: 100%;
+    margin-left: 0;
     text-align: left;
   }
 

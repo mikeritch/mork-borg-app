@@ -54,7 +54,7 @@
       }
     </script>
   <script src="theme-init.js?v=20260305-csp-init-1"></script>
-  <link rel="stylesheet" href="styles.css?v=20260305-cache-iter-2" />
+  <link rel="stylesheet" href="styles.css?v=20260306-autosave-indicator-1" />
 </head>
 
 <body>
@@ -185,8 +185,10 @@
         </div>
 
         <div class="header-actions">
-          <button id="save-character" class="btn btn-primary" type="button">
-            Save
+          <button id="save-indicator" class="btn btn-ghost autosave-indicator" type="button" disabled
+            aria-disabled="true" aria-live="polite" aria-atomic="true" tabindex="-1" title="Changes saved locally"
+            data-state="saved">
+            Saved
           </button>
           <button id="delete-character" class="btn btn-danger" type="button">
             Delete
@@ -263,21 +265,19 @@
             </label>
             <label>
               Homeland
-              <select id="homeland">
-                <option value="">Choose a homeland...</option>
-                <option value="Grift">Grift</option>
-                <option value="Kerguz">Kerguz</option>
-                <option value="Sarkash">Sarkash</option>
-                <option value="Tveland">Tveland</option>
-                <option value="Bergen Chrypt">Bergen Chrypt</option>
-                <option value="Galgenbeck outskirts">Galgenbeck outskirts</option>
-                <option value="Valley of the Unfortunate Undead">
-                  Valley of the Unfortunate Undead
-                </option>
-                <option value="A nameless plague village">A nameless plague village</option>
-                <option value="An unmarked battlefield">An unmarked battlefield</option>
-                <option value="A ruined monastery">A ruined monastery</option>
-              </select>
+              <input id="homeland" list="homeland-options" maxlength="80" placeholder="Grift" />
+              <datalist id="homeland-options">
+                <option value="Grift"></option>
+                <option value="Kerguz"></option>
+                <option value="Sarkash"></option>
+                <option value="Tveland"></option>
+                <option value="Bergen Chrypt"></option>
+                <option value="Galgenbeck outskirts"></option>
+                <option value="Valley of the Unfortunate Undead"></option>
+                <option value="A nameless plague village"></option>
+                <option value="An unmarked battlefield"></option>
+                <option value="A ruined monastery"></option>
+              </datalist>
             </label>
             <label>
               Age
@@ -879,12 +879,27 @@
     </li>
   </template>
 
+  <div id="confirm-modal" class="confirm-modal" aria-hidden="true" hidden>
+    <section id="confirm-dialog" class="confirm-dialog" role="dialog" aria-modal="true"
+      aria-labelledby="confirm-title" aria-describedby="confirm-message" tabindex="-1">
+      <div class="confirm-dialog-body">
+        <p class="confirm-kicker">Confirm</p>
+        <h2 id="confirm-title" class="confirm-title">Confirm action</h2>
+        <p id="confirm-message" class="confirm-message"></p>
+        <div class="confirm-actions">
+          <button id="confirm-cancel" class="btn btn-ghost" type="button">Cancel</button>
+          <button id="confirm-proceed" class="btn btn-primary" type="button">Proceed</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <div id="dice-viewport-overlay" class="dice-viewport-overlay" aria-hidden="true">
     <canvas id="dice-canvas" aria-label="3D dice canvas" hidden></canvas>
   </div>
 
   <script src="assets/vendor/lucide-0.468.0.min.js" defer></script>
-  <script src="app.js?v=20260305-cache-iter-2" defer></script>
+  <script src="app.js?v=20260306-autosave-indicator-1" defer></script>
 </body>
 
 </html>

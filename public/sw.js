@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-03-05-v3";
+const CACHE_VERSION = "2026-03-06-v6";
 const APP_SHELL_CACHE = `cr-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `cr-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `cr-images-${CACHE_VERSION}`;
@@ -8,8 +8,8 @@ const APP_SHELL_URLS = [
   "/",
   "/index.html",
   "/theme-init.js?v=20260305-csp-init-1",
-  "/styles.css?v=20260305-cache-iter-2",
-  "/app.js?v=20260305-cache-iter-2",
+  "/styles.css?v=20260306-autosave-indicator-1",
+  "/app.js?v=20260306-autosave-indicator-1",
   "/dice.js?v=20260226-local-dice-modules-fix1",
   "/assets/vendor/lucide-0.468.0.min.js",
   "/assets/vendor/three-0.161.0.module.js",

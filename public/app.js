@@ -14,6 +14,35 @@ const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
 const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
 const RANDOMIZER_LIBRARY_URL = "data/randomizer-library.json";
 const BACKSTORY_LIBRARY_URL = "data/backstories.json";
+const EXPORT_FILE_HEADER = Object.freeze({
+  app: "Character Reliquary",
+  format: "character-sheet-export",
+  version: 1,
+});
+const MAX_IMPORT_FILE_BYTES = 256 * 1024;
+const MAX_IMPORT_FILE_SIZE_LABEL = "256 KB";
+const AUTO_SAVE_INDICATOR_STATES = Object.freeze({
+  saving: Object.freeze({
+    label: "Saving...",
+    title: "Saving changes locally",
+  }),
+  saved: Object.freeze({
+    label: "Saved",
+    title: "Changes saved locally",
+  }),
+  error: Object.freeze({
+    label: "Save Error",
+    title: "Browser storage is unavailable",
+  }),
+});
+const MODAL_FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "[href]",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(", ");
 const SERVICE_WORKER_PATH = "/sw.js";
 const SERVICE_WORKER_SCOPE = "/";
 const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -232,6 +261,9 @@ const state = {
   diceInitPromise: null,
   hpMaxHintVisible: false,
   scrollWarningDismissed: false,
+  confirmQueue: [],
+  activeConfirmRequest: null,
+  confirmRestoreFocus: null,
 };
 
 let didReloadOnServiceWorkerControllerChange = false;
@@ -251,11 +283,17 @@ const els = {
   themeToggle: document.getElementById("theme-toggle"),
   joinPartyTooltip: document.getElementById("join-party-tooltip"),
   installApp: document.getElementById("install-app"),
-  saveCharacter: document.getElementById("save-character"),
+  saveIndicator: document.getElementById("save-indicator"),
   deleteCharacter: document.getElementById("delete-character"),
   exportCharacter: document.getElementById("export-character"),
   importCharacter: document.getElementById("import-character"),
   importFile: document.getElementById("import-file"),
+  confirmModal: document.getElementById("confirm-modal"),
+  confirmDialog: document.getElementById("confirm-dialog"),
+  confirmTitle: document.getElementById("confirm-title"),
+  confirmMessage: document.getElementById("confirm-message"),
+  confirmCancel: document.getElementById("confirm-cancel"),
+  confirmProceed: document.getElementById("confirm-proceed"),
   weaponCustomNameWrap: document.getElementById("weapon-custom-name-wrap"),
   weaponCustomDieWrap: document.getElementById("weapon-custom-die-wrap"),
   armorCustomNameWrap: document.getElementById("armor-custom-name-wrap"),
@@ -1413,7 +1451,10 @@ function persistState() {
     if (state.activeId) {
       localStorage.setItem(ACTIVE_KEY, state.activeId);
     }
+    setAutoSaveIndicator("saved");
+    clearPendingSaveStatus();
   } catch (error) {
+    setAutoSaveIndicator("error");
     setStatus("Storage is unavailable in this browser context.", "error");
   }
 }
@@ -1524,6 +1565,9 @@ function saveActiveCharacter(notify = true) {
 }
 
 function setActiveCharacter(id) {
+  if (state.activeId && state.activeId !== id) {
+    flushPendingAutoSave();
+  }
   const target = state.characters.find((sheet) => sheet.id === id);
   if (!target) {
     return;
@@ -1569,6 +1613,246 @@ function setStatus(message, tone = "neutral") {
   els.status.dataset.tone = tone;
 }
 
+function setAutoSaveIndicator(state = "saved") {
+  if (!els.saveIndicator) {
+    return;
+  }
+  const resolvedState = AUTO_SAVE_INDICATOR_STATES[state] ? state : "saved";
+  const nextState = AUTO_SAVE_INDICATOR_STATES[resolvedState];
+  els.saveIndicator.dataset.state = resolvedState;
+  els.saveIndicator.textContent = nextState.label;
+  els.saveIndicator.title = nextState.title;
+}
+
+function clearPendingSaveStatus() {
+  if (!els.status) {
+    return;
+  }
+  if (els.status.dataset.tone === "neutral" && els.status.textContent === "Changes pending...") {
+    setStatus("Saved locally.", "ok");
+  }
+}
+
+function flushPendingAutoSave() {
+  if (!state.saveTimer) {
+    return;
+  }
+  window.clearTimeout(state.saveTimer);
+  state.saveTimer = null;
+  saveActiveCharacter(false);
+}
+
+function focusElement(element) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+  try {
+    element.focus({ preventScroll: true });
+  } catch (_error) {
+    element.focus();
+  }
+}
+
+function confirmModalFocusableElements() {
+  if (!(els.confirmDialog instanceof HTMLElement)) {
+    return [];
+  }
+  return Array.from(els.confirmDialog.querySelectorAll(MODAL_FOCUSABLE_SELECTOR)).filter((element) => {
+    return (
+      element instanceof HTMLElement &&
+      !element.hidden &&
+      element.getAttribute("aria-hidden") !== "true" &&
+      element.getClientRects().length > 0
+    );
+  });
+}
+
+function setConfirmModalOpen(isOpen) {
+  if (!els.confirmModal) {
+    return;
+  }
+  els.confirmModal.hidden = !isOpen;
+  els.confirmModal.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  document.body.classList.toggle("app-modal-open", isOpen);
+}
+
+function showNextConfirmDialog() {
+  if (state.activeConfirmRequest || state.confirmQueue.length === 0) {
+    return;
+  }
+  const request = state.confirmQueue.shift();
+  if (!request) {
+    return;
+  }
+
+  if (!state.confirmRestoreFocus && document.activeElement instanceof HTMLElement) {
+    state.confirmRestoreFocus = document.activeElement;
+  }
+
+  state.activeConfirmRequest = request;
+  setConfirmModalOpen(true);
+
+  if (els.confirmDialog) {
+    els.confirmDialog.dataset.tone = request.tone;
+  }
+  if (els.confirmTitle) {
+    els.confirmTitle.textContent = request.title;
+  }
+  if (els.confirmMessage) {
+    els.confirmMessage.textContent = request.message;
+  }
+  if (els.confirmCancel) {
+    els.confirmCancel.hidden = !request.showCancel;
+    els.confirmCancel.setAttribute("aria-hidden", request.showCancel ? "false" : "true");
+    els.confirmCancel.textContent = request.cancelLabel;
+  }
+  if (els.confirmProceed) {
+    els.confirmProceed.textContent = request.confirmLabel;
+    els.confirmProceed.classList.toggle("btn-danger", request.tone === "danger");
+    els.confirmProceed.classList.toggle("btn-primary", request.tone !== "danger");
+  }
+
+  window.requestAnimationFrame(() => {
+    focusElement(request.initialFocus === "cancel" ? els.confirmCancel : els.confirmProceed);
+  });
+}
+
+function closeActiveConfirmDialog(result) {
+  const request = state.activeConfirmRequest;
+  if (!request) {
+    return;
+  }
+
+  state.activeConfirmRequest = null;
+
+  if (state.confirmQueue.length > 0) {
+    request.resolve(result);
+    showNextConfirmDialog();
+    return;
+  }
+
+  setConfirmModalOpen(false);
+  const restoreFocus = state.confirmRestoreFocus;
+  state.confirmRestoreFocus = null;
+  request.resolve(result);
+  if (restoreFocus?.isConnected) {
+    focusElement(restoreFocus);
+  }
+}
+
+function buildDialogFallbackMessage(request) {
+  return [request.title, request.message].filter(Boolean).join("\n\n");
+}
+
+function requestDialog(options) {
+  const request = {
+    title: options?.title || "Confirm action",
+    message: options?.message || "Are you sure?",
+    confirmLabel: options?.confirmLabel || "Proceed",
+    cancelLabel: options?.cancelLabel || "Cancel",
+    tone: options?.tone === "danger" ? "danger" : "warn",
+    initialFocus: options?.initialFocus === "cancel" ? "cancel" : "proceed",
+    showCancel: options?.showCancel !== false,
+  };
+
+  if (
+    !els.confirmModal ||
+    !els.confirmDialog ||
+    !els.confirmTitle ||
+    !els.confirmMessage ||
+    !els.confirmCancel ||
+    !els.confirmProceed
+  ) {
+    const fallbackMessage = buildDialogFallbackMessage(request);
+    if (!request.showCancel) {
+      window.alert(fallbackMessage);
+      return Promise.resolve(true);
+    }
+    return Promise.resolve(window.confirm(fallbackMessage));
+  }
+
+  return new Promise((resolve) => {
+    state.confirmQueue.push({ ...request, resolve });
+    showNextConfirmDialog();
+  });
+}
+
+function requestConfirmation(options) {
+  return requestDialog({ ...options, showCancel: true });
+}
+
+function requestNotice(options) {
+  return requestDialog({
+    ...options,
+    showCancel: false,
+    confirmLabel: options?.confirmLabel || "Close",
+    initialFocus: "proceed",
+  }).then(() => undefined);
+}
+
+function handleConfirmDialogKeydown(event) {
+  if (!state.activeConfirmRequest || !(els.confirmDialog instanceof HTMLElement)) {
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeActiveConfirmDialog(false);
+    return;
+  }
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const focusable = confirmModalFocusableElements();
+  if (focusable.length === 0) {
+    event.preventDefault();
+    focusElement(els.confirmDialog);
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const current = document.activeElement;
+
+  if (!(current instanceof HTMLElement) || !els.confirmDialog.contains(current)) {
+    event.preventDefault();
+    focusElement(event.shiftKey ? last : first);
+    return;
+  }
+
+  if (!event.shiftKey && current === last) {
+    event.preventDefault();
+    focusElement(first);
+    return;
+  }
+
+  if (event.shiftKey && current === first) {
+    event.preventDefault();
+    focusElement(last);
+  }
+}
+
+function bindConfirmDialogEvents() {
+  if (!els.confirmModal || !els.confirmCancel || !els.confirmProceed) {
+    return;
+  }
+
+  els.confirmModal.addEventListener("click", (event) => {
+    if (event.target === els.confirmModal) {
+      closeActiveConfirmDialog(false);
+    }
+  });
+  els.confirmCancel.addEventListener("click", () => {
+    closeActiveConfirmDialog(false);
+  });
+  els.confirmProceed.addEventListener("click", () => {
+    closeActiveConfirmDialog(true);
+  });
+  document.addEventListener("keydown", handleConfirmDialogKeydown);
+}
+
 function renderFooterYear() {
   if (!els.footerYear) {
     return;
@@ -1600,6 +1884,7 @@ function renderLucideIcons() {
 }
 
 function createNewCharacter() {
+  flushPendingAutoSave();
   const fresh = createBlankCharacter();
   state.characters.unshift(fresh);
   state.activeId = fresh.id;
@@ -1908,9 +2193,13 @@ async function randomizeActiveCharacter() {
   const base = pullFromForm(existing);
   if (hasCharacterData(base)) {
     const label = base.name || "this character";
-    const confirmed = window.confirm(
-      `Randomize ${label}? This will overwrite the current character details.`
-    );
+    const confirmed = await requestConfirmation({
+      title: `Randomize ${label}?`,
+      message: "This will overwrite the current character details.",
+      confirmLabel: "Randomize",
+      cancelLabel: "Cancel",
+      tone: "warn",
+    });
     if (!confirmed) {
       setStatus("Randomize canceled.", "warn");
       return;
@@ -1928,13 +2217,20 @@ async function randomizeActiveCharacter() {
   }
 }
 
-function deleteActiveCharacter() {
+async function deleteActiveCharacter() {
   const current = activeCharacter();
   if (!current) {
     return;
   }
   const label = current.name || "this character";
-  const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+  const confirmed = await requestConfirmation({
+    title: `Delete ${label}?`,
+    message: "This cannot be undone.",
+    confirmLabel: "Delete",
+    cancelLabel: "Cancel",
+    tone: "danger",
+    initialFocus: "cancel",
+  });
   if (!confirmed) {
     return;
   }
@@ -1953,6 +2249,7 @@ function deleteActiveCharacter() {
 function exportActiveCharacter() {
   const character = saveActiveCharacter(false);
   const payload = {
+    header: EXPORT_FILE_HEADER,
     exportedAt: nowIso(),
     characters: [character],
   };
@@ -1974,22 +2271,71 @@ function exportActiveCharacter() {
   setStatus("Character exported to JSON.", "ok");
 }
 
+function hasValidImportHeader(header) {
+  return (
+    header &&
+    typeof header === "object" &&
+    header.app === EXPORT_FILE_HEADER.app &&
+    header.format === EXPORT_FILE_HEADER.format &&
+    header.version === EXPORT_FILE_HEADER.version
+  );
+}
+
+async function warnInvalidImport(title, message) {
+  setStatus("Import rejected.", "error");
+  await requestNotice({
+    title,
+    message,
+    confirmLabel: "Close",
+    tone: "danger",
+  });
+}
+
 async function importCharacters(file) {
+  flushPendingAutoSave();
+  if (typeof file?.size === "number" && file.size > MAX_IMPORT_FILE_BYTES) {
+    await warnInvalidImport(
+      "Import rejected",
+      `This file is too large to be a Character Reliquary export. Max size: ${MAX_IMPORT_FILE_SIZE_LABEL}.`
+    );
+    return;
+  }
+
   const rawText = await file.text();
-  const parsed = JSON.parse(rawText);
+  if (rawText.length > MAX_IMPORT_FILE_BYTES) {
+    await warnInvalidImport(
+      "Import rejected",
+      `This file is too large to be a Character Reliquary export. Max size: ${MAX_IMPORT_FILE_SIZE_LABEL}.`
+    );
+    return;
+  }
+
+  let parsed = null;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch (_error) {
+    await warnInvalidImport("Invalid JSON", "This file could not be parsed as JSON.");
+    return;
+  }
+
+  if (!hasValidImportHeader(parsed?.header)) {
+    await warnInvalidImport(
+      "Import rejected",
+      "This file doesn't match the Character Reliquary character sheet format."
+    );
+    return;
+  }
+
   let incoming = [];
 
-  if (Array.isArray(parsed)) {
-    incoming = parsed;
-  } else if (parsed && Array.isArray(parsed.characters)) {
+  if (parsed && Array.isArray(parsed.characters)) {
     incoming = parsed.characters;
-  } else if (parsed && typeof parsed === "object") {
-    incoming = [parsed];
   }
 
   const normalized = incoming.map(normalizeCharacter);
   if (normalized.length === 0) {
-    throw new Error("No characters found in file.");
+    await warnInvalidImport("Import rejected", "This export does not contain any characters.");
+    return;
   }
 
   const byId = new Map(state.characters.map((sheet) => [sheet.id, sheet]));
@@ -2000,9 +2346,13 @@ async function importCharacters(file) {
       .map((sheet) => byId.get(sheet.id)?.name || sheet.name || "Unnamed Soul")
       .join(", ");
     const suffix = collisions.length > 3 ? ", ..." : "";
-    const confirmed = window.confirm(
-      `Import will overwrite ${collisions.length} existing character(s): ${preview}${suffix}. Continue?`
-    );
+    const confirmed = await requestConfirmation({
+      title: `Overwrite ${collisions.length} existing character(s)?`,
+      message: `Import will replace: ${preview}${suffix}.`,
+      confirmLabel: "Import",
+      cancelLabel: "Cancel",
+      tone: "warn",
+    });
     if (!confirmed) {
       setStatus("Import canceled. Existing characters were not overwritten.", "warn");
       return;
@@ -2024,7 +2374,9 @@ function scheduleAutoSave() {
   if (state.saveTimer) {
     clearTimeout(state.saveTimer);
   }
+  setAutoSaveIndicator("saving");
   state.saveTimer = window.setTimeout(() => {
+    state.saveTimer = null;
     saveActiveCharacter(false);
   }, 450);
 }
@@ -2040,6 +2392,7 @@ function clampFieldValue(fieldId, min, max) {
 
 function bindEvents() {
   placeDicePanelByViewport();
+  bindConfirmDialogEvents();
   els.form.addEventListener("input", (event) => {
     if (event.target.id === "name") {
       updateSheetTitle({ name: event.target.value });
@@ -2190,9 +2543,6 @@ function bindEvents() {
   if (els.installApp) {
     els.installApp.addEventListener("click", handleInstallAppClick);
   }
-  if (els.saveCharacter) {
-    els.saveCharacter.addEventListener("click", () => saveActiveCharacter(true));
-  }
   if (els.deleteCharacter) {
     els.deleteCharacter.addEventListener("click", deleteActiveCharacter);
   }
@@ -2225,10 +2575,7 @@ function bindEvents() {
     if (state.diceTray) {
       state.diceTray.dispose();
     }
-    if (state.saveTimer) {
-      clearTimeout(state.saveTimer);
-      saveActiveCharacter(false);
-    }
+    flushPendingAutoSave();
   });
 }
 
@@ -2524,6 +2871,7 @@ function init() {
   ensureThemeToggleButton();
   setupJoinPartyTooltip();
   setupInstallAppButton();
+  setAutoSaveIndicator("saved");
   applyTheme(resolveTheme(), false);
   renderFooterYear();
   renderFooterVersion();
