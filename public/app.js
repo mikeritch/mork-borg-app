@@ -12,6 +12,7 @@ const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules-fix1";
 const DICE_MODULE_LOAD_MAX_ATTEMPTS = 3;
 const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
 const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
+const BACKSTORY_LIBRARY_URL = "data/backstories.json";
 const SERVICE_WORKER_PATH = "/sw.js";
 const SERVICE_WORKER_SCOPE = "/";
 const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -50,6 +51,7 @@ const FIELD_IDS = [
   "armor",
   "trinket",
   "inventory",
+  "backstory",
   "notes",
 ];
 
@@ -111,8 +113,52 @@ const DEFAULTS = {
   armor: "",
   trinket: "",
   inventory: "",
+  backstory: "",
   notes: "",
 };
+
+const FALLBACK_BACKSTORY_LIBRARY = Object.freeze({
+  themes: [
+    Object.freeze({
+      id: "gravebound",
+      origin: Object.freeze([
+        "{name} dragged themselves out of {homeland} with {trinket} clutched tight.",
+        "In {homeland}, {name} became {epithet} after surviving a ditch full of the dead.",
+      ]),
+      fracture: Object.freeze([
+        "A priest marked them with {scar}, then named them expendable.",
+        "{notesHook}",
+      ]),
+      drive: Object.freeze([
+        "Now they hunt redemption with {weapon} and a mouth full of curses.",
+        "They keep moving so nobody can bury them again.",
+      ]),
+      doom: Object.freeze([
+        "If the black bells toll, {name} swears they will answer first.",
+        "Every firelight throws a shadow shaped like their own grave.",
+      ]),
+    }),
+    Object.freeze({
+      id: "ash-hunted",
+      origin: Object.freeze([
+        "{name} once marched as {className}, before the regiment burned.",
+        "{name} fled {homeland} under arrows and plague smoke.",
+      ]),
+      fracture: Object.freeze([
+        "They carry {trinket} because it is all that survived the pyres.",
+        "{scar} reminds them what mercy costs in this world.",
+      ]),
+      drive: Object.freeze([
+        "They sell steel until they can afford revenge.",
+        "They lie about everything except the names of the dead.",
+      ]),
+      doom: Object.freeze([
+        "Each dawn feels borrowed from someone else.",
+        "Sooner or later, the hunters from {homeland} will catch their scent.",
+      ]),
+    }),
+  ],
+});
 
 const WEAPON_DATA = {
   "Unarmed (d2)": { damage: "d2", attack: "Strength" },
@@ -373,6 +419,8 @@ const state = {
   characters: [],
   activeId: null,
   saveTimer: null,
+  backstoryLibrary: null,
+  backstoryLibraryPromise: null,
   diceTray: null,
   diceLoadPromise: null,
   diceInitPromise: null,
@@ -1808,7 +1856,121 @@ function rollClasslessArmor(reducedStart) {
   return pick(table);
 }
 
-function randomCharacterPatch() {
+function normalizeBackstoryChunkList(chunks) {
+  if (!Array.isArray(chunks)) {
+    return [];
+  }
+  return chunks.map((chunk) => String(chunk ?? "").trim()).filter(Boolean);
+}
+
+function normalizeBackstoryTheme(theme, fallbackId = "theme") {
+  if (!theme || typeof theme !== "object") {
+    return null;
+  }
+  const origin = normalizeBackstoryChunkList(theme.origin);
+  const fracture = normalizeBackstoryChunkList(theme.fracture);
+  const drive = normalizeBackstoryChunkList(theme.drive);
+  const doom = normalizeBackstoryChunkList(theme.doom);
+  if (origin.length === 0 || fracture.length === 0 || drive.length === 0 || doom.length === 0) {
+    return null;
+  }
+  const id = String(theme.id ?? fallbackId).trim() || fallbackId;
+  return { id, origin, fracture, drive, doom };
+}
+
+function normalizeBackstoryLibrary(candidate) {
+  const rawThemes = Array.isArray(candidate?.themes) ? candidate.themes : [];
+  const themes = rawThemes
+    .map((theme, index) => normalizeBackstoryTheme(theme, `theme-${index + 1}`))
+    .filter(Boolean);
+  if (themes.length > 0) {
+    return { themes };
+  }
+  return {
+    themes: FALLBACK_BACKSTORY_LIBRARY.themes
+      .map((theme, index) => normalizeBackstoryTheme(theme, `fallback-${index + 1}`))
+      .filter(Boolean),
+  };
+}
+
+async function loadBackstoryLibrary() {
+  if (state.backstoryLibrary) {
+    return state.backstoryLibrary;
+  }
+  if (state.backstoryLibraryPromise) {
+    return state.backstoryLibraryPromise;
+  }
+
+  state.backstoryLibraryPromise = (async () => {
+    try {
+      const response = await fetch(BACKSTORY_LIBRARY_URL, { cache: "force-cache" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      state.backstoryLibrary = normalizeBackstoryLibrary(payload);
+    } catch (error) {
+      console.warn("Backstory library failed to load; using built-in fallback.", error);
+      state.backstoryLibrary = normalizeBackstoryLibrary(FALLBACK_BACKSTORY_LIBRARY);
+    } finally {
+      state.backstoryLibraryPromise = null;
+    }
+    return state.backstoryLibrary;
+  })();
+
+  return state.backstoryLibraryPromise;
+}
+
+function backstoryContextFor(character) {
+  return {
+    name: String(character?.name ?? "").trim() || "This soul",
+    epithet: String(character?.epithet ?? "").trim() || "the nameless wretch",
+    homeland: String(character?.homeland ?? "").trim() || "a ruined hamlet",
+    className: String(character?.className ?? "").trim() || DEFAULTS.className,
+    scar: String(character?.scars ?? "").trim() || "a half-healed ritual brand",
+    trinket: String(character?.trinket ?? "").trim() || "a rusted relic",
+    weapon: stripTrailingParens(String(character?.weapon ?? "")).trim() || "a chipped blade",
+    notesHook: String(character?.notes ?? "").trim() || "No confession escapes their teeth.",
+  };
+}
+
+function applyBackstoryPlaceholders(chunk, context) {
+  return String(chunk ?? "")
+    .replace(/\{([a-zA-Z0-9_]+)\}/g, (_token, key) => {
+      const value = context[key];
+      return value == null ? "" : String(value);
+    })
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function ensureSentenceEnding(text) {
+  const trimmed = String(text ?? "").trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (/[.!?]$/.test(trimmed)) {
+    return trimmed;
+  }
+  return `${trimmed}.`;
+}
+
+async function generateBackstory(character) {
+  const library = await loadBackstoryLibrary();
+  const theme = pick(library.themes);
+  if (!theme) {
+    return "";
+  }
+  const context = backstoryContextFor(character);
+  const chunks = [pick(theme.origin), pick(theme.fracture), pick(theme.drive), pick(theme.doom)];
+  return chunks
+    .map((chunk) => ensureSentenceEnding(applyBackstoryPlaceholders(chunk, context)))
+    .filter(Boolean)
+    .join(" ");
+}
+
+async function randomCharacterPatch() {
   const strength = rollAbilityModifier();
   const agility = rollAbilityModifier();
   const presence = rollAbilityModifier();
@@ -1835,7 +1997,8 @@ function randomCharacterPatch() {
     gearB,
   ];
 
-  return {
+  const notes = pick(generators.notes);
+  const patch = {
     name: randomName(),
     epithet: pick(generators.epithets),
     className: "Classless Scvm",
@@ -1869,13 +2032,13 @@ function randomCharacterPatch() {
     armor: armor.label,
     trinket: pick(generators.trinkets),
     inventory: inventoryBits.join(", "),
-    notes: `${pick(generators.notes)}${
-      reducedStart ? " Started with a scroll, so weapon/armor used reduced classless tables." : ""
-    }`,
+    notes,
   };
+  patch.backstory = await generateBackstory(patch);
+  return patch;
 }
 
-function randomizeActiveCharacter() {
+async function randomizeActiveCharacter() {
   const existing = activeCharacter() || createBlankCharacter();
   const base = pullFromForm(existing);
   if (hasCharacterData(base)) {
@@ -1888,14 +2051,16 @@ function randomizeActiveCharacter() {
       return;
     }
   }
-  const randomized = normalizeCharacter({
-    ...base,
-    ...randomCharacterPatch(),
-    updatedAt: nowIso(),
-  });
-  upsertCharacter(randomized, false);
-  applyToForm(randomized);
-  setStatus("A classless soul is forged from the core tables.", "ok");
+  try {
+    const randomizedPatch = await randomCharacterPatch();
+    const randomized = normalizeCharacter({ ...base, ...randomizedPatch, updatedAt: nowIso() });
+    upsertCharacter(randomized, false);
+    applyToForm(randomized);
+    setStatus("A classless soul is forged from the core tables.", "ok");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus(`Randomize failed: ${message}`, "error");
+  }
 }
 
 function deleteActiveCharacter() {
@@ -2501,6 +2666,7 @@ function init() {
   loadState();
   renderCharacterList();
   applyToForm(activeCharacter());
+  void loadBackstoryLibrary();
   setInlineDiceStatus("Dice tray ready.", "neutral");
   bindEvents();
   registerServiceWorker();

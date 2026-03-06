@@ -15,6 +15,7 @@ A fast, gothic character sheet app for MORK BORG. Build characters, track play, 
 ## Features
 
 - Classless random character generation with overwrite confirmation.
+- JSON-backed backstory generator
 - Full sheet editor for Identity, Core Stats, Survival, Equipment, Powers, and Notes.
 - Multi-character vault with quick switching.
 - Auto-save to browser storage and JSON import/export for backups.
