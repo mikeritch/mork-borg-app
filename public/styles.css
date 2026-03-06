@@ -215,6 +215,13 @@ body::before {
 
 .site-footer-wrap {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "commandments"
+    "references"
+    "patchnotes"
+    "license"
+    "meta";
   gap: 0.9rem;
 }
 
@@ -1166,17 +1173,19 @@ html[data-theme="dark"] .theme-toggle {
 .sheet-roll-banner-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  margin-bottom: 0.36rem;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.28rem;
 }
 
 .sheet-roll-banner-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.46rem;
-  flex-wrap: wrap;
+  gap: 0.42rem;
+  flex-wrap: nowrap;
+  width: 100%;
+  margin-top: 0.54rem;
 }
 
 .sheet-roll-banner-name {
@@ -1188,19 +1197,17 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .sheet-roll-banner-action {
-  border: 1px solid color-mix(in srgb, var(--gold) 54%, var(--accent) 46%);
+  border: 1px solid color-mix(in srgb, var(--line) 76%, var(--gold) 24%);
   border-radius: 999px;
   min-height: 1.9rem;
   padding: 0.3rem 0.74rem;
-  background:
-    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--gold) 16%, transparent 84%), transparent 54%),
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--paper-strong) 44%, var(--gold) 56%),
-      color-mix(in srgb, var(--accent) 28%, var(--paper) 72%));
-  color: #fff7eb;
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--paper-strong) 62%, var(--section-bg) 38%),
+      color-mix(in srgb, var(--paper) 76%, var(--section-bg) 24%));
+  color: color-mix(in srgb, var(--ink-soft) 84%, #fff 16%);
   box-shadow:
-    0 8px 15px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent 84%);
+    0 6px 12px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent 90%);
   font: 700 0.68rem/1 "Cinzel", serif;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1214,36 +1221,24 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .sheet-roll-banner-action.is-view-log {
-  border-color: color-mix(in srgb, var(--gold) 68%, var(--line) 32%);
-  background:
-    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--gold) 22%, transparent 78%), transparent 56%),
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--gold) 36%, var(--paper-strong) 64%),
-      color-mix(in srgb, var(--gold) 18%, var(--paper) 82%));
-  color: #fff8ec;
+  border-color: color-mix(in srgb, var(--line) 82%, var(--gold) 18%);
+  color: color-mix(in srgb, var(--ink-soft) 74%, var(--gold) 26%);
 }
 
 .sheet-roll-banner-action.is-dismiss {
-  border-color: color-mix(in srgb, var(--accent-soft) 58%, var(--accent) 42%);
-  background:
-    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--accent-soft) 20%, transparent 80%), transparent 58%),
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--accent-soft) 30%, var(--paper-strong) 70%),
-      color-mix(in srgb, var(--accent) 62%, var(--paper) 38%));
-  color: #fff3f1;
+  border-color: color-mix(in srgb, var(--line) 76%, var(--accent-soft) 24%);
+  color: color-mix(in srgb, var(--ink-soft) 76%, var(--accent-soft) 24%);
 }
 
 .sheet-roll-banner-action:hover {
-  border-color: color-mix(in srgb, var(--gold) 62%, var(--accent-soft) 38%);
-  color: #fffdf7;
-  background:
-    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--gold) 26%, transparent 74%), transparent 54%),
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--paper-strong) 50%, var(--gold) 50%),
-      color-mix(in srgb, var(--accent) 24%, var(--paper) 76%));
+  border-color: color-mix(in srgb, var(--line) 58%, var(--gold) 42%);
+  color: color-mix(in srgb, #fff 18%, var(--ink-soft) 82%);
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--paper-strong) 56%, var(--gold) 14%),
+      color-mix(in srgb, var(--paper) 74%, var(--section-bg) 26%));
   box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent 82%);
+    0 8px 16px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent 88%);
 }
 
 .sheet-roll-banner-action:active {
@@ -1260,7 +1255,7 @@ html[data-theme="dark"] .theme-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.8rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
@@ -1285,10 +1280,15 @@ html[data-theme="dark"] .theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 0.8rem;
-  color: color-mix(in srgb, var(--gold) 74%, #fff 26%);
-  font: 700 1rem/1 "Cinzel", serif;
-  letter-spacing: 0.02em;
+  min-width: 1.2rem;
+  min-height: 1.42rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--gold) 56%, var(--line) 44%);
+  background: color-mix(in srgb, var(--section-bg) 74%, transparent 26%);
+  color: color-mix(in srgb, #fff 52%, var(--gold) 48%);
+  font: 700 1.02rem/1 "Cinzel", serif;
+  letter-spacing: 0.03em;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.24);
 }
 
@@ -1451,29 +1451,24 @@ html[data-theme="light"] .sheet-roll-banner-stat {
 }
 
 html[data-theme="light"] .sheet-roll-banner-action {
-  border-color: color-mix(in srgb, var(--gold) 56%, var(--accent) 44%);
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, #fff 36%, var(--gold) 64%),
-      color-mix(in srgb, var(--accent) 18%, #fff 82%));
-  color: color-mix(in srgb, var(--accent) 72%, #fff 28%);
+  border-color: color-mix(in srgb, var(--line) 72%, var(--gold) 28%);
+  background: linear-gradient(180deg,
+      color-mix(in srgb, #fff 70%, var(--gold) 30%),
+      color-mix(in srgb, #fff 80%, var(--section-bg) 20%));
+  color: color-mix(in srgb, var(--ink) 74%, var(--accent) 26%);
   box-shadow:
-    0 8px 14px rgba(55, 33, 31, 0.1),
+    0 6px 12px rgba(55, 33, 31, 0.09),
     inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
 html[data-theme="light"] .sheet-roll-banner-action.is-view-log {
-  border-color: color-mix(in srgb, var(--gold) 66%, var(--accent) 34%);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, #fff 30%, var(--gold) 70%), color-mix(in srgb, var(--gold) 30%, #fff 70%));
-  color: color-mix(in srgb, var(--accent) 66%, #fff 34%);
+  border-color: color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
+  color: color-mix(in srgb, var(--ink) 70%, var(--gold) 30%);
 }
 
 html[data-theme="light"] .sheet-roll-banner-action.is-dismiss {
-  border-color: color-mix(in srgb, var(--accent-soft) 58%, var(--accent) 42%);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, #fff 26%, var(--accent-soft) 74%), color-mix(in srgb, var(--accent) 72%, #fff 28%));
-  color: #fff7f4;
+  border-color: color-mix(in srgb, var(--line) 74%, var(--accent-soft) 26%);
+  color: color-mix(in srgb, var(--ink) 74%, var(--accent) 26%);
 }
 
 html[data-theme="light"] .sheet-roll-banner-chip {
@@ -1507,7 +1502,9 @@ html[data-theme="light"] .sheet-roll-banner-chip.is-note {
 }
 
 html[data-theme="light"] .sheet-roll-banner-op {
-  color: color-mix(in srgb, var(--accent) 56%, var(--gold) 44%);
+  border-color: color-mix(in srgb, var(--gold) 56%, var(--line) 44%);
+  background: color-mix(in srgb, #fff 78%, var(--gold) 22%);
+  color: color-mix(in srgb, var(--accent) 52%, var(--gold) 48%);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.56);
 }
 
@@ -3206,25 +3203,56 @@ textarea:focus {
 
   .sheet-roll-banner-card {
     width: min(100%, calc(100vw - 1.2rem));
-    padding-inline: 0.76rem;
+    padding: 0.64rem 0.7rem 0.7rem;
   }
 
   .sheet-roll-banner-head {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    margin-bottom: 0.18rem;
   }
 
   .sheet-roll-banner-actions {
-    width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
+    margin-top: 0.42rem;
   }
 
   .sheet-roll-banner-main {
     align-items: flex-start;
+    gap: 0.46rem;
+  }
+
+  .sheet-roll-banner-stat {
+    font-size: 1.04rem;
   }
 
   .sheet-roll-banner-metrics {
     justify-content: flex-start;
+    gap: 0.32rem;
+  }
+
+  .sheet-roll-banner-chip {
+    min-height: 2.04rem;
+    padding: 0.34rem 0.62rem;
+    font-size: 0.76rem;
+  }
+
+  .sheet-roll-banner-chip.is-total,
+  .sheet-roll-banner-chip.is-critical,
+  .sheet-roll-banner-chip.is-fumble {
+    min-height: 2.18rem;
+    padding-inline: 0.76rem;
+    font-size: 0.85rem;
+  }
+
+  .sheet-roll-banner-action {
+    min-height: 1.76rem;
+    padding: 0.26rem 0.62rem;
+    font-size: 0.62rem;
+  }
+
+  .sheet-roll-banner-op {
+    min-width: 1.26rem;
+    min-height: 1.44rem;
+    font-size: 1.08rem;
   }
 
   .span-2 {

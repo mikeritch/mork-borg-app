@@ -9,7 +9,7 @@ const KNOWN_POWERS_MAX = 99;
 const HP_CURRENT_MIN = -30;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
-const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260306-clear-distance-boost-4";
+const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260306-banner-mobile-layout-1";
 const DICE_MODULE_LOAD_MAX_ATTEMPTS = 3;
 const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
 const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
@@ -17,7 +17,7 @@ const RANDOMIZER_LIBRARY_URL = "data/randomizer-library.json";
 const BACKSTORY_LIBRARY_URL = "data/backstories.json";
 const CORE_STAT_FIELD_IDS = Object.freeze(["strength", "agility", "presence", "toughness"]);
 const ATTACK_STAT_OPTIONS = Object.freeze(["Strength", "Presence"]);
-const SHEET_ROLL_BANNER_DEFAULT_DURATION_MS = 30000;
+const SHEET_ROLL_BANNER_DEFAULT_DURATION_MS = 20000;
 const SHEET_ROLL_BANNER_TRANSITION_MS = 220;
 const EXPORT_FILE_HEADER = Object.freeze({
   app: "Character Reliquary",
@@ -271,6 +271,7 @@ const state = {
   diceLoadPromise: null,
   diceInitPromise: null,
   sheetRollBannerTimer: null,
+  sheetRollBannerDiceTimer: null,
   sheetRollBannerResetTimer: null,
   sheetRollBannerControlsDice: false,
   hpMaxHintVisible: false,
@@ -413,6 +414,10 @@ function clearSheetRollBannerTimers() {
   if (state.sheetRollBannerTimer) {
     window.clearTimeout(state.sheetRollBannerTimer);
     state.sheetRollBannerTimer = null;
+  }
+  if (state.sheetRollBannerDiceTimer) {
+    window.clearTimeout(state.sheetRollBannerDiceTimer);
+    state.sheetRollBannerDiceTimer = null;
   }
   if (state.sheetRollBannerResetTimer) {
     window.clearTimeout(state.sheetRollBannerResetTimer);
@@ -564,9 +569,27 @@ function showSheetRollBanner({
   void els.sheetRollBanner.offsetWidth;
   els.sheetRollBanner.classList.add("is-visible");
   state.sheetRollBannerControlsDice = true;
+  const durationMs = resolveSheetRollBannerDurationMs();
+  const diceClearDelayMs = Math.max(500, Math.round(durationMs / 2));
+  state.sheetRollBannerDiceTimer = window.setTimeout(async () => {
+    state.sheetRollBannerDiceTimer = null;
+    const shouldClearDice = state.sheetRollBannerControlsDice;
+    state.sheetRollBannerControlsDice = false;
+    if (!shouldClearDice || !state.diceTray || typeof state.diceTray.throwDiceOffScreenAndClear !== "function") {
+      return;
+    }
+    try {
+      await state.diceTray.throwDiceOffScreenAndClear({
+        silent: true,
+        skipIfRolling: true,
+      });
+    } catch (_error) {
+      // Ignore auto-clear failures; tray controls remain available.
+    }
+  }, diceClearDelayMs);
   state.sheetRollBannerTimer = window.setTimeout(() => {
     void dismissSheetRollBanner();
-  }, resolveSheetRollBannerDurationMs());
+  }, durationMs);
 }
 
 function resolveActiveCharacterName() {
