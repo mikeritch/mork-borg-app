@@ -2,6 +2,7 @@ const STORAGE_KEY = "morkborg-reliquary.characters.v1";
 const ACTIVE_KEY = "morkborg-reliquary.active.v1";
 const THEME_KEY = "morkborg-reliquary.theme.v1";
 const INSTALL_HINT_KEY = "morkborg-reliquary.install-hint.v1";
+const APP_VERSION = "__APP_VERSION__";
 const CUSTOM_OPTION_VALUE = "__custom__";
 const POWER_TRACKER_LENGTH = 12;
 const KNOWN_POWERS_MAX = 99;
@@ -440,6 +441,7 @@ const els = {
   diceLowPerformance: document.getElementById("dice-low-performance"),
   diceStatus: document.getElementById("dice-status"),
   footerYear: document.getElementById("footer-year"),
+  footerVersion: document.getElementById("footer-version"),
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, document.getElementById(id)])),
 };
 
@@ -1720,6 +1722,17 @@ function renderFooterYear() {
   els.footerYear.textContent = String(new Date().getFullYear());
 }
 
+function renderFooterVersion() {
+  if (!els.footerVersion) {
+    return;
+  }
+  if (/^\d+\.\d+\.\d+$/.test(APP_VERSION)) {
+    els.footerVersion.textContent = `v${APP_VERSION}`;
+    return;
+  }
+  els.footerVersion.textContent = "vdev";
+}
+
 function renderLucideIcons() {
   const lucideApi = window.lucide;
   if (!lucideApi || typeof lucideApi.createIcons !== "function") {
@@ -2483,6 +2496,7 @@ function init() {
   setupInstallAppButton();
   applyTheme(resolveTheme(), false);
   renderFooterYear();
+  renderFooterVersion();
   renderLucideIcons();
   loadState();
   renderCharacterList();
