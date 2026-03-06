@@ -52,7 +52,7 @@
       }
     </script>
   <script src="theme-init.js?v=20260305-csp-init-1"></script>
-  <link rel="stylesheet" href="styles.css?v=20260306-autosave-indicator-1" />
+  <link rel="stylesheet" href="styles.css?v=20260306-banner-tray-mod-hide-1" />
 </head>
 
 <body>
@@ -170,6 +170,13 @@
                 <label class="dice-switch-label" for="dice-low-performance">
                   <input id="dice-low-performance" type="checkbox" />
                   Low Performance
+                </label>
+                <label class="dice-setting-field" for="dice-banner-seconds">
+                  <span class="dice-setting-label">Notification Timer</span>
+                  <span class="dice-setting-input">
+                    <input id="dice-banner-seconds" type="number" min="5" max="120" step="1" inputmode="numeric" />
+                    <span class="dice-setting-suffix">seconds</span>
+                  </span>
                 </label>
               </div>
             </details>
@@ -306,34 +313,58 @@
             improve up to +6 over time.
           </p>
           <div class="fields stat-grid core-stats-grid">
-            <label class="core-stat-field">
-              <span class="label-with-icon">
+            <div class="core-stat-field">
+              <label class="label-with-icon" for="strength">
                 <i class="stat-lucide" data-lucide="dumbbell" aria-hidden="true"></i>
                 <span>Strength</span>
-              </span>
-              <input class="core-stat-input" id="strength" type="number" min="-3" max="6" step="1" />
-            </label>
-            <label class="core-stat-field">
-              <span class="label-with-icon">
+              </label>
+              <div class="core-stat-controls">
+                <input class="core-stat-input" id="strength" type="number" min="-3" max="6" step="1" />
+                <button class="core-stat-roll-btn" type="button" data-core-stat-roll="strength"
+                  aria-label="Roll Strength test" title="Roll Strength test">
+                  <i class="core-stat-roll-icon" data-lucide="dices" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+            <div class="core-stat-field">
+              <label class="label-with-icon" for="agility">
                 <i class="stat-lucide" data-lucide="wind" aria-hidden="true"></i>
                 <span>Agility</span>
-              </span>
-              <input class="core-stat-input" id="agility" type="number" min="-3" max="6" step="1" />
-            </label>
-            <label class="core-stat-field">
-              <span class="label-with-icon">
+              </label>
+              <div class="core-stat-controls">
+                <input class="core-stat-input" id="agility" type="number" min="-3" max="6" step="1" />
+                <button class="core-stat-roll-btn" type="button" data-core-stat-roll="agility"
+                  aria-label="Roll Agility test" title="Roll Agility test">
+                  <i class="core-stat-roll-icon" data-lucide="dices" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+            <div class="core-stat-field">
+              <label class="label-with-icon" for="presence">
                 <i class="stat-lucide" data-lucide="eye" aria-hidden="true"></i>
                 <span>Presence</span>
-              </span>
-              <input class="core-stat-input" id="presence" type="number" min="-3" max="6" step="1" />
-            </label>
-            <label class="core-stat-field">
-              <span class="label-with-icon">
+              </label>
+              <div class="core-stat-controls">
+                <input class="core-stat-input" id="presence" type="number" min="-3" max="6" step="1" />
+                <button class="core-stat-roll-btn" type="button" data-core-stat-roll="presence"
+                  aria-label="Roll Presence test" title="Roll Presence test">
+                  <i class="core-stat-roll-icon" data-lucide="dices" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+            <div class="core-stat-field">
+              <label class="label-with-icon" for="toughness">
                 <i class="stat-lucide" data-lucide="shield-alert" aria-hidden="true"></i>
                 <span>Toughness</span>
-              </span>
-              <input class="core-stat-input" id="toughness" type="number" min="-3" max="6" step="1" />
-            </label>
+              </label>
+              <div class="core-stat-controls">
+                <input class="core-stat-input" id="toughness" type="number" min="-3" max="6" step="1" />
+                <button class="core-stat-roll-btn" type="button" data-core-stat-roll="toughness"
+                  aria-label="Roll Toughness test" title="Roll Toughness test">
+                  <i class="core-stat-roll-icon" data-lucide="dices" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -847,10 +878,26 @@
 
   <footer class="site-footer" aria-label="Legal and attribution">
     <div class="site-footer-wrap">
+      <section class="footer-card footer-references" aria-labelledby="footer-references-title">
+        <div class="footer-references-body">
+          <h2 id="footer-references-title" class="footer-section-title">References</h2>
+          <p class="footer-references-copy">Useful MORK BORG resources beyond the reliquary.</p>
+          <ul class="footer-reference-list" aria-label="External MORK BORG resources">
+            <li>
+              <a href="https://morkborg.com/" target="_blank" rel="noopener noreferrer">Official MORK BORG site</a>
+              <span>News, books, and the main hub for the game.</span>
+            </li>
+            <li>
+              <a href="https://scvmbirther.makedatanotlore.dev/" target="_blank" rel="noopener noreferrer">SCVMBIRTHER</a>
+              <span>The official MORK BORG character generator.</span>
+            </li>
+          </ul>
+        </div>
+      </section>
       <section class="footer-card footer-license">
         <img class="footer-license-logo" src="assets/logos/CompWith_MORKBORG_horiz.svg" alt="Compatible with MORK BORG"
           loading="lazy" decoding="async" />
-        <p>
+        <p class="footer-license-copy">
           Character Reliquary is an independent production by Mane Mike and is not affiliated
           with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK
           BORG Third Party License. MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm
@@ -877,6 +924,32 @@
     </li>
   </template>
 
+  <div id="sheet-roll-banner" class="sheet-roll-banner" role="status" aria-live="polite" aria-atomic="true" hidden>
+    <section class="sheet-roll-banner-card" aria-label="Latest roll result">
+      <div class="sheet-roll-banner-head">
+        <p id="sheet-roll-banner-name" class="sheet-roll-banner-name">Unnamed Soul</p>
+        <div class="sheet-roll-banner-actions">
+          <button id="sheet-roll-banner-view-log" class="sheet-roll-banner-action is-view-log" type="button"
+            aria-label="Open dice roll log">
+            View Log
+          </button>
+          <button id="sheet-roll-banner-dismiss" class="sheet-roll-banner-action is-dismiss" type="button"
+            aria-label="Dismiss roll result">
+            Dismiss
+          </button>
+        </div>
+      </div>
+      <div class="sheet-roll-banner-main">
+        <p id="sheet-roll-banner-stat" class="sheet-roll-banner-stat">Strength</p>
+        <div class="sheet-roll-banner-metrics">
+          <span id="sheet-roll-banner-roll" class="sheet-roll-banner-chip is-roll">d20 12</span>
+          <span id="sheet-roll-banner-mod" class="sheet-roll-banner-chip is-mod">mod +0</span>
+          <span id="sheet-roll-banner-total" class="sheet-roll-banner-chip is-total">total 12</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <div id="confirm-modal" class="confirm-modal" aria-hidden="true" hidden>
     <section id="confirm-dialog" class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title"
       aria-describedby="confirm-message" tabindex="-1">
@@ -897,7 +970,7 @@
   </div>
 
   <script src="assets/vendor/lucide-0.468.0.min.js" defer></script>
-  <script src="app.js?v=20260306-autosave-indicator-1" defer></script>
+  <script src="app.js?v=20260306-clear-distance-boost-3" defer></script>
 </body>
 
 </html>

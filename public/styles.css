@@ -97,6 +97,7 @@
   --dice-chip-active: linear-gradient(120deg, rgba(141, 33, 41, 0.84), rgba(177, 145, 78, 0.66));
   --dice-surface: rgba(66, 50, 57, 0.6);
   --dice-fallback-token: linear-gradient(180deg, rgba(84, 63, 72, 0.94), rgba(52, 39, 44, 0.94));
+  --sheet-roll-banner-safe-zone-px: 122;
   --readonly-bg: rgba(44, 35, 39, 0.95);
   --readonly-text: #ddcfc0;
   --reference-bg: radial-gradient(circle at 80% 0%, rgba(177, 145, 78, 0.22), transparent 38%),
@@ -233,8 +234,62 @@ body::before {
   line-height: 1.24;
 }
 
+.footer-section-title {
+  margin: 0 0 0.42rem;
+  font: 700 0.98rem/1.1 "Cinzel", serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kicker);
+}
+
+.footer-references-copy {
+  font-size: 0.94rem;
+}
+
+.footer-references-body {
+  width: min(100%, 46rem);
+  margin-inline: auto;
+}
+
+.footer-reference-list {
+  list-style: none;
+  margin: 0.78rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.footer-reference-list li {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.footer-reference-list a {
+  width: fit-content;
+  color: var(--accent-soft);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-soft) 70%, transparent 30%);
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.footer-reference-list a:hover {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 72%, transparent 28%);
+}
+
+.footer-reference-list span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.24;
+}
+
 .footer-license p {
   font-size: 0.95rem;
+}
+
+.footer-license-copy {
+  width: min(100%, 86rem);
+  margin-inline: auto;
 }
 
 .footer-license-logo {
@@ -557,6 +612,7 @@ html[data-theme="light"] .brand-logo-light {
 
 .label-with-icon {
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.4rem;
 }
@@ -861,6 +917,267 @@ html[data-theme="dark"] .theme-toggle {
   display: none;
 }
 
+.sheet-roll-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 44;
+  display: grid;
+  justify-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.72rem) 1rem 0;
+  pointer-events: none;
+}
+
+.sheet-roll-banner-card {
+  width: min(34rem, calc(100vw - 2rem));
+  border: 1px solid color-mix(in srgb, var(--gold) 58%, var(--accent) 42%);
+  border-radius: 14px;
+  padding: 0.72rem 0.88rem 0.82rem;
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--gold) 28%, transparent 72%), transparent 56%),
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--accent-soft) 18%, transparent 82%), transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, var(--paper-strong) 84%, var(--accent) 16%), color-mix(in srgb, var(--paper) 76%, var(--accent) 24%));
+  box-shadow:
+    0 20px 38px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent 88%);
+  transform: translateY(calc(-100% - 1rem));
+  opacity: 0;
+  transition: transform 220ms ease, opacity 180ms ease;
+  backdrop-filter: blur(9px);
+  pointer-events: auto;
+}
+
+.sheet-roll-banner.is-visible .sheet-roll-banner-card {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.sheet-roll-banner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.36rem;
+}
+
+.sheet-roll-banner-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.46rem;
+  flex-wrap: wrap;
+}
+
+.sheet-roll-banner-name {
+  margin: 0;
+  font: 700 0.74rem/1.1 "Cinzel", serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--gold) 84%, #fff 16%);
+}
+
+.sheet-roll-banner-action {
+  border: 1px solid color-mix(in srgb, var(--gold) 48%, var(--accent-soft) 52%);
+  border-radius: 999px;
+  min-height: 1.9rem;
+  padding: 0.28rem 0.68rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--btn-ghost-bg) 68%, var(--accent) 32%), color-mix(in srgb, var(--paper) 80%, var(--accent) 20%));
+  color: color-mix(in srgb, #fff 88%, var(--gold) 12%);
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent 86%);
+  font: 700 0.68rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, transform 120ms ease, box-shadow 140ms ease;
+}
+
+.sheet-roll-banner-action.is-view-log {
+  border-color: color-mix(in srgb, var(--gold) 62%, var(--line) 38%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 22%, var(--btn-ghost-bg) 78%), color-mix(in srgb, var(--paper) 84%, var(--gold) 16%));
+  color: color-mix(in srgb, #fff 82%, var(--gold) 18%);
+}
+
+.sheet-roll-banner-action:hover {
+  border-color: color-mix(in srgb, var(--gold) 62%, var(--accent-soft) 38%);
+  color: #fff7eb;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent 82%);
+}
+
+.sheet-roll-banner-action:active {
+  transform: translateY(1px);
+}
+
+.sheet-roll-banner-action:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 18%, transparent 82%);
+}
+
+.sheet-roll-banner-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.sheet-roll-banner-stat {
+  margin: 0;
+  font: 700 1.22rem/1 "Cinzel", serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #fff 78%, var(--gold) 22%);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.28);
+}
+
+.sheet-roll-banner-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.sheet-roll-banner-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.3rem;
+  padding: 0.42rem 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent 28%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tracker-pill-bg) 82%, transparent 18%);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent 88%);
+  font: 700 0.86rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+  white-space: nowrap;
+}
+
+.sheet-roll-banner-chip[hidden] {
+  display: none !important;
+}
+
+.sheet-roll-banner[data-roll-source="tray"] .sheet-roll-banner-chip.is-mod {
+  display: none !important;
+}
+
+.sheet-roll-banner-chip.is-roll {
+  border-color: color-mix(in srgb, var(--gold) 74%, var(--accent-soft) 26%);
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--gold) 28%, transparent 72%), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 32%, var(--paper-strong) 68%), color-mix(in srgb, var(--accent) 12%, var(--paper) 88%));
+  color: #fff6e6;
+}
+
+.sheet-roll-banner-chip.is-mod {
+  border-color: color-mix(in srgb, var(--accent-soft) 68%, var(--accent) 32%);
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--accent-soft) 26%, transparent 74%), transparent 56%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, var(--btn-ghost-bg) 86%), color-mix(in srgb, var(--accent) 68%, var(--paper) 32%));
+  color: #fff3f1;
+}
+
+.sheet-roll-banner-chip.is-total {
+  border-color: color-mix(in srgb, var(--gold) 78%, var(--accent) 22%);
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, var(--gold) 30%, transparent 70%), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 26%, var(--btn-ghost-bg) 74%), color-mix(in srgb, var(--gold) 42%, var(--paper) 58%));
+  color: #fff8eb;
+  min-height: 2.48rem;
+  padding-inline: 0.92rem;
+  font-size: 0.98rem;
+  box-shadow:
+    0 0 14px rgba(164, 32, 42, 0.34),
+    0 0 28px rgba(164, 32, 42, 0.2),
+    0 14px 24px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent 82%);
+}
+
+html[data-theme="light"] .sheet-roll-banner-card {
+  border-color: color-mix(in srgb, var(--gold) 58%, var(--accent) 42%);
+  background:
+    radial-gradient(circle at 50% 0, rgba(165, 133, 69, 0.26), transparent 60%),
+    radial-gradient(circle at 100% 0, rgba(185, 90, 78, 0.16), transparent 52%),
+    linear-gradient(180deg, rgba(255, 250, 242, 0.98), rgba(244, 233, 214, 0.96));
+  box-shadow:
+    0 18px 32px rgba(45, 26, 23, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+html[data-theme="light"] .sheet-roll-banner-name {
+  color: color-mix(in srgb, var(--accent) 58%, var(--gold) 42%);
+}
+
+html[data-theme="light"] .sheet-roll-banner-stat {
+  color: color-mix(in srgb, var(--accent) 72%, #2b1c1d 28%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+html[data-theme="light"] .sheet-roll-banner-action {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--gold) 54%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 70%, var(--accent-soft) 30%), color-mix(in srgb, var(--accent) 18%, #fff 82%));
+  color: color-mix(in srgb, var(--accent) 76%, #fff 24%);
+  box-shadow:
+    0 8px 14px rgba(55, 33, 31, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+html[data-theme="light"] .sheet-roll-banner-action.is-view-log {
+  border-color: color-mix(in srgb, var(--gold) 58%, var(--accent) 42%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 34%, var(--gold) 66%), color-mix(in srgb, var(--gold) 28%, #fff 72%));
+  color: color-mix(in srgb, var(--accent) 68%, #fff 32%);
+}
+
+html[data-theme="light"] .sheet-roll-banner-chip {
+  color: color-mix(in srgb, var(--accent) 56%, #201414 44%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.48);
+  box-shadow:
+    0 9px 16px rgba(48, 30, 27, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme="light"] .sheet-roll-banner-chip.is-roll {
+  border-color: color-mix(in srgb, var(--gold) 62%, var(--accent) 38%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 34%, var(--gold) 66%), color-mix(in srgb, var(--gold) 82%, var(--accent) 18%));
+  color: #2b1a0f;
+}
+
+html[data-theme="light"] .sheet-roll-banner-chip.is-mod {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--accent-soft) 30%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 18%, var(--accent-soft) 82%), color-mix(in srgb, var(--accent) 80%, black 20%));
+  color: #fff7f4;
+  text-shadow: 0 1px 0 rgba(71, 22, 19, 0.34);
+}
+
+html[data-theme="light"] .sheet-roll-banner-chip.is-total {
+  border-color: color-mix(in srgb, var(--gold) 70%, var(--accent) 30%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 28%, var(--gold) 72%), color-mix(in srgb, var(--gold) 88%, var(--accent) 12%));
+  color: #24150d;
+  box-shadow:
+    0 0 12px rgba(142, 30, 36, 0.22),
+    0 0 24px rgba(142, 30, 36, 0.12),
+    0 10px 18px rgba(45, 26, 23, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
 .confirm-dialog {
   width: min(100%, 29rem);
   border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
@@ -972,8 +1289,8 @@ html[data-theme="dark"] .theme-toggle {
 
 .dice-panel-body {
   display: grid;
-  gap: 0.72rem;
-  padding: 0.8rem 0.85rem 0.9rem;
+  gap: 0.5rem;
+  padding: 0.66rem 0.74rem 0.74rem;
 }
 
 .dice-panel-body[hidden] {
@@ -982,7 +1299,7 @@ html[data-theme="dark"] .theme-toggle {
 
 .dice-preview-host {
   position: relative;
-  height: clamp(4.2rem, 13vh, 6.1rem);
+  height: clamp(3.35rem, 10vh, 4.8rem);
   border: 1px solid color-mix(in srgb, var(--line) 72%, var(--gold) 28%);
   border-radius: 10px;
   background:
@@ -993,25 +1310,25 @@ html[data-theme="dark"] .theme-toggle {
 
 .dice-controls {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.38rem;
   align-items: stretch;
 }
 
 .dice-roll-btn {
-  min-height: 2.55rem;
+  min-height: 2.25rem;
   flex: 1 1 auto;
 }
 
 .dice-clear-btn {
-  min-height: 2.55rem;
-  min-width: 5.35rem;
+  min-height: 2.25rem;
+  min-width: 4.9rem;
   flex: 0 0 auto;
 }
 
 .dice-chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.34rem;
 }
 
 .dice-chip {
@@ -1020,8 +1337,8 @@ html[data-theme="dark"] .theme-toggle {
   border-radius: 999px;
   background: var(--dice-chip-bg);
   color: inherit;
-  padding: 0.35rem 0.72rem;
-  font: 700 0.8rem/1 "Cinzel", serif;
+  padding: 0.28rem 0.58rem;
+  font: 700 0.74rem/1 "Cinzel", serif;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: transform 150ms ease, border-color 160ms ease, box-shadow 160ms ease;
@@ -1047,14 +1364,14 @@ html[data-theme="dark"] .theme-toggle {
 .dice-advanced {
   border: 1px dashed color-mix(in srgb, var(--line) 75%, var(--gold) 25%);
   border-radius: 9px;
-  padding: 0.5rem 0.58rem 0.58rem;
+  padding: 0.42rem 0.48rem 0.48rem;
   background: color-mix(in srgb, var(--section-bg) 70%, transparent 30%);
 }
 
 .dice-advanced summary {
   cursor: pointer;
   list-style: none;
-  font: 700 0.78rem/1 "Cinzel", serif;
+  font: 700 0.73rem/1 "Cinzel", serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -1064,9 +1381,9 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .dice-advanced-grid {
-  margin-top: 0.5rem;
+  margin-top: 0.38rem;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.38rem;
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -1074,9 +1391,9 @@ html[data-theme="dark"] .theme-toggle {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.42rem;
+  gap: 0.34rem;
   justify-content: flex-start;
-  font: 700 0.8rem/1.1 "Cinzel", serif;
+  font: 700 0.74rem/1.08 "Cinzel", serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1088,13 +1405,46 @@ html[data-theme="dark"] .theme-toggle {
   accent-color: var(--accent);
 }
 
+.dice-setting-field {
+  gap: 0.26rem;
+}
+
+.dice-setting-label {
+  font: 700 0.72rem/1 "Cinzel", serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--field-help);
+}
+
+.dice-setting-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.dice-setting-field input {
+  min-height: 2.12rem;
+  padding-block: 0.32rem;
+  font: 700 0.92rem/1 "Cinzel", serif;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dice-setting-suffix {
+  font: 700 0.68rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .dice-status {
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--line) 74%, var(--gold) 26%);
   border-radius: 8px;
   background: color-mix(in srgb, var(--status-bg) 86%, transparent 14%);
-  padding: 0.62rem 0.72rem;
-  font: 700 1.05rem/1.2 "Cinzel", serif;
+  padding: 0.46rem 0.58rem;
+  font: 700 0.88rem/1.15 "Cinzel", serif;
   letter-spacing: 0.025em;
   color: var(--field-help);
 }
@@ -1173,15 +1523,15 @@ html[data-theme="dark"] .theme-toggle {
 .dice-history-wrap {
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent 22%);
   border-radius: 9px;
-  padding: 0.55rem 0.58rem;
+  padding: 0.42rem 0.46rem;
   background: color-mix(in srgb, var(--section-bg) 77%, transparent 23%);
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
 }
 
 .dice-history-wrap h4 {
-  margin: 0 0 0.45rem;
-  font: 700 0.84rem/1 "Cinzel", serif;
+  margin: 0 0 0.18rem;
+  font: 700 0.74rem/1 "Cinzel", serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -1191,37 +1541,81 @@ html[data-theme="dark"] .theme-toggle {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.22rem;
 }
 
 .dice-history-item {
   border: 1px solid color-mix(in srgb, var(--line) 74%, transparent 26%);
   border-radius: 8px;
   background: color-mix(in srgb, var(--dice-surface) 65%, transparent 35%);
-  padding: 0.45rem 0.55rem;
+  padding: 0.28rem 0.4rem;
 }
 
 .dice-history-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
-  font: 700 1rem/1.1 "Cinzel", serif;
-  letter-spacing: 0.03em;
+  gap: 0.44rem;
+}
+
+.dice-history-labels {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .dice-history-die {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.12rem 0.44rem;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--gold) 30%);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--btn-ghost-bg) 84%, var(--gold) 16%), color-mix(in srgb, var(--section-bg) 94%, black 6%));
+  font: 700 0.72rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+.dice-history-mod {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.32rem;
+  padding: 0.08rem 0.36rem;
+  border: 1px solid color-mix(in srgb, var(--accent-soft) 42%, var(--line) 58%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--btn-ghost-bg) 76%, var(--accent) 24%);
+  font: 700 0.6rem/1 "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent-soft) 68%, #fff 32%);
+}
+
 .dice-history-total {
-  font: 700 1.1rem/1 "Cinzel", serif;
-  color: color-mix(in srgb, var(--gold) 75%, var(--text) 25%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.64rem;
+  min-width: 2.45rem;
+  padding: 0.14rem 0.52rem;
+  border: 1px solid color-mix(in srgb, var(--gold) 58%, var(--line) 42%);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--btn-ghost-bg) 76%, var(--gold) 24%), color-mix(in srgb, var(--section-bg) 90%, black 10%));
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent 88%);
+  font: 700 0.94rem/1 "Cinzel", serif;
+  color: color-mix(in srgb, var(--gold) 78%, var(--ink) 22%);
+  font-variant-numeric: tabular-nums;
 }
 
 .dice-purge-btn {
   width: 100%;
-  min-height: 2.35rem;
+  min-height: 2rem;
   transition: transform 120ms ease, filter 160ms ease, box-shadow 160ms ease;
 }
 
@@ -1696,6 +2090,10 @@ html[data-theme="dark"] .tracker-hint.is-broken {
   .dice-fallback-token.is-rolling {
     animation: none !important;
   }
+
+  .sheet-roll-banner-card {
+    transition: none !important;
+  }
 }
 
 input[readonly] {
@@ -1718,7 +2116,6 @@ input[readonly] {
 
 .core-stat-field {
   gap: 0.6rem;
-  align-items: stretch;
   border: 1px solid color-mix(in srgb, var(--line) 70%, var(--gold) 30%);
   border-radius: 12px;
   padding: 0.72rem 0.72rem 0.78rem;
@@ -1729,6 +2126,17 @@ input[readonly] {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent 92%),
     var(--hover-shadow-soft);
+}
+
+.core-stat-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.58rem;
+  align-items: stretch;
+}
+
+.core-stat-controls.is-roll-hidden {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .core-stat-field .label-with-icon {
@@ -1748,6 +2156,7 @@ input[readonly] {
 
 .core-stat-input {
   min-height: 4rem;
+  width: 100%;
   border-radius: 12px;
   border-color: color-mix(in srgb, var(--line) 56%, var(--gold) 44%);
   background:
@@ -1772,9 +2181,80 @@ input[readonly] {
     inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent 90%);
 }
 
+.core-stat-roll-btn {
+  min-height: 4rem;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--line) 54%, var(--gold) 46%);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  color: color-mix(in srgb, var(--gold) 76%, var(--ink) 24%);
+  background:
+    radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--gold) 18%, transparent 82%), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--btn-ghost-bg) 90%, var(--gold) 10%), var(--section-bg));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent 90%),
+    inset 0 -12px 18px color-mix(in srgb, #000 10%, transparent 90%);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+
+.core-stat-roll-btn:hover {
+  border-color: color-mix(in srgb, var(--gold) 62%, var(--accent-soft) 38%);
+  color: color-mix(in srgb, var(--gold) 52%, var(--accent-soft) 48%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent 90%),
+    0 9px 18px color-mix(in srgb, #000 18%, transparent 82%);
+}
+
+.core-stat-roll-btn:active {
+  transform: translateY(1px);
+}
+
+.core-stat-roll-btn:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--gold) 18%, transparent 82%),
+    inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent 90%);
+}
+
+.core-stat-roll-icon {
+  width: 1.42rem;
+  height: 1.42rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: 0 0 auto;
+}
+
 @media (min-width: 1011px) {
   .sheet-section>.fields {
     row-gap: 1.4rem;
+  }
+
+  .footer-references,
+  .footer-license {
+    padding-inline: 10%;
+  }
+
+  .footer-references-body,
+  .footer-license-copy {
+    width: auto;
+    margin-inline: 0;
+  }
+
+  .footer-meta p {
+    width: min(100%, 44rem);
+    margin-inline: auto;
   }
 }
 
@@ -2012,6 +2492,10 @@ textarea:focus {
 }
 
 @media (max-width: 700px) {
+  :root {
+    --sheet-roll-banner-safe-zone-px: 141;
+  }
+
   .confirm-modal {
     padding: 0.9rem;
   }
@@ -2047,7 +2531,7 @@ textarea:focus {
   }
 
   .dice-preview-host {
-    height: clamp(6.4rem, 18vh, 8.4rem);
+    height: clamp(4.6rem, 14vh, 6.4rem);
   }
 
   .dice-advanced-grid {
@@ -2070,6 +2554,33 @@ textarea:focus {
   .core-stat-input {
     min-height: 3.5rem;
     font-size: 1.9rem;
+  }
+
+  .core-stat-roll-btn {
+    min-height: 3.5rem;
+  }
+
+  .sheet-roll-banner-card {
+    width: min(100%, calc(100vw - 1.2rem));
+    padding-inline: 0.76rem;
+  }
+
+  .sheet-roll-banner-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sheet-roll-banner-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .sheet-roll-banner-main {
+    align-items: flex-start;
+  }
+
+  .sheet-roll-banner-metrics {
+    justify-content: flex-start;
   }
 
   .span-2 {

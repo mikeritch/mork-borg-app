@@ -9,12 +9,15 @@ const KNOWN_POWERS_MAX = 99;
 const HP_CURRENT_MIN = -30;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
-const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules-fix1";
+const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260306-clear-distance-boost-3";
 const DICE_MODULE_LOAD_MAX_ATTEMPTS = 3;
 const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
 const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
 const RANDOMIZER_LIBRARY_URL = "data/randomizer-library.json";
 const BACKSTORY_LIBRARY_URL = "data/backstories.json";
+const CORE_STAT_FIELD_IDS = Object.freeze(["strength", "agility", "presence", "toughness"]);
+const SHEET_ROLL_BANNER_DEFAULT_DURATION_MS = 30000;
+const SHEET_ROLL_BANNER_TRANSITION_MS = 220;
 const EXPORT_FILE_HEADER = Object.freeze({
   app: "Character Reliquary",
   format: "character-sheet-export",
@@ -260,6 +263,9 @@ const state = {
   diceTray: null,
   diceLoadPromise: null,
   diceInitPromise: null,
+  sheetRollBannerTimer: null,
+  sheetRollBannerResetTimer: null,
+  sheetRollBannerControlsDice: false,
   hpMaxHintVisible: false,
   scrollWarningDismissed: false,
   confirmQueue: [],
@@ -332,10 +338,20 @@ const els = {
   diceAdvanced: document.getElementById("dice-advanced"),
   diceForce2d: document.getElementById("dice-force-2d"),
   diceLowPerformance: document.getElementById("dice-low-performance"),
+  diceBannerSeconds: document.getElementById("dice-banner-seconds"),
   diceStatus: document.getElementById("dice-status"),
+  sheetRollBanner: document.getElementById("sheet-roll-banner"),
+  sheetRollBannerName: document.getElementById("sheet-roll-banner-name"),
+  sheetRollBannerViewLog: document.getElementById("sheet-roll-banner-view-log"),
+  sheetRollBannerDismiss: document.getElementById("sheet-roll-banner-dismiss"),
+  sheetRollBannerStat: document.getElementById("sheet-roll-banner-stat"),
+  sheetRollBannerRoll: document.getElementById("sheet-roll-banner-roll"),
+  sheetRollBannerMod: document.getElementById("sheet-roll-banner-mod"),
+  sheetRollBannerTotal: document.getElementById("sheet-roll-banner-total"),
   footerYear: document.getElementById("footer-year"),
   footerVersion: document.getElementById("footer-version"),
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, document.getElementById(id)])),
+  coreStatRollButtons: Array.from(document.querySelectorAll("[data-core-stat-roll]")),
 };
 
 function setInlineDiceStatus(message, tone = "neutral") {
@@ -346,9 +362,236 @@ function setInlineDiceStatus(message, tone = "neutral") {
   els.diceStatus.dataset.tone = tone;
 }
 
+function setCoreStatRollButtonsVisible(isVisible) {
+  els.coreStatRollButtons.forEach((button) => {
+    button.hidden = !isVisible;
+    button.setAttribute("aria-hidden", isVisible ? "false" : "true");
+    const controls = button.closest(".core-stat-controls");
+    if (controls) {
+      controls.classList.toggle("is-roll-hidden", !isVisible);
+    }
+  });
+}
+
+function clearSheetRollBannerTimers() {
+  if (state.sheetRollBannerTimer) {
+    window.clearTimeout(state.sheetRollBannerTimer);
+    state.sheetRollBannerTimer = null;
+  }
+  if (state.sheetRollBannerResetTimer) {
+    window.clearTimeout(state.sheetRollBannerResetTimer);
+    state.sheetRollBannerResetTimer = null;
+  }
+}
+
+function hideSheetRollBannerVisual() {
+  if (!els.sheetRollBanner) {
+    return;
+  }
+  clearSheetRollBannerTimers();
+  els.sheetRollBanner.classList.remove("is-visible");
+  state.sheetRollBannerResetTimer = window.setTimeout(() => {
+    if (!els.sheetRollBanner?.classList.contains("is-visible")) {
+      els.sheetRollBanner.hidden = true;
+    }
+    state.sheetRollBannerResetTimer = null;
+  }, SHEET_ROLL_BANNER_TRANSITION_MS);
+}
+
+async function dismissSheetRollBanner() {
+  hideSheetRollBannerVisual();
+  const shouldClearDice = state.sheetRollBannerControlsDice;
+  state.sheetRollBannerControlsDice = false;
+  if (!shouldClearDice || !state.diceTray || typeof state.diceTray.throwDiceOffScreenAndClear !== "function") {
+    return;
+  }
+  try {
+    await state.diceTray.throwDiceOffScreenAndClear({
+      silent: true,
+    });
+  } catch (_error) {
+    // Ignore banner-dismiss cleanup failures; the tray remains user-clearable.
+  }
+}
+
+function resolveSheetRollBannerDurationMs() {
+  if (
+    state.diceTray &&
+    typeof state.diceTray.getSheetRollBannerDurationMs === "function"
+  ) {
+    const durationMs = Number(state.diceTray.getSheetRollBannerDurationMs());
+    if (Number.isFinite(durationMs) && durationMs > 0) {
+      return durationMs;
+    }
+  }
+  return SHEET_ROLL_BANNER_DEFAULT_DURATION_MS;
+}
+
+function isElementMostlyInViewport(element) {
+  if (!(element instanceof HTMLElement)) {
+    return false;
+  }
+  const rect = element.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (rect.width <= 0 || rect.height <= 0 || viewportHeight <= 0 || viewportWidth <= 0) {
+    return false;
+  }
+  const visibleHeight = Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
+  const visibleWidth = Math.max(0, Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0));
+  return visibleHeight >= rect.height * 0.68 && visibleWidth >= rect.width * 0.68;
+}
+
+function scrollElementIntoViewIfNeeded(element) {
+  if (!(element instanceof HTMLElement) || isElementMostlyInViewport(element)) {
+    return;
+  }
+  element.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+    inline: "nearest",
+  });
+}
+
+async function openSheetRollLog() {
+  state.sheetRollBannerControlsDice = false;
+  hideSheetRollBannerVisual();
+  const ready = await ensureDiceTrayInitialized();
+  if (!ready) {
+    return;
+  }
+  if (els.dicePanel?.dataset.collapsed === "true") {
+    els.diceToggle?.click();
+  }
+  const target = els.diceHistory?.closest(".dice-history-wrap") || els.dicePanel;
+  window.setTimeout(() => {
+    scrollElementIntoViewIfNeeded(target);
+  }, 90);
+}
+
+function showSheetRollBanner({
+  characterName,
+  statLabel,
+  rollLabel,
+  modifierLabel,
+  totalLabel,
+  showModifier = true,
+  rollSource = "sheet",
+}) {
+  if (
+    !els.sheetRollBanner ||
+    !els.sheetRollBannerName ||
+    !els.sheetRollBannerStat ||
+    !els.sheetRollBannerRoll ||
+    !els.sheetRollBannerMod ||
+    !els.sheetRollBannerTotal
+  ) {
+    return;
+  }
+  const hasModifierLabel =
+    showModifier &&
+    typeof modifierLabel === "string" &&
+    modifierLabel.trim().length > 0;
+
+  clearSheetRollBannerTimers();
+  els.sheetRollBanner.dataset.rollSource = rollSource === "tray" ? "tray" : "sheet";
+  els.sheetRollBannerName.textContent = characterName;
+  els.sheetRollBannerStat.textContent = statLabel;
+  els.sheetRollBannerRoll.textContent = rollLabel;
+  els.sheetRollBannerMod.textContent = hasModifierLabel ? modifierLabel : "";
+  els.sheetRollBannerMod.hidden = !hasModifierLabel;
+  els.sheetRollBannerMod.setAttribute("aria-hidden", hasModifierLabel ? "false" : "true");
+  els.sheetRollBannerTotal.textContent = totalLabel;
+  els.sheetRollBanner.hidden = false;
+  els.sheetRollBanner.classList.remove("is-visible");
+  void els.sheetRollBanner.offsetWidth;
+  els.sheetRollBanner.classList.add("is-visible");
+  state.sheetRollBannerControlsDice = true;
+  state.sheetRollBannerTimer = window.setTimeout(() => {
+    void dismissSheetRollBanner();
+  }, resolveSheetRollBannerDurationMs());
+}
+
+function resolveActiveCharacterName() {
+  const sheet = activeCharacter();
+  const name = sheet?.name?.trim() || els.fields.name?.value?.trim() || "";
+  return name || "Unnamed Soul";
+}
+
+function formatSignedModifier(value) {
+  const safe = Math.trunc(Number.isFinite(value) ? value : 0);
+  return safe > 0 ? `+${safe}` : String(safe);
+}
+
+function resolveRollNotationLabel(result) {
+  let parsed = null;
+  if (typeof result?.notation === "string" && result.notation.trim()) {
+    try {
+      parsed = RollParser.parse(result.notation);
+    } catch (_error) {
+      parsed = null;
+    }
+  }
+  if (parsed && Array.isArray(parsed.terms) && parsed.terms.length > 0) {
+    const termLabel = parsed.terms
+      .map((term, index) => {
+        const prefix = term.sign < 0 ? "-" : index === 0 ? "" : "+";
+        const countLabel = term.count === 1 ? "" : String(term.count);
+        return `${prefix}${countLabel}d${term.sides}`;
+      })
+      .join("");
+    if (termLabel) {
+      return termLabel;
+    }
+  }
+  const singleDie =
+    Array.isArray(result?.rolls) && result.rolls.length === 1 ? result.rolls[0]?.die : null;
+  return singleDie || result?.notation || "roll";
+}
+
+function resolveRolledValue(result, modifier = 0) {
+  if (Array.isArray(result?.rolls) && result.rolls.length > 0) {
+    return result.rolls.reduce((sum, roll) => {
+      const value = Number.isFinite(roll?.value) ? Math.trunc(roll.value) : 0;
+      const sign = roll?.sign < 0 ? -1 : 1;
+      return sum + sign * value;
+    }, 0);
+  }
+  if (Number.isFinite(result?.total)) {
+    return Math.trunc(result.total) - Math.trunc(Number.isFinite(modifier) ? modifier : 0);
+  }
+  return null;
+}
+
+function handleDiceRollResult(result, context = {}) {
+  const metadata = context?.metadata;
+  const hasMetadata = Boolean(metadata && typeof metadata === "object");
+  const isSheetRoll = hasMetadata;
+  const modifier = isSheetRoll
+    ? Math.trunc(toSafeNumber(metadata?.modifier, result?.modifier))
+    : Math.trunc(toSafeNumber(result?.modifier, 0));
+  const rolledValue = resolveRolledValue(result, modifier);
+  const total = Math.trunc(toSafeNumber(result?.total, 0));
+  const shouldShowModifier =
+    isSheetRoll &&
+    (modifier !== 0 || Object.prototype.hasOwnProperty.call(metadata, "modifier"));
+  showSheetRollBanner({
+    characterName: metadata?.characterName || resolveActiveCharacterName(),
+    statLabel: metadata?.statLabel || "Dice Tray",
+    rollLabel: Number.isFinite(rolledValue)
+      ? `${resolveRollNotationLabel(result)} ${rolledValue}`
+      : String(resolveRollNotationLabel(result)),
+    modifierLabel: shouldShowModifier ? `mod ${formatSignedModifier(modifier)}` : "",
+    totalLabel: `total ${total}`,
+    showModifier: shouldShowModifier,
+    rollSource: isSheetRoll ? "sheet" : "tray",
+  });
+}
+
 function diceControllerParams() {
   return {
     setGlobalStatus: setStatus,
+    onResult: handleDiceRollResult,
     panel: els.dicePanel,
     toggle: els.diceToggle,
     body: els.dicePanelBody,
@@ -361,6 +604,7 @@ function diceControllerParams() {
     advanced: els.diceAdvanced,
     force2d: els.diceForce2d,
     lowPerformance: els.diceLowPerformance,
+    bannerTimerInput: els.diceBannerSeconds,
     canvas: els.diceCanvas,
     overlay: els.diceOverlay,
     fallback: els.diceFallback,
@@ -509,19 +753,24 @@ function loadDiceModuleScript() {
   return state.diceLoadPromise;
 }
 
-async function ensureDiceTrayInitialized() {
+async function ensureDiceTrayInitialized(options = {}) {
+  const silent = Boolean(options?.silent);
   if (state.diceTray) {
+    setCoreStatRollButtonsVisible(true);
     return true;
   }
   if (state.diceInitPromise) {
     return state.diceInitPromise;
   }
   if (!els.dicePanel || !els.diceToggle) {
+    setCoreStatRollButtonsVisible(false);
     return false;
   }
 
   state.diceInitPromise = (async () => {
-    setInlineDiceStatus("Loading dice tray...", "neutral");
+    if (!silent) {
+      setInlineDiceStatus("Loading dice tray...", "neutral");
+    }
     if (els.diceRollBtn) {
       els.diceRollBtn.disabled = true;
     }
@@ -530,11 +779,15 @@ async function ensureDiceTrayInitialized() {
       const createDiceTrayController = await loadDiceModuleScript();
       state.diceTray = createDiceTrayController(diceControllerParams());
       state.diceTray.init();
+      setCoreStatRollButtonsVisible(true);
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown dice load error.";
       setInlineDiceStatus(`Dice tray unavailable. ${message}`, "error");
-      setStatus(`Dice tray failed to load: ${message}`, "error");
+      if (!silent) {
+        setStatus(`Dice tray failed to load: ${message}`, "error");
+      }
+      setCoreStatRollButtonsVisible(false);
       return false;
     } finally {
       if (els.diceRollBtn) {
@@ -546,6 +799,21 @@ async function ensureDiceTrayInitialized() {
   });
 
   return state.diceInitPromise;
+}
+
+function primeDiceTrayAvailability() {
+  const kickoff = () => {
+    if (state.diceTray || state.diceInitPromise || els.coreStatRollButtons.length === 0) {
+      return;
+    }
+    void ensureDiceTrayInitialized({ silent: true });
+  };
+
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(() => kickoff(), { timeout: 1500 });
+    return;
+  }
+  window.setTimeout(kickoff, 180);
 }
 
 function bindDiceLazyLoading() {
@@ -719,6 +987,14 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function formatModifierNotation(baseNotation, modifier) {
+  const safeModifier = Math.trunc(Number.isFinite(modifier) ? modifier : 0);
+  if (safeModifier === 0) {
+    return baseNotation;
+  }
+  return `${baseNotation}${safeModifier > 0 ? "+" : ""}${safeModifier}`;
+}
+
 function rollDice(count, sides) {
   let total = 0;
   for (let index = 0; index < count; index += 1) {
@@ -744,6 +1020,45 @@ function createBlankCharacter() {
 function toSafeNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function titleCaseStatLabel(statId) {
+  return String(statId || "")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .replace(/^\w/, (match) => match.toUpperCase());
+}
+
+function coreStatRollNotation(statId) {
+  const field = els.fields[statId];
+  const fallback = DEFAULTS[statId];
+  const modifier = clamp(Math.trunc(toSafeNumber(field?.value, fallback)), -3, 6);
+  return {
+    label: titleCaseStatLabel(statId),
+    modifier,
+    notation: formatModifierNotation("d20", modifier),
+  };
+}
+
+async function rollCoreStat(statId) {
+  if (!CORE_STAT_FIELD_IDS.includes(statId)) {
+    return;
+  }
+  const { label, modifier, notation } = coreStatRollNotation(statId);
+  const ready = await ensureDiceTrayInitialized();
+  if (!ready || !state.diceTray) {
+    setStatus(`Dice tray unavailable. Could not roll ${label}.`, "error");
+    return;
+  }
+  setStatus(`Rolling ${label} test.`, "neutral");
+  state.diceTray.roll(notation, {
+    source: "core-stat",
+    statId,
+    statLabel: label,
+    modifier,
+    characterName: resolveActiveCharacterName(),
+  });
 }
 
 function toSafeBoolean(value, fallback = false) {
@@ -1427,7 +1742,7 @@ function normalizeCharacter(candidate) {
   });
 
   merged.level = clamp(Math.trunc(merged.level), 1, 20);
-  ["strength", "agility", "presence", "toughness"].forEach((stat) => {
+  CORE_STAT_FIELD_IDS.forEach((stat) => {
     merged[stat] = clamp(Math.trunc(merged[stat]), -3, 6);
   });
   merged.hpMax = clamp(Math.trunc(merged.hpMax), 1, 30);
@@ -2457,7 +2772,7 @@ function bindEvents() {
       });
     }
 
-    if (["strength", "agility", "presence", "toughness"].includes(event.target.id)) {
+    if (CORE_STAT_FIELD_IDS.includes(event.target.id)) {
       clampFieldValue(event.target.id, -3, 6);
     }
 
@@ -2538,6 +2853,15 @@ function bindEvents() {
       scheduleAutoSave();
       return;
     }
+    const coreStatRollButton = origin.closest("[data-core-stat-roll]");
+    if (coreStatRollButton instanceof HTMLElement) {
+      const statId = String(coreStatRollButton.dataset.coreStatRoll || "").trim();
+      if (!statId) {
+        return;
+      }
+      void rollCoreStat(statId);
+      return;
+    }
     const button = origin.closest("[data-power-action][data-power-target]");
     if (!(button instanceof HTMLElement)) {
       return;
@@ -2595,6 +2919,16 @@ function bindEvents() {
       event.stopPropagation();
       state.scrollWarningDismissed = true;
       setScrollWarningVisible(false);
+    });
+  }
+  if (els.sheetRollBannerDismiss) {
+    els.sheetRollBannerDismiss.addEventListener("click", () => {
+      void dismissSheetRollBanner();
+    });
+  }
+  if (els.sheetRollBannerViewLog) {
+    els.sheetRollBannerViewLog.addEventListener("click", () => {
+      void openSheetRollLog();
     });
   }
 
@@ -2939,6 +3273,7 @@ function init() {
   setupJoinPartyTooltip();
   setupInstallAppButton();
   setAutoSaveIndicator("saved");
+  setCoreStatRollButtonsVisible(Boolean(els.dicePanel && els.diceToggle));
   applyTheme(resolveTheme(), false);
   renderFooterYear();
   renderFooterVersion();
@@ -2948,6 +3283,7 @@ function init() {
   applyToForm(activeCharacter());
   void loadRandomizerLibrary();
   void loadBackstoryLibrary();
+  primeDiceTrayAvailability();
   setInlineDiceStatus("Dice tray ready.", "neutral");
   bindEvents();
   registerServiceWorker();

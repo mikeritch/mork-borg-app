@@ -17,6 +17,13 @@ const DICE_SETTLE_ANGULAR = 0.1;
 const DICE_VIEWPORT_EDGE_PADDING = 0.9;
 const DICE_PHYSICS_INNER_PADDING = 0.55;
 const DICE_GLOBAL_SCALE = 1.4;
+const DICE_DOUBLE_TAP_WINDOW_MS = 2000;
+const DICE_NOTIFICATION_TIMER_DEFAULT_SECONDS = 30;
+const DICE_NOTIFICATION_TIMER_MIN_SECONDS = 5;
+const DICE_NOTIFICATION_TIMER_MAX_SECONDS = 120;
+const DICE_OVERLAY_SAFE_TOP_CSS_VAR = "--sheet-roll-banner-safe-zone-px";
+const DICE_OVERLAY_SAFE_TOP_FALLBACK_PX = 122;
+const DICE_OVERLAY_SAFE_TOP_MIN_PX = 96;
 const DICE_ALLOWED_SIDES = new Set([2, 4, 6, 8, 10, 12, 20, 100]);
 const DICE_MODES = Object.freeze({
   PROCEDURAL: "procedural",
@@ -45,6 +52,60 @@ function writeJsonStorage(key, value) {
   } catch (_error) {
     // Ignore storage write issues for optional dice UI state.
   }
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeNotificationTimerSeconds(value) {
+  const rawValue = typeof value === "string" ? value.trim() : value;
+  if (rawValue === "") {
+    return DICE_NOTIFICATION_TIMER_DEFAULT_SECONDS;
+  }
+  const parsed = Math.round(Number(rawValue));
+  if (!Number.isFinite(parsed)) {
+    return DICE_NOTIFICATION_TIMER_DEFAULT_SECONDS;
+  }
+  return clampNumber(
+    parsed,
+    DICE_NOTIFICATION_TIMER_MIN_SECONDS,
+    DICE_NOTIFICATION_TIMER_MAX_SECONDS
+  );
+}
+
+function resolveOverlaySafeTopInsetPx() {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return DICE_OVERLAY_SAFE_TOP_FALLBACK_PX;
+  }
+  const rootStyles = window.getComputedStyle(document.documentElement);
+  const rawValue = rootStyles.getPropertyValue(DICE_OVERLAY_SAFE_TOP_CSS_VAR);
+  const parsed = Number.parseFloat(rawValue);
+  if (!Number.isFinite(parsed)) {
+    return DICE_OVERLAY_SAFE_TOP_FALLBACK_PX;
+  }
+  return Math.max(DICE_OVERLAY_SAFE_TOP_MIN_PX, parsed);
+}
+
+function isPointInsideElement(element, clientX, clientY) {
+  if (!element) {
+    return false;
+  }
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    return false;
+  }
+  return (
+    clientX >= rect.left &&
+    clientX <= rect.right &&
+    clientY >= rect.top &&
+    clientY <= rect.bottom
+  );
+}
+
+function formatSignedModifier(value) {
+  const safe = Math.trunc(Number.isFinite(value) ? value : 0);
+  return safe > 0 ? `+${safe}` : String(safe);
 }
 
 class RollParser {
@@ -830,6 +891,12 @@ class DiceRenderer {
       centerX: 0,
       centerZ: 0,
     };
+    this.safeInsets = {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    };
     this.meshMap = new Map();
     this.idlePreviewMesh = null;
     this.labelTextureCache = new Map();
@@ -929,6 +996,15 @@ class DiceRenderer {
     this.dieScale = DICE_GLOBAL_SCALE;
   }
 
+  setViewportSafeInsets(insets = {}) {
+    this.safeInsets = {
+      top: Math.max(0, Number.isFinite(insets.top) ? insets.top : 0),
+      right: Math.max(0, Number.isFinite(insets.right) ? insets.right : 0),
+      bottom: Math.max(0, Number.isFinite(insets.bottom) ? insets.bottom : 0),
+      left: Math.max(0, Number.isFinite(insets.left) ? insets.left : 0),
+    };
+  }
+
   setPresentationMode(mode) {
     const next = mode === "preview" ? "preview" : "overlay";
     this.presentationMode = next;
@@ -964,9 +1040,42 @@ class DiceRenderer {
 
   computeArenaBounds() {
     const intersections = [];
-    const ndcValues = [-1, -0.35, 0.35, 1];
-    ndcValues.forEach((ndcX) => {
-      ndcValues.forEach((ndcY) => {
+    const rect = this.canvas?.getBoundingClientRect?.() || null;
+    const width = Math.max(
+      2,
+      Math.round(rect?.width || this.canvas?.clientWidth || window.innerWidth || 720)
+    );
+    const height = Math.max(
+      2,
+      Math.round(rect?.height || this.canvas?.clientHeight || window.innerHeight || 405)
+    );
+    const activeInsets =
+      this.presentationMode === "overlay"
+        ? this.safeInsets
+        : { top: 0, right: 0, bottom: 0, left: 0 };
+    const leftInset = Math.min(width / 2 - 1, Math.max(0, activeInsets.left || 0));
+    const rightInset = Math.min(width / 2 - 1, Math.max(0, activeInsets.right || 0));
+    const topInset = Math.min(height / 2 - 1, Math.max(0, activeInsets.top || 0));
+    const bottomInset = Math.min(height / 2 - 1, Math.max(0, activeInsets.bottom || 0));
+    const minNdcX = -1 + (leftInset / width) * 2;
+    const maxNdcX = 1 - (rightInset / width) * 2;
+    const minNdcY = -1 + (bottomInset / height) * 2;
+    const maxNdcY = 1 - (topInset / height) * 2;
+    if (!(maxNdcX > minNdcX) || !(maxNdcY > minNdcY)) {
+      return {
+        minX: -5,
+        maxX: 5,
+        minZ: -5,
+        maxZ: 5,
+        centerX: 0,
+        centerZ: 0,
+      };
+    }
+    const sampleOffsets = [0, 0.35, 0.65, 1];
+    sampleOffsets.forEach((offsetX) => {
+      sampleOffsets.forEach((offsetY) => {
+        const ndcX = minNdcX + (maxNdcX - minNdcX) * offsetX;
+        const ndcY = minNdcY + (maxNdcY - minNdcY) * offsetY;
         const point = this.projectToGround(ndcX, ndcY, 0);
         if (point) {
           intersections.push(point);
@@ -1025,6 +1134,44 @@ class DiceRenderer {
 
   getArenaBounds() {
     return { ...this.viewportBounds };
+  }
+
+  projectWorldPointToViewport(point) {
+    if (!this.camera || !this.canvas || !point) {
+      return null;
+    }
+    const rect = this.canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+    const worldPoint = new this.THREE.Vector3(
+      Number.isFinite(point.x) ? point.x : 0,
+      Number.isFinite(point.y) ? point.y : 0,
+      Number.isFinite(point.z) ? point.z : 0
+    );
+    worldPoint.project(this.camera);
+    return {
+      x: ((worldPoint.x + 1) / 2) * rect.width,
+      y: ((1 - worldPoint.y) / 2) * rect.height,
+      ndcX: worldPoint.x,
+      ndcY: worldPoint.y,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
+  isWorldPointOutsideViewport(point, paddingPx = 56) {
+    const projection = this.projectWorldPointToViewport(point);
+    if (!projection) {
+      return false;
+    }
+    const padding = Math.max(0, Number.isFinite(paddingPx) ? paddingPx : 0);
+    return (
+      projection.x < -padding ||
+      projection.x > projection.width + padding ||
+      projection.y < -padding ||
+      projection.y > projection.height + padding
+    );
   }
 
   pickDieAtClient(clientX, clientY) {
@@ -1509,6 +1656,7 @@ class DiceRenderer {
 class DiceTrayController {
   constructor(params) {
     this.setGlobalStatus = params.setGlobalStatus;
+    this.onResult = params.onResult;
     this.panel = params.panel;
     this.toggle = params.toggle;
     this.body = params.body;
@@ -1521,6 +1669,7 @@ class DiceTrayController {
     this.advanced = params.advanced;
     this.force2d = params.force2d;
     this.lowPerformance = params.lowPerformance;
+    this.bannerTimerInput = params.bannerTimerInput;
     this.canvas = params.canvas;
     this.overlay = params.overlay;
     this.fallback = params.fallback;
@@ -1531,6 +1680,7 @@ class DiceTrayController {
       notation: "d20",
       force2d: false,
       lowPerformance: false,
+      bannerDurationSeconds: DICE_NOTIFICATION_TIMER_DEFAULT_SECONDS,
     };
     this.history = [];
     this.modules = null;
@@ -1545,6 +1695,9 @@ class DiceTrayController {
     this.rollCompletionResolver = null;
     this.rollCancelRequested = false;
     this.pendingAction = null;
+    this.clearing = false;
+    this.clearSessionId = 0;
+    this.activeRollMetadata = null;
     this.hasRolled = false;
     this.activeRecords = [];
     this.canvasMode = "hidden";
@@ -1552,10 +1705,15 @@ class DiceTrayController {
     this.onScenePointerDown = null;
     this.onSceneClick = null;
     this.pendingDieClickBlock = false;
+    this.lastOverlayTapTarget = null;
+    this.lastOverlayTapAt = 0;
     this.chipButtons = [];
 
     this.onResize = () => {
       if (this.renderer) {
+        this.renderer.setViewportSafeInsets({
+          top: resolveOverlaySafeTopInsetPx(),
+        });
         this.renderer.resize();
         if (this.physics) {
           this.physics.setArenaBounds(this.renderer.getArenaBounds());
@@ -1582,6 +1740,9 @@ class DiceTrayController {
           : this.settings.notation;
       this.settings.force2d = Boolean(storedSettings.force2d);
       this.settings.lowPerformance = Boolean(storedSettings.lowPerformance);
+      this.settings.bannerDurationSeconds = normalizeNotificationTimerSeconds(
+        storedSettings.bannerDurationSeconds
+      );
     }
 
     const storedHistory = readJsonStorage(DICE_HISTORY_KEY, []);
@@ -1593,7 +1754,11 @@ class DiceTrayController {
     this.chipButtons = this.root
       ? Array.from(this.root.querySelectorAll("[data-dice-chip]"))
       : [];
+    const storedNotation = this.settings.notation;
     this.settings.notation = this.normalizeChipNotation(this.settings.notation);
+    if (this.settings.notation !== storedNotation) {
+      this.persistSettings();
+    }
     this.refreshChipStates();
     this.updateRollButtonLabel();
     if (this.force2d) {
@@ -1601,6 +1766,9 @@ class DiceTrayController {
     }
     if (this.lowPerformance) {
       this.lowPerformance.checked = this.settings.lowPerformance;
+    }
+    if (this.bannerTimerInput) {
+      this.bannerTimerInput.value = String(this.settings.bannerDurationSeconds);
     }
     if (this.advanced) {
       this.advanced.open = false;
@@ -1662,7 +1830,7 @@ class DiceTrayController {
   }
 
   refreshChipStates() {
-    const active = String(this.settings.notation || "").trim().toLowerCase();
+    const active = this.normalizeChipNotation(this.settings.notation);
     this.chipButtons.forEach((chip) => {
       const value = String(chip.dataset.diceChip || "").trim().toLowerCase();
       const isActive = value === active;
@@ -1730,6 +1898,9 @@ class DiceTrayController {
       return;
     }
     this.renderer?.setPresentationMode("overlay");
+    this.renderer?.setViewportSafeInsets({
+      top: resolveOverlaySafeTopInsetPx(),
+    });
     this.renderer?.setIdlePreviewVisible(false);
     this.setCanvasMode("overlay");
     if (this.renderer) {
@@ -1741,6 +1912,7 @@ class DiceTrayController {
   }
 
   clearRenderedDice({ returnToPreview = true } = {}) {
+    this.resetOverlayTapState();
     this.activeRecords = [];
     this.physics?.clearDynamicBodies();
     this.renderer?.clearDice();
@@ -1760,6 +1932,27 @@ class DiceTrayController {
     this.previewRenderer?.setIdlePreviewVisible(false);
     this.setPreviewCanvasVisible(false);
     this.setCanvasMode("hidden");
+  }
+
+  setBannerDurationSeconds(value, persist = true) {
+    const next = normalizeNotificationTimerSeconds(value);
+    this.settings.bannerDurationSeconds = next;
+    if (this.bannerTimerInput) {
+      this.bannerTimerInput.value = String(next);
+    }
+    if (persist) {
+      this.persistSettings();
+    }
+    return next;
+  }
+
+  getSheetRollBannerDurationMs() {
+    return normalizeNotificationTimerSeconds(this.settings.bannerDurationSeconds) * 1000;
+  }
+
+  resetOverlayTapState() {
+    this.lastOverlayTapTarget = null;
+    this.lastOverlayTapAt = 0;
   }
 
   async throwDiceOffScreenAndClear(options = {}) {
@@ -1783,6 +1976,10 @@ class DiceTrayController {
       return;
     }
 
+    if (this.clearing) {
+      return;
+    }
+
     if (this.activeRecords.length === 0) {
       this.clearRenderedDice({ returnToPreview });
       if (!silent) {
@@ -1796,6 +1993,10 @@ class DiceTrayController {
     this.prepareOverlayCanvas();
     this.renderer?.mark3DActive(true);
     this.physics?.setBoundaryConstraintsEnabled(false);
+    const clearSessionId = this.clearSessionId + 1;
+    this.clearSessionId = clearSessionId;
+    this.clearing = true;
+    const recordsToClear = this.activeRecords.slice();
 
     const viewportBounds = this.renderer?.getArenaBounds() || {
       minX: -5,
@@ -1813,66 +2014,165 @@ class DiceTrayController {
       Number.isFinite(viewportBounds.centerZ)
         ? viewportBounds.centerZ
         : (viewportBounds.minZ + viewportBounds.maxZ) / 2;
+    const viewportWidth = Math.max(1, viewportBounds.maxX - viewportBounds.minX);
+    const viewportDepth = Math.max(1, viewportBounds.maxZ - viewportBounds.minZ);
+    const exitBounds = {
+      minX: viewportBounds.minX - Math.max(8.8, viewportWidth * 1.02),
+      maxX: viewportBounds.maxX + Math.max(8.8, viewportWidth * 1.02),
+      minZ: viewportBounds.minZ - Math.max(10.6, viewportDepth * 1.32),
+      maxZ: viewportBounds.maxZ + Math.max(8.8, viewportDepth * 1.02),
+    };
+    const resolveExitTarget = (dirX, dirZ) => {
+      const tx =
+        Math.abs(dirX) < 1e-4
+          ? Number.POSITIVE_INFINITY
+          : dirX > 0
+            ? (exitBounds.maxX - centerX) / dirX
+            : (exitBounds.minX - centerX) / dirX;
+      const tz =
+        Math.abs(dirZ) < 1e-4
+          ? Number.POSITIVE_INFINITY
+          : dirZ > 0
+            ? (exitBounds.maxZ - centerZ) / dirZ
+            : (exitBounds.minZ - centerZ) / dirZ;
+      const distance = Math.min(
+        tx > 0 ? tx : Number.POSITIVE_INFINITY,
+        tz > 0 ? tz : Number.POSITIVE_INFINITY
+      );
+      const fallbackDistance = Math.max(viewportWidth, viewportDepth) + 14;
+      return {
+        x: centerX + dirX * (Number.isFinite(distance) ? distance : fallbackDistance),
+        z: centerZ + dirZ * (Number.isFinite(distance) ? distance : fallbackDistance),
+      };
+    };
 
-    this.activeRecords.forEach((record) => {
+    recordsToClear.forEach((record) => {
       const body = record?.body;
       if (!body) {
         return;
       }
-      const outwardAngle =
+      let outwardAngle =
         Math.atan2(body.position.z - centerZ, body.position.x - centerX) +
         (Math.random() - 0.5) * 0.52;
-      const horizontal = 30 + Math.random() * 16;
+      const initialDirX = Math.cos(outwardAngle);
+      const initialDirZ = Math.sin(outwardAngle);
+      // Avoid a near-perfect top ejection lane, which can leave dice skimming the upper edge.
+      if (initialDirZ < -0.95 && Math.abs(initialDirX) < 0.2) {
+        outwardAngle += (Math.random() < 0.5 ? -1 : 1) * (0.28 + Math.random() * 0.16);
+      }
+      let dirX = Math.cos(outwardAngle);
+      let dirZ = Math.sin(outwardAngle);
+      const exitTarget = resolveExitTarget(dirX, dirZ);
+      const isTopExit = exitTarget.z <= viewportBounds.minZ - 1;
+      if (isTopExit) {
+        const topSideBias =
+          (Math.random() < 0.5 ? -1 : 1) *
+          (Math.max(2.8, viewportWidth * 0.15) + Math.random() * Math.max(1.6, viewportWidth * 0.08));
+        exitTarget.x = clampNumber(exitTarget.x + topSideBias, exitBounds.minX, exitBounds.maxX);
+        exitTarget.z = exitBounds.minZ;
+      }
+      const travelX = exitTarget.x - body.position.x;
+      const travelZ = exitTarget.z - body.position.z;
+      const travelLength = Math.hypot(travelX, travelZ) || 1;
+      dirX = travelX / travelLength;
+      dirZ = travelZ / travelLength;
+      const horizontal = 36 + Math.random() * 14 + (isTopExit ? 4 : 0);
+      body.allowSleep = false;
+      body.linearDamping = 0.035;
+      body.angularDamping = 0.05;
+      if (typeof body.wakeUp === "function") {
+        body.wakeUp();
+      }
       body.velocity.set(
-        Math.cos(outwardAngle) * horizontal,
-        5 + Math.random() * 3.5,
-        Math.sin(outwardAngle) * horizontal
+        dirX * horizontal,
+        6.4 + Math.random() * 3.8,
+        dirZ * horizontal
       );
       body.angularVelocity.set(
         (Math.random() - 0.5) * 68,
         (Math.random() - 0.5) * 68,
         (Math.random() - 0.5) * 68
       );
+      record.clearDirection = {
+        x: dirX,
+        z: dirZ,
+      };
     });
 
-    await new Promise((resolve) => {
-      const startedAt = performance.now();
-      let previous = startedAt;
-      const outsidePadding = 2.2;
-      const outsideViewport = (body) => {
-        return (
-          body.position.x < viewportBounds.minX - outsidePadding ||
-          body.position.x > viewportBounds.maxX + outsidePadding ||
-          body.position.z < viewportBounds.minZ - outsidePadding ||
-          body.position.z > viewportBounds.maxZ + outsidePadding
-        );
-      };
-      const tick = (now) => {
-        const dt = Math.min(0.05, Math.max(1 / 300, (now - previous) / 1000));
-        previous = now;
-        this.physics?.step(dt);
-        this.renderer?.syncAllBodies(this.activeRecords);
-        this.renderer?.render();
-        const elapsed = now - startedAt;
-        const allOutside =
-          this.activeRecords.length > 0 &&
-          this.activeRecords.every((record) => record?.body && outsideViewport(record.body));
-        if ((allOutside && elapsed > 300) || elapsed >= 5200) {
-          resolve();
-          return;
-        }
+    try {
+      await new Promise((resolve) => {
+        const startedAt = performance.now();
+        let previous = startedAt;
+        const outsidePadding = 4.2;
+        const screenPadding = 156;
+        const outsideViewport = (body) => {
+          const offscreenByProjection =
+            this.renderer?.isWorldPointOutsideViewport(body.position, screenPadding) || false;
+          if (offscreenByProjection) {
+            return true;
+          }
+          return (
+            body.position.x < viewportBounds.minX - outsidePadding ||
+            body.position.x > viewportBounds.maxX + outsidePadding ||
+            body.position.z < viewportBounds.minZ - outsidePadding ||
+            body.position.z > viewportBounds.maxZ + outsidePadding
+          );
+        };
+        const tick = (now) => {
+          if (!this.clearing || this.clearSessionId !== clearSessionId) {
+            resolve();
+            return;
+          }
+          const dt = Math.min(0.05, Math.max(1 / 300, (now - previous) / 1000));
+          previous = now;
+          this.physics?.step(dt);
+          const elapsed = now - startedAt;
+          if (elapsed > 760) {
+            recordsToClear.forEach((record) => {
+              const body = record?.body;
+              const clearDirection = record?.clearDirection;
+              if (!body || !clearDirection || outsideViewport(body)) {
+                return;
+              }
+              const horizontalSpeed = Math.hypot(body.velocity.x, body.velocity.z);
+              if (horizontalSpeed >= 12) {
+                return;
+              }
+              if (typeof body.wakeUp === "function") {
+                body.wakeUp();
+              }
+              const speedBoost = 26 + Math.random() * 10;
+              body.velocity.x = clearDirection.x * speedBoost;
+              body.velocity.z = clearDirection.z * speedBoost;
+              body.velocity.y = Math.max(body.velocity.y, 5.2 + Math.random() * 2.4);
+            });
+          }
+          this.renderer?.syncAllBodies(recordsToClear);
+          this.renderer?.render();
+          const allOutside =
+            recordsToClear.length > 0 &&
+            recordsToClear.every((record) => record?.body && outsideViewport(record.body));
+          if ((allOutside && elapsed > 520) || elapsed >= 9800) {
+            resolve();
+            return;
+          }
+          this.animationFrame = requestAnimationFrame(tick);
+        };
         this.animationFrame = requestAnimationFrame(tick);
-      };
-      this.animationFrame = requestAnimationFrame(tick);
-    });
-
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = 0;
+      });
+    } finally {
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = 0;
+      }
+      this.restoreBoundaryConstraints();
+      if (this.clearSessionId === clearSessionId) {
+        this.clearing = false;
+      }
     }
-    this.physics?.setBoundaryConstraintsEnabled(true);
-    if (this.physics && this.renderer) {
-      this.physics.setArenaBounds(this.renderer.getArenaBounds());
+
+    if (this.clearSessionId !== clearSessionId) {
+      return;
     }
 
     this.clearRenderedDice({ returnToPreview });
@@ -2078,20 +2378,55 @@ class DiceTrayController {
       });
     }
 
+    if (this.bannerTimerInput) {
+      const commitBannerDuration = () => {
+        const next = this.setBannerDurationSeconds(this.bannerTimerInput.value, true);
+        if (!this.rolling) {
+          this.writeStatus(`Roll notifications last ${next} seconds.`, "neutral");
+        }
+      };
+      this.bannerTimerInput.addEventListener("change", commitBannerDuration);
+      this.bannerTimerInput.addEventListener("blur", commitBannerDuration);
+    }
+
     this.onScenePointerDown = (event) => {
       if (this.rolling && this.settings.lowPerformance) {
         return;
       }
-      if (this.panel?.dataset.collapsed === "true" || !this.canUse3D()) {
+      if (!this.canUse3D()) {
         return;
       }
-      let picked = null;
-      if (this.renderer && this.canvas && !this.canvas.hidden) {
-        picked = this.renderer.pickDieAtClient(event.clientX, event.clientY);
+      const clientX = Number(event.clientX);
+      const clientY = Number(event.clientY);
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+        return;
       }
-      if (!picked && this.previewRenderer && this.previewCanvas && !this.previewCanvas.hidden) {
-        picked = this.previewRenderer.pickDieAtClient(event.clientX, event.clientY);
+
+      const previewZoneVisible =
+        this.previewRenderer &&
+        this.previewCanvas &&
+        !this.previewCanvas.hidden &&
+        isPointInsideElement(this.previewCanvas, clientX, clientY);
+      if (previewZoneVisible) {
+        const previewPicked = this.previewRenderer.pickDieAtClient(clientX, clientY);
+        if (!previewPicked) {
+          return;
+        }
+        this.pendingDieClickBlock = true;
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === "function") {
+          event.stopImmediatePropagation();
+        }
+        this.resetOverlayTapState();
+        this.roll(this.settings.notation);
+        return;
       }
+
+      if (!this.renderer || !this.canvas || this.canvas.hidden) {
+        return;
+      }
+      const picked = this.renderer.pickDieAtClient(clientX, clientY);
       if (!picked) {
         return;
       }
@@ -2101,7 +2436,21 @@ class DiceTrayController {
       if (typeof event.stopImmediatePropagation === "function") {
         event.stopImmediatePropagation();
       }
-      this.roll();
+      const currentTapAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+      const isDoubleTap =
+        this.lastOverlayTapTarget === picked &&
+        currentTapAt - this.lastOverlayTapAt <= DICE_DOUBLE_TAP_WINDOW_MS;
+      this.lastOverlayTapTarget = picked;
+      this.lastOverlayTapAt = currentTapAt;
+      if (!isDoubleTap) {
+        return;
+      }
+      this.resetOverlayTapState();
+      this.throwDiceOffScreenAndClear({
+        silent: true,
+        returnToPreview: this.panel?.dataset.collapsed === "false",
+        allowDuringLowPerformance: true,
+      });
     };
     window.addEventListener("pointerdown", this.onScenePointerDown, true);
 
@@ -2137,6 +2486,7 @@ class DiceTrayController {
       this.onSceneClick = null;
     }
     this.pendingDieClickBlock = false;
+    this.resetOverlayTapState();
     window.removeEventListener("resize", this.onResize);
   }
 
@@ -2219,8 +2569,28 @@ class DiceTrayController {
     }
   }
 
+  restoreBoundaryConstraints() {
+    this.physics?.setBoundaryConstraintsEnabled(true);
+    if (this.physics && this.renderer) {
+      this.physics.setArenaBounds(this.renderer.getArenaBounds());
+    }
+  }
+
+  cancelActiveClear() {
+    if (!this.clearing) {
+      return;
+    }
+    this.clearing = false;
+    this.clearSessionId += 1;
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = 0;
+    }
+    this.restoreBoundaryConstraints();
+  }
+
   flushPendingAction() {
-    if (this.rolling || !this.pendingAction) {
+    if (this.rolling || this.clearing || !this.pendingAction) {
       return;
     }
     const action = this.pendingAction;
@@ -2230,7 +2600,7 @@ class DiceTrayController {
       return;
     }
     if (action.type === "roll") {
-      this.roll(action.notation || this.settings.notation);
+      this.roll(action.notation || this.settings.notation, action.metadata || null);
     }
   }
 
@@ -2338,6 +2708,10 @@ class DiceTrayController {
           throw new Error("Renderer failed to initialize.");
         }
         this.renderer.setPresentationMode("overlay");
+        this.renderer.setViewportSafeInsets({
+          top: resolveOverlaySafeTopInsetPx(),
+        });
+        this.renderer.resize();
         this.renderer.setIdlePreviewVisible(false);
 
         if (this.previewCanvas) {
@@ -2539,6 +2913,7 @@ class DiceTrayController {
     return {
       timestamp: nowIso(),
       notation: request.notation,
+      modifier: request.modifier,
       total,
       rolls,
       mode: DICE_MODES.PROCEDURAL,
@@ -2569,6 +2944,7 @@ class DiceTrayController {
     return {
       timestamp: nowIso(),
       notation: request.notation,
+      modifier: request.modifier,
       total,
       rolls,
       mode: DICE_MODES.FALLBACK,
@@ -2619,11 +2995,23 @@ class DiceTrayController {
   }
 
   commitResult(result, statusMessage, tone = "neutral") {
-    this.history.unshift(result);
+    const historyEntry = {
+      ...result,
+      showModifier: Boolean(
+        this.activeRollMetadata &&
+        Object.prototype.hasOwnProperty.call(this.activeRollMetadata, "modifier")
+      ),
+    };
+    this.history.unshift(historyEntry);
     this.history = this.history.slice(0, DICE_HISTORY_LIMIT);
     this.persistHistory();
     this.renderHistory();
     this.writeStatus(statusMessage || `Rolled ${result.notation} = ${result.total}`, tone);
+    if (typeof this.onResult === "function") {
+      this.onResult(result, {
+        metadata: this.activeRollMetadata,
+      });
+    }
     if (typeof this.setGlobalStatus === "function") {
       this.setGlobalStatus(`Rolled ${result.notation} = ${result.total}.`, "ok");
     }
@@ -2648,17 +3036,64 @@ class DiceTrayController {
 
       const main = document.createElement("div");
       main.className = "dice-history-main";
+      const labels = document.createElement("div");
+      labels.className = "dice-history-labels";
       const notation = document.createElement("span");
       notation.className = "dice-history-die";
-      const singleDie =
-        Array.isArray(entry.rolls) && entry.rolls.length === 1
-          ? entry.rolls[0]?.die
-          : null;
-      notation.textContent = singleDie || entry.notation || "roll";
+      let parsed = null;
+      if (typeof entry?.notation === "string" && entry.notation.trim()) {
+        try {
+          parsed = RollParser.parse(entry.notation);
+        } catch (_error) {
+          parsed = null;
+        }
+      }
+      const modifier =
+        Number.isFinite(entry?.modifier)
+          ? Math.trunc(entry.modifier)
+          : Math.trunc(parsed?.modifier || 0);
+      let primaryLabel = "";
+      if (parsed && Array.isArray(parsed.terms) && parsed.terms.length > 0) {
+        primaryLabel = parsed.terms
+          .map((term, index) => {
+            const prefix = term.sign < 0 ? "-" : index === 0 ? "" : "+";
+            const countLabel = term.count === 1 ? "" : String(term.count);
+            return `${prefix}${countLabel}d${term.sides}`;
+          })
+          .join("");
+      }
+      if (!primaryLabel) {
+        const singleDie =
+          Array.isArray(entry.rolls) && entry.rolls.length === 1
+            ? entry.rolls[0]?.die
+            : null;
+        primaryLabel = singleDie || entry.notation || "roll";
+      }
+      let rolledValue = null;
+      if (Array.isArray(entry?.rolls) && entry.rolls.length > 0) {
+        rolledValue = entry.rolls.reduce((sum, roll) => {
+          const value = Number.isFinite(roll?.value) ? Math.trunc(roll.value) : 0;
+          const sign = roll?.sign < 0 ? -1 : 1;
+          return sum + sign * value;
+        }, 0);
+      } else if (Number.isFinite(entry?.total)) {
+        rolledValue = Math.trunc(entry.total) - modifier;
+      }
+      notation.textContent = Number.isFinite(rolledValue)
+        ? `${primaryLabel} = ${rolledValue}`
+        : primaryLabel;
+      labels.appendChild(notation);
+      const shouldShowModifier = Boolean(entry?.showModifier) || modifier !== 0;
+      if (shouldShowModifier) {
+        const modifierBadge = document.createElement("span");
+        modifierBadge.className = "dice-history-mod";
+        modifierBadge.textContent = `mod ${modifier < 0 ? "- " : "+ "}${Math.abs(modifier)}`;
+        labels.appendChild(modifierBadge);
+      }
       const total = document.createElement("span");
       total.className = "dice-history-total";
-      total.textContent = String(entry.total);
-      main.appendChild(notation);
+      total.textContent = String(Math.trunc(toSafeNumber(entry?.total, 0)));
+      main.appendChild(labels);
       main.appendChild(total);
 
       item.appendChild(main);
@@ -2666,7 +3101,10 @@ class DiceTrayController {
     });
   }
 
-  async roll(forcedNotation = null) {
+  async roll(forcedNotation = null, metadata = null) {
+    if (this.clearing) {
+      this.cancelActiveClear();
+    }
     if (this.rolling) {
       if (this.settings.lowPerformance) {
         return;
@@ -2674,13 +3112,18 @@ class DiceTrayController {
       this.pendingAction = {
         type: "roll",
         notation: forcedNotation || this.settings.notation,
+        metadata,
       };
       this.interruptActiveRoll();
       return;
     }
 
     const CANCELLED_ERROR = "__ROLL_CANCELLED__";
-    const notation = this.setActiveNotation(forcedNotation || this.settings.notation, true);
+    const isTrayRoll = forcedNotation == null;
+    const requestedNotation = forcedNotation || this.settings.notation;
+    const notation = isTrayRoll
+      ? this.setActiveNotation(this.normalizeChipNotation(requestedNotation), true)
+      : requestedNotation;
     let request;
     try {
       request = RollParser.parse(notation);
@@ -2692,9 +3135,9 @@ class DiceTrayController {
       return;
     }
 
-    this.settings.notation = request.notation;
-    this.persistSettings();
+    this.resetOverlayTapState();
     this.hasRolled = true;
+    this.activeRollMetadata = metadata;
     this.activeRecords = [];
     if (this.settings.lowPerformance) {
       this.stopIdleRenderLoop();
@@ -2807,6 +3250,7 @@ class DiceTrayController {
       this.rolling = false;
       this.rollCompletionResolver = null;
       this.rollCancelRequested = false;
+      this.activeRollMetadata = null;
       this.updateControlAvailability();
       if (this.animationFrame) {
         cancelAnimationFrame(this.animationFrame);
