@@ -2488,7 +2488,7 @@ function bindEvents() {
     scheduleAutoSave();
     if (els.fields.className.value !== "Classless Scvm") {
       setStatus(
-        "Class-specific starting rules vary. Randomize stays faithful to classless baseline.",
+        "Class-specific starting rules vary.",
         "warn"
       );
     } else {
