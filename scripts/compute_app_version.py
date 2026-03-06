@@ -66,9 +66,10 @@ def main() -> int:
         major, minor = read_major_minor(config_path)
         base_sha = run_git(["log", "-n", "1", "--format=%H", "--", str(relative_config)])
         if not base_sha:
-            raise ValueError(f"Could not determine last commit for {relative_config}.")
-        patch_raw = run_git(["rev-list", "--count", f"{base_sha}..HEAD"])
-        patch = int(patch_raw)
+            patch = 0
+        else:
+            patch_raw = run_git(["rev-list", "--count", f"{base_sha}..HEAD"])
+            patch = int(patch_raw)
         if patch < 0:
             raise ValueError("Patch version cannot be negative.")
     except (subprocess.CalledProcessError, ValueError, json.JSONDecodeError) as error:
