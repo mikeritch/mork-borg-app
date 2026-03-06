@@ -4,10 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta
-    http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'sha256-rhWmlvLJFRKJzymhoEOUZwun7pP+y8pGT35VsnEVZ4U='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'"
-  />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'sha256-rhWmlvLJFRKJzymhoEOUZwun7pP+y8pGT35VsnEVZ4U='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>MORK BORG Character Sheet Generator | Character Reliquary</title>
   <meta name="description"
@@ -78,8 +76,8 @@
           </div>
           <p class="brand-sub">Forge, shape, and preserve your doomed souls.</p>
           <div class="brand-quick-actions">
-            <button id="theme-toggle" class="btn btn-ghost theme-toggle brand-theme-toggle" type="button"
-              role="switch" aria-pressed="true" aria-checked="true" aria-label="Switch theme" title="Switch theme">
+            <button id="theme-toggle" class="btn btn-ghost theme-toggle brand-theme-toggle" type="button" role="switch"
+              aria-pressed="true" aria-checked="true" aria-label="Switch theme" title="Switch theme">
               <span class="theme-toggle-glyph" aria-hidden="true">
                 <i class="stat-lucide theme-toggle-icon" data-lucide="sun-moon"></i>
               </span>
@@ -184,7 +182,10 @@
       <header class="sheet-header">
         <div>
           <p class="section-kicker">Sheet Editor</p>
-          <h2 class="sheet-title-row"><span id="sheet-title">Unnamed Soul</span></h2>
+          <h2 class="sheet-title-row">
+            <span id="sheet-title">Unnamed Soul</span>
+            <span id="sheet-title-epithet" class="sheet-title-epithet" hidden></span>
+          </h2>
         </div>
 
         <div class="header-actions">
@@ -304,34 +305,34 @@
             Modifiers are normally created by rolling 3d6 and mapping to -3 through +3. They can
             improve up to +6 over time.
           </p>
-          <div class="fields stat-grid">
-            <label>
+          <div class="fields stat-grid core-stats-grid">
+            <label class="core-stat-field">
               <span class="label-with-icon">
                 <i class="stat-lucide" data-lucide="dumbbell" aria-hidden="true"></i>
                 <span>Strength</span>
               </span>
-              <input id="strength" type="number" min="-3" max="6" step="1" />
+              <input class="core-stat-input" id="strength" type="number" min="-3" max="6" step="1" />
             </label>
-            <label>
+            <label class="core-stat-field">
               <span class="label-with-icon">
                 <i class="stat-lucide" data-lucide="wind" aria-hidden="true"></i>
                 <span>Agility</span>
               </span>
-              <input id="agility" type="number" min="-3" max="6" step="1" />
+              <input class="core-stat-input" id="agility" type="number" min="-3" max="6" step="1" />
             </label>
-            <label>
+            <label class="core-stat-field">
               <span class="label-with-icon">
                 <i class="stat-lucide" data-lucide="eye" aria-hidden="true"></i>
                 <span>Presence</span>
               </span>
-              <input id="presence" type="number" min="-3" max="6" step="1" />
+              <input class="core-stat-input" id="presence" type="number" min="-3" max="6" step="1" />
             </label>
-            <label>
+            <label class="core-stat-field">
               <span class="label-with-icon">
                 <i class="stat-lucide" data-lucide="shield-alert" aria-hidden="true"></i>
                 <span>Toughness</span>
               </span>
-              <input id="toughness" type="number" min="-3" max="6" step="1" />
+              <input class="core-stat-input" id="toughness" type="number" min="-3" max="6" step="1" />
             </label>
           </div>
         </section>
@@ -363,7 +364,7 @@
                 </button>
               </div>
               <p id="hp-current-hint" class="tracker-hint" hidden>Current HP cannot exceed Max HP.</p>
-              <input id="hpCurrent" type="number" min="0" max="30" step="1" hidden aria-hidden="true" />
+              <input id="hpCurrent" type="number" min="-30" max="50" step="1" hidden aria-hidden="true" />
             </article>
             <label>
               <span class="label-with-icon">
@@ -548,29 +549,17 @@
           </h3>
           <p class="field-help">Catalogue forbidden rites, cursed scrolls, and the toll of each casting.</p>
           <div class="fields two-col">
-            <div class="power-summary span-2">
-              <article class="power-summary-chip">
-                <span class="power-summary-label label-with-icon">
-                  <i class="stat-lucide" data-lucide="skull" aria-hidden="true"></i>
-                  <span>Known Powers</span>
-                </span>
-                <output id="powers-known-counter" class="tracker-count">0</output>
-              </article>
-              <article class="power-summary-chip">
-                <span class="power-summary-label label-with-icon">
-                  <i class="stat-lucide" data-lucide="hourglass" aria-hidden="true"></i>
-                  <span>Cast Attempts Today</span>
-                </span>
-                <output id="powers-cast-counter" class="tracker-count">0</output>
-              </article>
-            </div>
             <div class="power-trackers power-trackers-single span-2">
               <article class="power-tracker-card" id="powers-cast-card">
-                <div class="power-tracker-head">
+                <div class="power-tracker-head power-tracker-head-with-action">
                   <h4 class="heading-with-icon">
                     <i class="stat-lucide" data-lucide="activity" aria-hidden="true"></i>
                     <span>Cast Attempts Tracker</span>
                   </h4>
+                  <button class="btn btn-ghost tracker-reset-btn" type="button" data-power-action="reset"
+                    data-power-target="cast" aria-label="Reset cast attempts">
+                    Reset
+                  </button>
                 </div>
                 <div class="tracker-controls">
                   <button class="tracker-btn tracker-btn-minus" type="button" data-power-action="decrement"
@@ -592,9 +581,13 @@
                   <i class="stat-lucide" data-lucide="compass" aria-hidden="true"></i>
                   <span>Known Powers List</span>
                 </h4>
-                <button id="add-known-power" class="btn btn-ghost known-power-add" type="button">
-                  Add Power
-                </button>
+                <div class="known-powers-tools">
+                  <output id="powers-known-counter" class="tracker-count known-powers-count"
+                    aria-label="Known powers count" title="Known powers count">0</output>
+                  <button id="add-known-power" class="btn btn-ghost known-power-add" type="button">
+                    Add Power
+                  </button>
+                </div>
               </div>
               <div id="known-powers-list" class="known-powers-list"></div>
               <p class="tracker-hint">Inscribe each power that still answers your call.</p>
@@ -885,8 +878,8 @@
   </template>
 
   <div id="confirm-modal" class="confirm-modal" aria-hidden="true" hidden>
-    <section id="confirm-dialog" class="confirm-dialog" role="dialog" aria-modal="true"
-      aria-labelledby="confirm-title" aria-describedby="confirm-message" tabindex="-1">
+    <section id="confirm-dialog" class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title"
+      aria-describedby="confirm-message" tabindex="-1">
       <div class="confirm-dialog-body">
         <p class="confirm-kicker">Confirm</p>
         <h2 id="confirm-title" class="confirm-title">Confirm action</h2>

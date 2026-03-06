@@ -6,6 +6,7 @@ const APP_VERSION = "__APP_VERSION__";
 const CUSTOM_OPTION_VALUE = "__custom__";
 const POWER_TRACKER_LENGTH = 12;
 const KNOWN_POWERS_MAX = 99;
+const HP_CURRENT_MIN = -30;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
 const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules-fix1";
@@ -277,6 +278,7 @@ const els = {
   listEmpty: document.getElementById("list-empty"),
   listTemplate: document.getElementById("character-item-template"),
   sheetTitle: document.getElementById("sheet-title"),
+  sheetTitleEpithet: document.getElementById("sheet-title-epithet"),
   status: document.getElementById("status"),
   newCharacter: document.getElementById("new-character"),
   randomCharacter: document.getElementById("random-character"),
@@ -311,7 +313,6 @@ const els = {
   hpCurrentHint: document.getElementById("hp-current-hint"),
   powersCastCard: document.getElementById("powers-cast-card"),
   powersKnownCounter: document.getElementById("powers-known-counter"),
-  powersCastCounter: document.getElementById("powers-cast-counter"),
   powersCastDisplay: document.getElementById("powers-cast-display"),
   knownPowersList: document.getElementById("known-powers-list"),
   addKnownPower: document.getElementById("add-known-power"),
@@ -899,7 +900,6 @@ function trackerDescriptor(target) {
         showMax: false,
         card: els.powersCastCard,
         display: els.powersCastDisplay,
-        counter: els.powersCastCounter,
       };
     default:
       return null;
@@ -1006,12 +1006,12 @@ function syncCurrentHpTracker() {
   const hpMax = clamp(Math.trunc(toSafeNumber(els.fields.hpMax?.value, DEFAULTS.hpMax)), 1, 30);
   const hpCurrent = clamp(
     Math.trunc(toSafeNumber(els.fields.hpCurrent?.value, DEFAULTS.hpCurrent)),
-    0,
+    HP_CURRENT_MIN,
     hpMax
   );
   const healthRatio = hpMax > 0 ? hpCurrent / hpMax : 1;
   const isBloodied = healthRatio < 0.2;
-  const isBroken = hpCurrent === 0;
+  const isBroken = hpCurrent <= 0;
 
   if (els.fields.hpMax) {
     els.fields.hpMax.value = String(hpMax);
@@ -1057,7 +1057,7 @@ function syncCurrentHpTracker() {
 
 function adjustCurrentHp(delta) {
   const { hpCurrent, hpMax } = syncCurrentHpTracker();
-  const next = clamp(hpCurrent + delta, 0, hpMax);
+  const next = clamp(hpCurrent + delta, HP_CURRENT_MIN, hpMax);
   if (next === hpCurrent) {
     if (delta > 0 && hpCurrent >= hpMax) {
       state.hpMaxHintVisible = true;
@@ -1067,7 +1067,7 @@ function adjustCurrentHp(delta) {
     }
     state.hpMaxHintVisible = false;
     syncCurrentHpTracker();
-    setStatus("Hit points are already at 0.", "warn");
+    setStatus(`Hit points are already at minimum (${HP_CURRENT_MIN}).`, "warn");
     return;
   }
 
@@ -1165,6 +1165,21 @@ function adjustPowerTracker(target, delta) {
     target === "known" ? `Known powers: ${next}/${KNOWN_POWERS_MAX}.` : `Cast attempts: ${next}.`,
     "ok"
   );
+}
+
+function resetPowerTracker(target) {
+  const tracker = trackerDescriptor(target);
+  if (!tracker) {
+    return;
+  }
+  const current = getTrackerCount(target);
+  if (current === 0) {
+    setStatus(target === "cast" ? "Cast attempts are already reset." : `${tracker.label} are already reset.`, "warn");
+    return;
+  }
+  setPowerTrackerValue(target, 0);
+  retriggerAnimation(tracker.card, "is-shaking");
+  setStatus(target === "cast" ? "Cast attempts reset." : `${tracker.label} reset.`, "ok");
 }
 
 function stripTrailingParens(text) {
@@ -1416,7 +1431,7 @@ function normalizeCharacter(candidate) {
     merged[stat] = clamp(Math.trunc(merged[stat]), -3, 6);
   });
   merged.hpMax = clamp(Math.trunc(merged.hpMax), 1, 30);
-  merged.hpCurrent = clamp(Math.trunc(merged.hpCurrent), 0, merged.hpMax);
+  merged.hpCurrent = clamp(Math.trunc(merged.hpCurrent), HP_CURRENT_MIN, merged.hpMax);
   merged.omens = clamp(Math.trunc(merged.omens), 0, 9);
   merged.silver = Math.max(0, Math.trunc(merged.silver));
   merged.weaponCustomDie = clampCustomDie(merged.weaponCustomDie, DEFAULTS.weaponCustomDie);
@@ -1498,7 +1513,13 @@ function activeCharacter() {
 }
 
 function updateSheetTitle(character) {
-  els.sheetTitle.textContent = character?.name?.trim() || "Unnamed Soul";
+  const name = character?.name?.trim() || "Unnamed Soul";
+  const epithet = character?.epithet?.trim() || "";
+  els.sheetTitle.textContent = name;
+  if (els.sheetTitleEpithet) {
+    els.sheetTitleEpithet.textContent = epithet;
+    els.sheetTitleEpithet.hidden = epithet === "";
+  }
 }
 
 function applyToForm(character) {
@@ -2428,8 +2449,12 @@ function bindEvents() {
   placeDicePanelByViewport();
   bindConfirmDialogEvents();
   els.form.addEventListener("input", (event) => {
-    if (event.target.id === "name") {
-      updateSheetTitle({ name: event.target.value });
+    if (event.target.id === "name" || event.target.id === "epithet") {
+      updateSheetTitle({
+        ...(activeCharacter() || {}),
+        name: els.fields.name.value,
+        epithet: els.fields.epithet.value,
+      });
     }
 
     if (["strength", "agility", "presence", "toughness"].includes(event.target.id)) {
@@ -2520,6 +2545,14 @@ function bindEvents() {
     const target = button.dataset.powerTarget;
     const action = button.dataset.powerAction;
     if (!target || !action) {
+      return;
+    }
+    if (action === "reset") {
+      resetPowerTracker(target);
+      scheduleAutoSave();
+      return;
+    }
+    if (action !== "increment" && action !== "decrement") {
       return;
     }
     adjustPowerTracker(target, action === "increment" ? 1 : -1);
