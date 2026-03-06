@@ -12,6 +12,7 @@ const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260226-local-dice-modules-fix1";
 const DICE_MODULE_LOAD_MAX_ATTEMPTS = 3;
 const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
 const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
+const RANDOMIZER_LIBRARY_URL = "data/randomizer-library.json";
 const BACKSTORY_LIBRARY_URL = "data/backstories.json";
 const SERVICE_WORKER_PATH = "/sw.js";
 const SERVICE_WORKER_SCOPE = "/";
@@ -184,182 +185,20 @@ const ARMOR_DATA = {
 const WEAPON_CHOICES = new Set(["", CUSTOM_OPTION_VALUE, ...Object.keys(WEAPON_DATA)]);
 const ARMOR_CHOICES = new Set(["", CUSTOM_OPTION_VALUE, ...Object.keys(ARMOR_DATA)]);
 
+const FALLBACK_RANDOMIZER_LIBRARY = Object.freeze({
+  namesA: Object.freeze(["Aerg-Tval", "Aldur", "Mirek", "Ravik"]),
+  namesB: Object.freeze(["Ashborn", "Grimveil", "Ruin-Bell", "Bog-Saint"]),
+  epithets: Object.freeze(["Bearer of Rotten Light", "Bell-Toll Penitent"]),
+  homelands: Object.freeze(["Grift", "Sarkash", "Tveland"]),
+  classlessLoadD6: Object.freeze(["Nothing", "Backpack (capacity: 7 normal items)", "Sack (capacity: 10 normal items)"]),
+  classlessGearD12A: Object.freeze(["Rope (30ft)", "Torches (Presence + 4)", "Random unclean scroll"]),
+  classlessGearD12B: Object.freeze(["Life elixir (d4 doses, heal d6 HP)", "Random sacred scroll", "Shield (-1 damage, or break to ignore one attack)"]),
+  trinkets: Object.freeze(["A tooth carved with scripture", "A key with no known lock", "A bell that rings only underwater"]),
+  notes: Object.freeze(["Owes a favor to a one-eyed butcher in Galgenbeck.", "Keeps a tally of each night survived in charcoal marks."]),
+  scars: Object.freeze(["Acid pitting", "Ritual brand", "Clouded eye"]),
+});
+
 const generators = {
-  namesA: [
-    "Aerg-Tval",
-    "Agn",
-    "Arvant",
-    "Belsum",
-    "Belum",
-    "Brint",
-    "Borda",
-    "Daeru",
-    "Eldar",
-    "Felban",
-    "Gotven",
-    "Graft",
-    "Grin",
-    "Grittr",
-    "Haeru",
-    "Hargha",
-    "Harmug",
-    "Jotna",
-    "Karg",
-    "Karva",
-    "Katla",
-    "Keftar",
-    "Klort",
-    "Kratar",
-    "Kutz",
-    "Kvetin",
-    "Lygan",
-    "Margar",
-    "Merkari",
-    "Nagl",
-    "Niduk",
-    "Nifehl",
-    "Prugl",
-    "Qillnach",
-    "Risten",
-    "Svind",
-    "Theras",
-    "Therg",
-    "Torvul",
-    "Torn",
-    "Urm",
-    "Urvarg",
-    "Vagal",
-    "Vatan",
-    "Von",
-    "Vrakh",
-    "Vresi",
-    "Wemut",
-    "Aldur",
-    "Ysold",
-    "Mirek",
-    "Silas",
-    "Tova",
-    "Drogo",
-    "Ravik",
-    "Kelda",
-  ],
-  namesB: [
-    "Ashborn",
-    "Blacktongue",
-    "Bleakvein",
-    "Bonewake",
-    "Brine-Crown",
-    "Carrion",
-    "Corpsebane",
-    "Crowhand",
-    "Dreadwake",
-    "Frostspine",
-    "Gallows",
-    "Gloamchild",
-    "Graveshade",
-    "Grimveil",
-    "Hallow",
-    "Harrow",
-    "Holloweye",
-    "Ironmold",
-    "Mireclaw",
-    "Morrow",
-    "Nightmire",
-    "Palegrin",
-    "Rimeblood",
-    "Rottooth",
-    "Ruin-Bell",
-    "Sable",
-    "Skullmarrow",
-    "Slagborn",
-    "Thorn",
-    "Tombsalt",
-    "Vilewater",
-    "Woe",
-    "Wormsigil",
-    "Wraithmark",
-    "Doomthread",
-    "Galldust",
-    "Rotspark",
-    "Charnel",
-    "Crow-Mire",
-    "Bog-Saint",
-  ],
-  epithets: [
-    "Bearer of Rotten Light",
-    "Saint of Ruined Bells",
-    "Sworn to the Last Dusk",
-    "Pilgrim of the Burning Mire",
-    "Keeper of Splintered Teeth",
-    "Witness to the Black Sun",
-    "Vagrant of Broken Relics",
-    "Herald of the Pale Feast",
-    "Ash-Crowned Graverobber",
-    "Bell-Toll Penitent",
-    "Maggot-Fed Prophet",
-    "Candleless Pilgrim",
-    "Sepulcher Witness",
-    "Scourge of the Mire",
-  ],
-  classes: [
-    "Classless Scvm",
-    "Fanged Deserter",
-    "Gutterborn Scum",
-    "Esoteric Hermit",
-    "Wretched Royalty",
-    "Heretical Priest",
-    "Occult Herbmaster",
-    "Pale One",
-    "Child of the Swamp",
-  ],
-  homelands: [
-    "Grift",
-    "Kerguz",
-    "Sarkash",
-    "Tveland",
-    "Bergen Chrypt",
-    "Valley of the Unfortunate Undead",
-    "Galgenbeck outskirts",
-    "A nameless plague village",
-    "An unmarked battlefield",
-    "A ruined monastery",
-  ],
-  classlessLoadD6: [
-    "Nothing",
-    "Nothing",
-    "Backpack (capacity: 7 normal items)",
-    "Sack (capacity: 10 normal items)",
-    "Small wagon",
-    "Donkey (inventory carrier)",
-  ],
-  classlessGearD12A: [
-    "Rope (30ft)",
-    "Torches (Presence + 4)",
-    "Lantern and oil (Presence + 6 hours)",
-    "Magnesium strip (instant bright light)",
-    "Random unclean scroll",
-    "Sharp needle",
-    "Medicine chest (Presence + 4 uses)",
-    "Metal file and lockpicks",
-    "Bear trap (d8 damage)",
-    "Bomb (d10 damage)",
-    "Red poison (d4 doses, Toughness DR12 or d10 damage)",
-    "Silver crucifix",
-  ],
-  classlessGearD12B: [
-    "Life elixir (d4 doses, heal d6 HP)",
-    "Random sacred scroll",
-    "Small vicious dog (d6+2 HP, bite d4)",
-    "Monkeys (d4)",
-    "Exquisite perfume (worth 25s)",
-    "Toolbox (nails, tongs, hammer, saw, drill)",
-    "Heavy chain (15ft)",
-    "Grappling hook",
-    "Shield (-1 damage, or break to ignore one attack)",
-    "Crowbar (d4 damage)",
-    "Lard (5 meals)",
-    "Tent",
-  ],
   classlessWeapons: [
     { label: "Femur (d4)", damage: "d4", attack: "Strength" },
     { label: "Staff (d4)", damage: "d4", attack: "Strength" },
@@ -378,47 +217,14 @@ const generators = {
     { label: "Medium armor (-d4 damage, DR +2 Agility tests)", tier: 2 },
     { label: "Heavy armor (-d6 damage, DR +4 Agility tests)", tier: 3 },
   ],
-  trinkets: [
-    "A tooth carved with scripture",
-    "A key with no known lock",
-    "A shard of mirror that shows another face",
-    "A bell that rings only underwater",
-    "A vial of grave dirt and silver filings",
-    "A saint's fingerbone wrapped in linen",
-    "A black coin stamped with a blind eye",
-    "A prayer strip sewn into skin",
-    "A rusted knucklebone reliquary",
-    "A tiny iron idol missing its head",
-    "A bone die with no pips",
-    "A ribbon from a saint's shroud",
-  ],
-  notes: [
-    "Owes a favor to a one-eyed butcher in Galgenbeck.",
-    "Dreams nightly of a throne built from bells.",
-    "Believes they carry a prophecy carved into their scars.",
-    "Will never enter a church again after the winter purge.",
-    "Hunts the apostate who burned their kin.",
-    "Claims to hear the sea inside sealed tombs.",
-    "Has sworn to never refuse a grave-digger's request.",
-    "Keeps a tally of each night survived in charcoal marks.",
-    "Carries guilt for abandoning a sibling during the plague.",
-  ],
-  scars: [
-    "Acid pitting",
-    "Ritual brand",
-    "Half-healed bite",
-    "Old battlefield cut",
-    "Burned palm sigil",
-    "Broken nose set wrong",
-    "Clouded eye",
-    "Missing fingertip",
-  ],
 };
 
 const state = {
   characters: [],
   activeId: null,
   saveTimer: null,
+  randomizerLibrary: null,
+  randomizerLibraryPromise: null,
   backstoryLibrary: null,
   backstoryLibraryPromise: null,
   diceTray: null,
@@ -1829,11 +1635,69 @@ function rollAbilityModifier() {
   return abilityScoreToModifier(rollDice(3, 6));
 }
 
-function randomName() {
-  if (Math.random() < 0.42) {
-    return pick(generators.namesA);
+function normalizeRandomizerLibraryList(items) {
+  if (!Array.isArray(items)) {
+    return [];
   }
-  return `${pick(generators.namesA)} ${pick(generators.namesB)}`;
+  return items.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
+function normalizeRandomizerLibrary(candidate) {
+  const keys = [
+    "namesA",
+    "namesB",
+    "epithets",
+    "homelands",
+    "classlessLoadD6",
+    "classlessGearD12A",
+    "classlessGearD12B",
+    "trinkets",
+    "notes",
+    "scars",
+  ];
+  const normalized = {};
+  keys.forEach((key) => {
+    normalized[key] = normalizeRandomizerLibraryList(candidate?.[key]);
+    if (normalized[key].length === 0) {
+      normalized[key] = [...FALLBACK_RANDOMIZER_LIBRARY[key]];
+    }
+  });
+  return normalized;
+}
+
+async function loadRandomizerLibrary() {
+  if (state.randomizerLibrary) {
+    return state.randomizerLibrary;
+  }
+  if (state.randomizerLibraryPromise) {
+    return state.randomizerLibraryPromise;
+  }
+
+  state.randomizerLibraryPromise = (async () => {
+    try {
+      const response = await fetch(RANDOMIZER_LIBRARY_URL, { cache: "force-cache" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      state.randomizerLibrary = normalizeRandomizerLibrary(payload);
+    } catch (error) {
+      console.warn("Randomizer library failed to load; using built-in fallback.", error);
+      state.randomizerLibrary = normalizeRandomizerLibrary(FALLBACK_RANDOMIZER_LIBRARY);
+    } finally {
+      state.randomizerLibraryPromise = null;
+    }
+    return state.randomizerLibrary;
+  })();
+
+  return state.randomizerLibraryPromise;
+}
+
+function randomName(library) {
+  if (Math.random() < 0.42) {
+    return pick(library.namesA);
+  }
+  return `${pick(library.namesA)} ${pick(library.namesB)}`;
 }
 
 function withPresenceScaling(text, presenceMod) {
@@ -1971,14 +1835,15 @@ async function generateBackstory(character) {
 }
 
 async function randomCharacterPatch() {
+  const library = await loadRandomizerLibrary();
   const strength = rollAbilityModifier();
   const agility = rollAbilityModifier();
   const presence = rollAbilityModifier();
   const toughness = rollAbilityModifier();
 
-  const load = pick(generators.classlessLoadD6);
-  const gearA = withPresenceScaling(pick(generators.classlessGearD12A), presence);
-  const gearB = pick(generators.classlessGearD12B);
+  const load = pick(library.classlessLoadD6);
+  const gearA = withPresenceScaling(pick(library.classlessGearD12A), presence);
+  const gearB = pick(library.classlessGearD12B);
   const reducedStart = gearA.toLowerCase().includes("scroll") || gearB.toLowerCase().includes("scroll");
   const uncleanScrolls = /random unclean scroll/i.test(gearA) ? 1 : 0;
   const sacredScrolls = /random sacred scroll/i.test(gearB) ? 1 : 0;
@@ -1997,12 +1862,12 @@ async function randomCharacterPatch() {
     gearB,
   ];
 
-  const notes = pick(generators.notes);
+  const notes = pick(library.notes);
   const patch = {
-    name: randomName(),
-    epithet: pick(generators.epithets),
+    name: randomName(library),
+    epithet: pick(library.epithets),
     className: "Classless Scvm",
-    homeland: pick(generators.homelands),
+    homeland: pick(library.homelands),
     age: String(rollDice(2, 10) + 8),
     level: 1,
     strength,
@@ -2027,10 +1892,10 @@ async function randomCharacterPatch() {
     powersKnown: "",
     powersNotes: "",
     attack: weapon.attack,
-    scars: pick(generators.scars),
+    scars: pick(library.scars),
     weapon: weapon.label,
     armor: armor.label,
-    trinket: pick(generators.trinkets),
+    trinket: pick(library.trinkets),
     inventory: inventoryBits.join(", "),
     notes,
   };
@@ -2666,6 +2531,7 @@ function init() {
   loadState();
   renderCharacterList();
   applyToForm(activeCharacter());
+  void loadRandomizerLibrary();
   void loadBackstoryLibrary();
   setInlineDiceStatus("Dice tray ready.", "neutral");
   bindEvents();

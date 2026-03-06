@@ -23,6 +23,7 @@ const APP_SHELL_URLS = [
   "/assets/logos/CRLogoLight-desktop.webp",
   "/assets/logos/CRLogoLight-mobile.webp",
   "/assets/logos/CompWith_MORKBORG_horiz.svg",
+  "/data/randomizer-library.json",
   "/data/backstories.json",
   "/offline.html",
   "/manifest.webmanifest",
