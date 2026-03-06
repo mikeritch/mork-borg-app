@@ -9,13 +9,14 @@ const KNOWN_POWERS_MAX = 99;
 const HP_CURRENT_MIN = -30;
 const DICE_MODULE_GLOBAL = "MorkBorgDice";
 const DICE_MODULE_SCRIPT_ID = "mb-dice-module-script";
-const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260306-clear-distance-boost-3";
+const DICE_MODULE_SCRIPT_SRC = "dice.js?v=20260306-clear-distance-boost-4";
 const DICE_MODULE_LOAD_MAX_ATTEMPTS = 3;
 const DICE_MODULE_RETRY_BASE_DELAY_MS = 300;
 const DICE_MODULE_LOAD_TIMEOUT_MS = 10000;
 const RANDOMIZER_LIBRARY_URL = "data/randomizer-library.json";
 const BACKSTORY_LIBRARY_URL = "data/backstories.json";
 const CORE_STAT_FIELD_IDS = Object.freeze(["strength", "agility", "presence", "toughness"]);
+const ATTACK_STAT_OPTIONS = Object.freeze(["Strength", "Presence"]);
 const SHEET_ROLL_BANNER_DEFAULT_DURATION_MS = 30000;
 const SHEET_ROLL_BANNER_TRANSITION_MS = 220;
 const EXPORT_FILE_HEADER = Object.freeze({
@@ -67,6 +68,8 @@ const FIELD_IDS = [
   "omens",
   "silver",
   "attack",
+  "ammo",
+  "weaponCustomDamageModifier",
   "weaponCustomName",
   "weaponCustomDie",
   "armorCustomName",
@@ -99,7 +102,9 @@ const NUMERIC_FIELDS = new Set([
   "hpMax",
   "omens",
   "silver",
+  "ammo",
   "weaponCustomDie",
+  "weaponCustomDamageModifier",
   "armorCustomDie",
   "powersKnownCount",
   "powersCastToday",
@@ -125,6 +130,8 @@ const DEFAULTS = {
   omens: 1,
   silver: 20,
   attack: "Strength",
+  ammo: 0,
+  weaponCustomDamageModifier: 0,
   damage: "d6",
   armorTier: 0,
   weaponCustomName: "",
@@ -202,9 +209,9 @@ const WEAPON_DATA = {
   "Knife (d4)": { damage: "d4", attack: "Strength" },
   "Warhammer (d6)": { damage: "d6", attack: "Strength" },
   "Sword (d6)": { damage: "d6", attack: "Strength" },
-  "Bow (d6, Presence + 10 arrows)": { damage: "d6", attack: "Presence" },
+  "Bow (d6)": { damage: "d6", attack: "Presence" },
   "Flail (d8)": { damage: "d8", attack: "Strength" },
-  "Crossbow (d8, Presence + 10 bolts)": { damage: "d8", attack: "Presence" },
+  "Crossbow (d8)": { damage: "d8", attack: "Presence" },
   "Zweihander (d10)": { damage: "d10", attack: "Strength" },
 };
 
@@ -239,9 +246,9 @@ const generators = {
     { label: "Knife (d4)", damage: "d4", attack: "Strength" },
     { label: "Warhammer (d6)", damage: "d6", attack: "Strength" },
     { label: "Sword (d6)", damage: "d6", attack: "Strength" },
-    { label: "Bow (d6, Presence + 10 arrows)", damage: "d6", attack: "Presence" },
+    { label: "Bow (d6)", damage: "d6", attack: "Presence" },
     { label: "Flail (d8)", damage: "d8", attack: "Strength" },
-    { label: "Crossbow (d8, Presence + 10 bolts)", damage: "d8", attack: "Presence" },
+    { label: "Crossbow (d8)", damage: "d8", attack: "Presence" },
     { label: "Zweihander (d10)", damage: "d10", attack: "Strength" },
   ],
   classlessArmor: [
@@ -340,18 +347,34 @@ const els = {
   diceLowPerformance: document.getElementById("dice-low-performance"),
   diceBannerSeconds: document.getElementById("dice-banner-seconds"),
   diceStatus: document.getElementById("dice-status"),
+  attackRollButton: document.getElementById("attack-roll-btn"),
+  attackRollButtonMeta: document.getElementById("attack-roll-btn-meta"),
+  attackDamageRollButton: document.getElementById("attack-damage-roll-btn"),
+  attackDamageRollButtonMeta: document.getElementById("attack-damage-roll-btn-meta"),
+  defenceRollButton: document.getElementById("defence-roll-btn"),
+  defenceRollButtonMeta: document.getElementById("defence-roll-btn-meta"),
   sheetRollBanner: document.getElementById("sheet-roll-banner"),
   sheetRollBannerName: document.getElementById("sheet-roll-banner-name"),
   sheetRollBannerViewLog: document.getElementById("sheet-roll-banner-view-log"),
   sheetRollBannerDismiss: document.getElementById("sheet-roll-banner-dismiss"),
   sheetRollBannerStat: document.getElementById("sheet-roll-banner-stat"),
   sheetRollBannerRoll: document.getElementById("sheet-roll-banner-roll"),
+  sheetRollBannerPlus: document.getElementById("sheet-roll-banner-plus"),
   sheetRollBannerMod: document.getElementById("sheet-roll-banner-mod"),
+  sheetRollBannerEquals: document.getElementById("sheet-roll-banner-equals"),
   sheetRollBannerTotal: document.getElementById("sheet-roll-banner-total"),
+  sheetRollBannerNote: document.getElementById("sheet-roll-banner-note"),
+  sheetRollBannerCritical: document.getElementById("sheet-roll-banner-critical"),
+  sheetRollBannerFumble: document.getElementById("sheet-roll-banner-fumble"),
   footerYear: document.getElementById("footer-year"),
   footerVersion: document.getElementById("footer-version"),
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, document.getElementById(id)])),
-  coreStatRollButtons: Array.from(document.querySelectorAll("[data-core-stat-roll]")),
+  sheetRollButtons: Array.from(
+    document.querySelectorAll(
+      "[data-core-stat-roll], [data-attack-roll], [data-attack-damage-roll], [data-defence-roll]"
+    )
+  ),
+  sheetRollBreaks: Array.from(document.querySelectorAll("[data-sheet-roll-break]")),
 };
 
 function setInlineDiceStatus(message, tone = "neutral") {
@@ -362,13 +385,26 @@ function setInlineDiceStatus(message, tone = "neutral") {
   els.diceStatus.dataset.tone = tone;
 }
 
-function setCoreStatRollButtonsVisible(isVisible) {
-  els.coreStatRollButtons.forEach((button) => {
+function setSheetRollButtonsVisible(isVisible) {
+  els.sheetRollButtons.forEach((button) => {
     button.hidden = !isVisible;
     button.setAttribute("aria-hidden", isVisible ? "false" : "true");
     const controls = button.closest(".core-stat-controls");
     if (controls) {
       controls.classList.toggle("is-roll-hidden", !isVisible);
+    }
+    const attackCluster = button.closest(".equipment-attack-cluster");
+    if (attackCluster) {
+      attackCluster.classList.toggle("is-roll-hidden", !isVisible);
+    }
+    const equipmentRollRow = button.closest(".equipment-roll-row");
+    if (equipmentRollRow) {
+      equipmentRollRow.hidden = !isVisible;
+    }
+  });
+  els.sheetRollBreaks.forEach((divider) => {
+    if (divider instanceof HTMLElement) {
+      divider.hidden = !isVisible;
     }
   });
 }
@@ -408,6 +444,7 @@ async function dismissSheetRollBanner() {
   try {
     await state.diceTray.throwDiceOffScreenAndClear({
       silent: true,
+      skipIfRolling: true,
     });
   } catch (_error) {
     // Ignore banner-dismiss cleanup failures; the tray remains user-clearable.
@@ -475,7 +512,10 @@ function showSheetRollBanner({
   rollLabel,
   modifierLabel,
   totalLabel,
+  noteLabel = "",
   showModifier = true,
+  showCritical = false,
+  showFumble = false,
   rollSource = "sheet",
 }) {
   if (
@@ -483,8 +523,13 @@ function showSheetRollBanner({
     !els.sheetRollBannerName ||
     !els.sheetRollBannerStat ||
     !els.sheetRollBannerRoll ||
+    !els.sheetRollBannerPlus ||
     !els.sheetRollBannerMod ||
-    !els.sheetRollBannerTotal
+    !els.sheetRollBannerEquals ||
+    !els.sheetRollBannerTotal ||
+    !els.sheetRollBannerNote ||
+    !els.sheetRollBannerCritical ||
+    !els.sheetRollBannerFumble
   ) {
     return;
   }
@@ -492,6 +537,7 @@ function showSheetRollBanner({
     showModifier &&
     typeof modifierLabel === "string" &&
     modifierLabel.trim().length > 0;
+  const hasNoteLabel = typeof noteLabel === "string" && noteLabel.trim().length > 0;
 
   clearSheetRollBannerTimers();
   els.sheetRollBanner.dataset.rollSource = rollSource === "tray" ? "tray" : "sheet";
@@ -501,7 +547,18 @@ function showSheetRollBanner({
   els.sheetRollBannerMod.textContent = hasModifierLabel ? modifierLabel : "";
   els.sheetRollBannerMod.hidden = !hasModifierLabel;
   els.sheetRollBannerMod.setAttribute("aria-hidden", hasModifierLabel ? "false" : "true");
+  els.sheetRollBannerPlus.hidden = !hasModifierLabel;
+  els.sheetRollBannerPlus.setAttribute("aria-hidden", hasModifierLabel ? "false" : "true");
+  els.sheetRollBannerEquals.hidden = !hasModifierLabel;
+  els.sheetRollBannerEquals.setAttribute("aria-hidden", hasModifierLabel ? "false" : "true");
   els.sheetRollBannerTotal.textContent = totalLabel;
+  els.sheetRollBannerNote.textContent = hasNoteLabel ? noteLabel : "";
+  els.sheetRollBannerNote.hidden = !hasNoteLabel;
+  els.sheetRollBannerNote.setAttribute("aria-hidden", hasNoteLabel ? "false" : "true");
+  els.sheetRollBannerCritical.hidden = !showCritical;
+  els.sheetRollBannerCritical.setAttribute("aria-hidden", showCritical ? "false" : "true");
+  els.sheetRollBannerFumble.hidden = !showFumble;
+  els.sheetRollBannerFumble.setAttribute("aria-hidden", showFumble ? "false" : "true");
   els.sheetRollBanner.hidden = false;
   els.sheetRollBanner.classList.remove("is-visible");
   void els.sheetRollBanner.offsetWidth;
@@ -563,18 +620,67 @@ function resolveRolledValue(result, modifier = 0) {
   return null;
 }
 
+function weaponUsesAmmo(character, weaponLabel = "") {
+  const label = String(weaponLabel || character?.weaponLabel || character?.weapon || "").trim().toLowerCase();
+  if (!label) {
+    return false;
+  }
+  if (/\bcrossbow\b/.test(label) || /\bbow\b/.test(label)) {
+    return true;
+  }
+  return character?.weapon === CUSTOM_OPTION_VALUE && Math.trunc(toSafeNumber(character?.ammo, 0)) > 0;
+}
+
+function consumeAmmoForDamageRoll(metadata) {
+  const rollSource = String(metadata?.source || "").trim().toLowerCase();
+  if (rollSource !== "attack-damage-roll") {
+    return "";
+  }
+  const current = pullFromForm(activeCharacter() || createBlankCharacter());
+  const ammoBefore = clamp(Math.trunc(toSafeNumber(current?.ammo, DEFAULTS.ammo)), 0, 999);
+  if (ammoBefore <= 0 || !weaponUsesAmmo(current, metadata?.weaponLabel)) {
+    return "";
+  }
+
+  const next = normalizeCharacter({
+    ...current,
+    ammo: ammoBefore - 1,
+    updatedAt: nowIso(),
+  });
+  upsertCharacter(next, false);
+  applyToForm(next);
+  syncEquipmentRollUi();
+  syncEquipmentDerivedUi();
+  return `ammo ${ammoBefore} -> ${next.ammo}`;
+}
+
 function handleDiceRollResult(result, context = {}) {
   const metadata = context?.metadata;
   const hasMetadata = Boolean(metadata && typeof metadata === "object");
   const isSheetRoll = hasMetadata;
+  const rollSource = String(metadata?.source || "").trim().toLowerCase();
   const modifier = isSheetRoll
     ? Math.trunc(toSafeNumber(metadata?.modifier, result?.modifier))
     : Math.trunc(toSafeNumber(result?.modifier, 0));
   const rolledValue = resolveRolledValue(result, modifier);
   const total = Math.trunc(toSafeNumber(result?.total, 0));
+  const isAttackRoll = rollSource === "attack-roll";
+  const isDefenceRoll = rollSource === "defence-roll";
+  const isAttackOrDefenceRoll = isAttackRoll || isDefenceRoll;
+  const hasNaturalValue = Number.isFinite(rolledValue);
+  const naturalRollValue = hasNaturalValue ? Math.trunc(rolledValue) : null;
+  const shouldShowCritical = isAttackOrDefenceRoll && naturalRollValue === 20;
+  const shouldShowFumble =
+    isAttackOrDefenceRoll &&
+    naturalRollValue === 1;
+  const bannerNote = isSheetRoll ? consumeAmmoForDamageRoll(metadata) : "";
   const shouldShowModifier =
     isSheetRoll &&
-    (modifier !== 0 || Object.prototype.hasOwnProperty.call(metadata, "modifier"));
+    (
+      metadata?.showModifier === true ||
+      modifier !== 0 ||
+      Object.prototype.hasOwnProperty.call(metadata, "modifier")
+    );
   showSheetRollBanner({
     characterName: metadata?.characterName || resolveActiveCharacterName(),
     statLabel: metadata?.statLabel || "Dice Tray",
@@ -583,7 +689,10 @@ function handleDiceRollResult(result, context = {}) {
       : String(resolveRollNotationLabel(result)),
     modifierLabel: shouldShowModifier ? `mod ${formatSignedModifier(modifier)}` : "",
     totalLabel: `total ${total}`,
+    noteLabel: bannerNote,
     showModifier: shouldShowModifier,
+    showCritical: shouldShowCritical,
+    showFumble: shouldShowFumble,
     rollSource: isSheetRoll ? "sheet" : "tray",
   });
 }
@@ -756,14 +865,14 @@ function loadDiceModuleScript() {
 async function ensureDiceTrayInitialized(options = {}) {
   const silent = Boolean(options?.silent);
   if (state.diceTray) {
-    setCoreStatRollButtonsVisible(true);
+    setSheetRollButtonsVisible(true);
     return true;
   }
   if (state.diceInitPromise) {
     return state.diceInitPromise;
   }
   if (!els.dicePanel || !els.diceToggle) {
-    setCoreStatRollButtonsVisible(false);
+    setSheetRollButtonsVisible(false);
     return false;
   }
 
@@ -779,7 +888,7 @@ async function ensureDiceTrayInitialized(options = {}) {
       const createDiceTrayController = await loadDiceModuleScript();
       state.diceTray = createDiceTrayController(diceControllerParams());
       state.diceTray.init();
-      setCoreStatRollButtonsVisible(true);
+      setSheetRollButtonsVisible(true);
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown dice load error.";
@@ -787,7 +896,7 @@ async function ensureDiceTrayInitialized(options = {}) {
       if (!silent) {
         setStatus(`Dice tray failed to load: ${message}`, "error");
       }
-      setCoreStatRollButtonsVisible(false);
+      setSheetRollButtonsVisible(false);
       return false;
     } finally {
       if (els.diceRollBtn) {
@@ -803,7 +912,7 @@ async function ensureDiceTrayInitialized(options = {}) {
 
 function primeDiceTrayAvailability() {
   const kickoff = () => {
-    if (state.diceTray || state.diceInitPromise || els.coreStatRollButtons.length === 0) {
+    if (state.diceTray || state.diceInitPromise || els.sheetRollButtons.length === 0) {
       return;
     }
     void ensureDiceTrayInitialized({ silent: true });
@@ -1030,6 +1139,46 @@ function titleCaseStatLabel(statId) {
     .replace(/^\w/, (match) => match.toUpperCase());
 }
 
+function sanitizeAttackStat(value, fallback = DEFAULTS.attack) {
+  const clean = String(value || "").trim();
+  return ATTACK_STAT_OPTIONS.includes(clean) ? clean : fallback;
+}
+
+function resolveAttackStatForCharacter(character) {
+  const standard = WEAPON_DATA[character?.weapon];
+  if (standard?.attack) {
+    return standard.attack;
+  }
+  return sanitizeAttackStat(character?.attack, DEFAULTS.attack);
+}
+
+function resolveWeaponIconName(attackStatLabel) {
+  if (String(attackStatLabel).trim() === "Presence") {
+    return "bow-arrow";
+  }
+  return "sword";
+}
+
+function syncWeaponAndDamageIcons(attackStatLabel) {
+  const iconName = resolveWeaponIconName(attackStatLabel);
+  const iconIds = ["weapon-field-icon", "attack-damage-roll-icon"];
+  let iconChanged = false;
+  iconIds.forEach((id) => {
+    const icon = document.getElementById(id);
+    if (!(icon instanceof Element)) {
+      return;
+    }
+    if (icon.getAttribute("data-lucide") === iconName) {
+      return;
+    }
+    icon.setAttribute("data-lucide", iconName);
+    iconChanged = true;
+  });
+  if (iconChanged) {
+    renderLucideIcons();
+  }
+}
+
 function coreStatRollNotation(statId) {
   const field = els.fields[statId];
   const fallback = DEFAULTS[statId];
@@ -1057,6 +1206,216 @@ async function rollCoreStat(statId) {
     statId,
     statLabel: label,
     modifier,
+    characterName: resolveActiveCharacterName(),
+  });
+}
+
+function resolveAttackRollDetails(character) {
+  const weapon = resolvedWeapon(character);
+  const attackStatLabel = resolveAttackStatForCharacter(character);
+  const statId = attackStatLabel.toLowerCase();
+  const hasValidStat = CORE_STAT_FIELD_IDS.includes(statId);
+  const modifier = hasValidStat
+    ? clamp(Math.trunc(toSafeNumber(character?.[statId], DEFAULTS[statId])), -3, 6)
+    : 0;
+  const hasWeaponLabel = Boolean(weapon.label);
+  const notationBase = hasWeaponLabel && parseDieFromText(weapon.damage) ? weapon.damage : "";
+  const isCustomWeapon = character?.weapon === CUSTOM_OPTION_VALUE;
+  const customDamageModifier = clamp(
+    Math.trunc(toSafeNumber(character?.weaponCustomDamageModifier, DEFAULTS.weaponCustomDamageModifier)),
+    -20,
+    20
+  );
+  const hasCustomDamageModifier = isCustomWeapon && customDamageModifier !== 0;
+  const damageModifier = hasCustomDamageModifier ? customDamageModifier : 0;
+  const weaponName = stripTrailingParens(weapon.label) || "Primary weapon";
+  const hasWeapon = Boolean(hasWeaponLabel && notationBase);
+  const modifierLabel = `${attackStatLabel} ${formatSignedModifier(modifier)}`;
+  const damageModifierLabel = formatSignedModifier(damageModifier);
+  const damageMeta = hasCustomDamageModifier
+    ? `${weaponName} · ${notationBase} ${damageModifierLabel}`
+    : `${weaponName} · ${notationBase}`;
+  return {
+    weaponLabel: weapon.label || "",
+    weaponName,
+    attackStatLabel,
+    statId,
+    modifier,
+    attackNotation: formatModifierNotation("d20", modifier),
+    damageNotation: notationBase ? formatModifierNotation(notationBase, damageModifier) : "",
+    damageLabel: notationBase || "No weapon die",
+    damageModifier,
+    hasCustomDamageModifier,
+    hasWeapon,
+    attackButtonMeta: hasWeapon
+      ? `d20 + ${modifierLabel}`
+      : "Choose a weapon to arm this roll.",
+    damageButtonMeta: hasWeapon ? damageMeta : "Choose a weapon to arm this roll.",
+    attackBannerLabel: `${weaponName} Attack`,
+    damageBannerLabel: `${weaponName} Damage`,
+  };
+}
+
+function resolveDefenceArmorBonus(armor) {
+  const tier = Math.max(0, Math.trunc(toSafeNumber(armor?.tier, 0)));
+  if (tier >= 3) {
+    return 4;
+  }
+  if (tier === 2) {
+    return 2;
+  }
+  return 0;
+}
+
+function resolveDefenceRollDetails(character) {
+  const armor = resolvedArmor(character);
+  const agilityModifier = clamp(Math.trunc(toSafeNumber(character?.agility, DEFAULTS.agility)), -3, 6);
+  const armorBonus = resolveDefenceArmorBonus(armor);
+  const modifier = agilityModifier + armorBonus;
+  const hasArmorBonus = armorBonus > 0;
+  return {
+    agilityModifier,
+    armorBonus,
+    modifier,
+    notation: formatModifierNotation("d20", modifier),
+    bannerLabel: "Defence",
+    buttonMeta: hasArmorBonus
+      ? `Agility ${formatSignedModifier(agilityModifier)} · armor +${armorBonus}`
+      : `Agility ${formatSignedModifier(agilityModifier)}`,
+    title: hasArmorBonus
+      ? `Roll d20 + Agility ${formatSignedModifier(agilityModifier)} + armor defence bonus ${armorBonus}`
+      : `Roll d20 + Agility ${formatSignedModifier(agilityModifier)}`,
+  };
+}
+
+function syncAttackFieldUi() {
+  const attackField = els.fields.attack;
+  if (!(attackField instanceof HTMLSelectElement)) {
+    return;
+  }
+  const selectedWeapon = els.fields.weapon?.value || "";
+  const standard = WEAPON_DATA[selectedWeapon];
+  const isCustomWeapon = selectedWeapon === CUSTOM_OPTION_VALUE;
+  const attackLabel = attackField.closest("label");
+
+  if (standard?.attack) {
+    attackField.value = standard.attack;
+  } else {
+    attackField.value = sanitizeAttackStat(attackField.value, DEFAULTS.attack);
+  }
+
+  const isDerived = Boolean(standard) && !isCustomWeapon;
+  attackField.disabled = isDerived;
+  attackField.title = isDerived ? `Derived from ${selectedWeapon}.` : "";
+  if (attackLabel) {
+    attackLabel.classList.toggle("is-derived-field", isDerived);
+  }
+}
+
+function syncAttackRollUi() {
+  const details = resolveAttackRollDetails(pullFromForm(activeCharacter() || createBlankCharacter()));
+  syncWeaponAndDamageIcons(details.attackStatLabel);
+  if (
+    !els.attackRollButton ||
+    !els.attackRollButtonMeta ||
+    !els.attackDamageRollButton ||
+    !els.attackDamageRollButtonMeta
+  ) {
+    return;
+  }
+  els.attackRollButtonMeta.textContent = details.attackButtonMeta;
+  els.attackDamageRollButtonMeta.textContent = details.damageButtonMeta;
+  els.attackRollButton.disabled = !details.hasWeapon;
+  els.attackDamageRollButton.disabled = !details.hasWeapon;
+  els.attackRollButton.title = details.hasWeapon
+    ? `Roll d20 + ${details.attackStatLabel} ${formatSignedModifier(details.modifier)}`
+    : "Choose a weapon before rolling attack.";
+  els.attackDamageRollButton.title = details.hasWeapon
+    ? details.hasCustomDamageModifier
+      ? `Roll ${details.damageLabel} + custom modifier ${formatSignedModifier(details.damageModifier)}`
+      : `Roll ${details.damageLabel} (no modifier)`
+    : "Choose a weapon before rolling damage.";
+}
+
+function syncDefenceRollUi() {
+  if (!els.defenceRollButton || !els.defenceRollButtonMeta) {
+    return;
+  }
+  const details = resolveDefenceRollDetails(pullFromForm(activeCharacter() || createBlankCharacter()));
+  els.defenceRollButtonMeta.textContent = details.buttonMeta;
+  els.defenceRollButton.disabled = false;
+  els.defenceRollButton.title = details.title;
+}
+
+function syncEquipmentRollUi() {
+  syncAttackRollUi();
+  syncDefenceRollUi();
+}
+
+async function rollPrimaryAttack() {
+  const details = resolveAttackRollDetails(pullFromForm(activeCharacter() || createBlankCharacter()));
+  if (!details.hasWeapon) {
+    syncAttackRollUi();
+    setStatus("Choose a weapon before rolling attack.", "warn");
+    return;
+  }
+  const ready = await ensureDiceTrayInitialized();
+  if (!ready || !state.diceTray) {
+    setStatus(`Dice tray unavailable. Could not roll ${details.weaponName} attack.`, "error");
+    return;
+  }
+  setStatus(`Rolling ${details.weaponName} attack test.`, "neutral");
+  state.diceTray.roll(details.attackNotation, {
+    source: "attack-roll",
+    statId: details.statId,
+    statLabel: details.attackBannerLabel,
+    modifier: details.modifier,
+    characterName: resolveActiveCharacterName(),
+    weaponLabel: details.weaponLabel,
+  });
+}
+
+async function rollAttackDamage() {
+  const details = resolveAttackRollDetails(pullFromForm(activeCharacter() || createBlankCharacter()));
+  if (!details.hasWeapon || !details.damageNotation) {
+    syncAttackRollUi();
+    setStatus("Choose a weapon before rolling damage.", "warn");
+    return;
+  }
+  const ready = await ensureDiceTrayInitialized();
+  if (!ready || !state.diceTray) {
+    setStatus(`Dice tray unavailable. Could not roll ${details.weaponName} damage.`, "error");
+    return;
+  }
+  setStatus(`Rolling ${details.weaponName} damage.`, "neutral");
+  const metadata = {
+    source: "attack-damage-roll",
+    statId: "damage",
+    statLabel: details.damageBannerLabel,
+    characterName: resolveActiveCharacterName(),
+    weaponLabel: details.weaponLabel,
+    characterId: activeCharacter()?.id || "",
+  };
+  if (details.hasCustomDamageModifier) {
+    metadata.modifier = details.damageModifier;
+    metadata.showModifier = true;
+  }
+  state.diceTray.roll(details.damageNotation, metadata);
+}
+
+async function rollDefence() {
+  const details = resolveDefenceRollDetails(pullFromForm(activeCharacter() || createBlankCharacter()));
+  const ready = await ensureDiceTrayInitialized();
+  if (!ready || !state.diceTray) {
+    setStatus("Dice tray unavailable. Could not roll defence.", "error");
+    return;
+  }
+  setStatus("Rolling defence.", "neutral");
+  state.diceTray.roll(details.notation, {
+    source: "defence-roll",
+    statId: "agility",
+    statLabel: details.bannerLabel,
+    modifier: details.modifier,
     characterName: resolveActiveCharacterName(),
   });
 }
@@ -1501,7 +1860,19 @@ function stripTrailingParens(text) {
   return String(text || "").replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
 
+function normalizeLegacyWeaponLabel(value) {
+  const clean = String(value || "").trim();
+  if (/^Bow\s*\(d6(?:,\s*Presence\s*\+\s*10\s*arrows)?\)$/i.test(clean)) {
+    return "Bow (d6)";
+  }
+  if (/^Crossbow\s*\(d8(?:,\s*Presence\s*\+\s*10\s*bolts)?\)$/i.test(clean)) {
+    return "Crossbow (d8)";
+  }
+  return clean;
+}
+
 function normalizeLegacyWeapon(character) {
+  character.weapon = normalizeLegacyWeaponLabel(character.weapon);
   if (WEAPON_CHOICES.has(character.weapon)) {
     return;
   }
@@ -1549,7 +1920,7 @@ function resolvedWeapon(character) {
     return {
       label: `${name} (${dieText(die)})`,
       damage: dieText(die),
-      attack: character.attack || "Strength",
+      attack: sanitizeAttackStat(character.attack, DEFAULTS.attack),
     };
   }
   const standard = WEAPON_DATA[character.weapon];
@@ -1563,7 +1934,7 @@ function resolvedWeapon(character) {
   return {
     label: character.weapon || "",
     damage: character.damage || "",
-    attack: character.attack || "Strength",
+    attack: sanitizeAttackStat(character.attack, DEFAULTS.attack),
   };
 }
 
@@ -1606,9 +1977,7 @@ function applyDerivedEquipment(character) {
   character.armorLabel = [armor.label, shieldEquipped ? "Shield" : ""].filter(Boolean).join(" + ");
   character.armorTotalReduction = armorTotalReduction || "none";
   character.shieldEquipped = shieldEquipped;
-  if (!["Strength", "Presence", "Strength or Presence"].includes(character.attack)) {
-    character.attack = weapon.attack || "Strength";
-  }
+  character.attack = resolveAttackStatForCharacter(character);
 }
 
 function armorBlocksScrolls(character) {
@@ -1725,7 +2094,9 @@ function syncCustomEquipmentFields() {
   setFieldVisibility(els.weaponCustomDieWrap, isWeaponCustom);
   setFieldVisibility(els.armorCustomNameWrap, isArmorCustom);
   setFieldVisibility(els.armorCustomDieWrap, isArmorCustom);
+  syncAttackFieldUi();
   syncEquipmentDerivedUi();
+  syncEquipmentRollUi();
 }
 
 function normalizeCharacter(candidate) {
@@ -1749,6 +2120,8 @@ function normalizeCharacter(candidate) {
   merged.hpCurrent = clamp(Math.trunc(merged.hpCurrent), HP_CURRENT_MIN, merged.hpMax);
   merged.omens = clamp(Math.trunc(merged.omens), 0, 9);
   merged.silver = Math.max(0, Math.trunc(merged.silver));
+  merged.ammo = clamp(Math.trunc(merged.ammo), 0, 999);
+  merged.weaponCustomDamageModifier = clamp(Math.trunc(merged.weaponCustomDamageModifier), -20, 20);
   merged.weaponCustomDie = clampCustomDie(merged.weaponCustomDie, DEFAULTS.weaponCustomDie);
   merged.armorCustomDie = clampCustomDie(merged.armorCustomDie, DEFAULTS.armorCustomDie);
   merged.powersKnownCount = clamp(Math.trunc(merged.powersKnownCount), 0, KNOWN_POWERS_MAX);
@@ -2518,6 +2891,7 @@ async function randomCharacterPatch() {
   ];
 
   const notes = pick(library.notes);
+  const startingAmmo = /^(?:bow \(d6\)|crossbow \(d8\))$/i.test(weapon.label) ? 10 : 0;
   const patch = {
     name: randomName(library),
     epithet: pick(library.epithets),
@@ -2533,6 +2907,8 @@ async function randomCharacterPatch() {
     hpMax,
     omens: rollDice(1, 2),
     silver: rollDice(2, 6) * 10,
+    ammo: startingAmmo,
+    weaponCustomDamageModifier: DEFAULTS.weaponCustomDamageModifier,
     weaponCustomName: "",
     weaponCustomDie: DEFAULTS.weaponCustomDie,
     armorCustomName: "",
@@ -2791,6 +3167,12 @@ function bindEvents() {
     if (event.target.id === "omens") {
       clampFieldValue("omens", 0, 9);
     }
+    if (event.target.id === "ammo") {
+      clampFieldValue("ammo", 0, 999);
+    }
+    if (event.target.id === "weaponCustomDamageModifier") {
+      clampFieldValue("weaponCustomDamageModifier", -20, 20);
+    }
     if (event.target.id === "weaponCustomDie") {
       clampFieldValue("weaponCustomDie", 2, 20);
     }
@@ -2818,6 +3200,20 @@ function bindEvents() {
     }
     if (event.target.id === "weapon" || event.target.id === "armor") {
       syncCustomEquipmentFields();
+    }
+    if (
+      [
+        "weaponCustomName",
+        "weaponCustomDie",
+        "weaponCustomDamageModifier",
+        "attack",
+        "strength",
+        "presence",
+        "agility",
+        "armorCustomDie",
+      ].includes(event.target.id)
+    ) {
+      syncEquipmentRollUi();
     }
     if (event.target instanceof Element && event.target.classList.contains("known-power-input")) {
       syncKnownPowersFromUI();
@@ -2860,6 +3256,21 @@ function bindEvents() {
         return;
       }
       void rollCoreStat(statId);
+      return;
+    }
+    const attackRollButton = origin.closest("[data-attack-roll]");
+    if (attackRollButton instanceof HTMLElement) {
+      void rollPrimaryAttack();
+      return;
+    }
+    const attackDamageRollButton = origin.closest("[data-attack-damage-roll]");
+    if (attackDamageRollButton instanceof HTMLElement) {
+      void rollAttackDamage();
+      return;
+    }
+    const defenceRollButton = origin.closest("[data-defence-roll]");
+    if (defenceRollButton instanceof HTMLElement) {
+      void rollDefence();
       return;
     }
     const button = origin.closest("[data-power-action][data-power-target]");
@@ -3273,7 +3684,7 @@ function init() {
   setupJoinPartyTooltip();
   setupInstallAppButton();
   setAutoSaveIndicator("saved");
-  setCoreStatRollButtonsVisible(Boolean(els.dicePanel && els.diceToggle));
+  setSheetRollButtonsVisible(Boolean(els.dicePanel && els.diceToggle));
   applyTheme(resolveTheme(), false);
   renderFooterYear();
   renderFooterVersion();

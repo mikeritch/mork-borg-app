@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-03-06-v32";
+const CACHE_VERSION = "2026-03-06-v54";
 const APP_SHELL_CACHE = `cr-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `cr-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `cr-images-${CACHE_VERSION}`;
@@ -8,10 +8,10 @@ const APP_SHELL_URLS = [
   "/",
   "/index.html",
   "/theme-init.js?v=20260305-csp-init-1",
-  "/styles.css?v=20260306-banner-tray-mod-hide-1",
-  "/app.js?v=20260306-clear-distance-boost-3",
-  "/dice.js?v=20260306-clear-distance-boost-3",
-  "/assets/vendor/lucide-0.468.0.min.js",
+  "/styles.css?v=20260306-ammo-custommod-icons-1",
+  "/app.js?v=20260306-weapon-alias-bow-icon-1",
+  "/dice.js?v=20260306-clear-distance-boost-4",
+  "/assets/vendor/lucide-0.577.0.min.js",
   "/assets/vendor/three-0.161.0.module.js",
   "/assets/vendor/cannon-es-0.20.0.module.js",
   "/assets/fonts/Cinzel-500-700-latin.woff2",

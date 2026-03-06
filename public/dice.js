@@ -1960,8 +1960,15 @@ class DiceTrayController {
       silent = false,
       returnToPreview = true,
       allowDuringLowPerformance = false,
+      skipIfRolling = false,
     } = options;
     if (this.rolling) {
+      if (skipIfRolling) {
+        if (!silent) {
+          this.writeStatus("Roll in progress.", "warn");
+        }
+        return;
+      }
       if (this.settings.lowPerformance && !allowDuringLowPerformance) {
         if (!silent) {
           this.writeStatus("Roll in progress.", "warn");
@@ -1970,7 +1977,7 @@ class DiceTrayController {
       }
       this.pendingAction = {
         type: "clear",
-        options: { silent, returnToPreview, allowDuringLowPerformance },
+        options: { silent, returnToPreview, allowDuringLowPerformance, skipIfRolling: false },
       };
       this.interruptActiveRoll();
       return;

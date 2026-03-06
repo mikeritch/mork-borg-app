@@ -52,7 +52,7 @@
       }
     </script>
   <script src="theme-init.js?v=20260305-csp-init-1"></script>
-  <link rel="stylesheet" href="styles.css?v=20260306-banner-tray-mod-hide-1" />
+  <link rel="stylesheet" href="styles.css?v=20260306-ammo-custommod-icons-1" />
 </head>
 
 <body>
@@ -437,31 +437,57 @@
             Record the rusted steel, tattered armor, and grave-picked relics keeping you alive.
           </p>
           <div class="fields two-col">
-            <label>
-              <span class="label-with-icon">
-                <i class="stat-lucide" data-lucide="axe" aria-hidden="true"></i>
-                <span>Weapon</span>
-              </span>
-              <select id="weapon">
-                <option value="">Choose a weapon...</option>
-                <option value="Unarmed (d2)">Unarmed (d2)</option>
-                <option value="Femur (d4)">Femur (d4)</option>
-                <option value="Staff (d4)">Staff (d4)</option>
-                <option value="Shortsword (d4)">Shortsword (d4)</option>
-                <option value="Knife (d4)">Knife (d4)</option>
-                <option value="Warhammer (d6)">Warhammer (d6)</option>
-                <option value="Sword (d6)">Sword (d6)</option>
-                <option value="Bow (d6, Presence + 10 arrows)">
-                  Bow (d6, Presence + 10 arrows)
-                </option>
-                <option value="Flail (d8)">Flail (d8)</option>
-                <option value="Crossbow (d8, Presence + 10 bolts)">
-                  Crossbow (d8, Presence + 10 bolts)
-                </option>
-                <option value="Zweihander (d10)">Zweihander (d10)</option>
-                <option value="__custom__">Custom weapon...</option>
-              </select>
-            </label>
+            <div class="equipment-attack-cluster span-2">
+              <label>
+                <span class="label-with-icon">
+                  <i id="weapon-field-icon" class="stat-lucide" data-lucide="sword" aria-hidden="true"></i>
+                  <span>Weapon</span>
+                </span>
+                <select id="weapon">
+                  <option value="">Choose a weapon...</option>
+                  <option value="Unarmed (d2)">Unarmed (d2)</option>
+                  <option value="Femur (d4)">Femur (d4)</option>
+                  <option value="Staff (d4)">Staff (d4)</option>
+                  <option value="Shortsword (d4)">Shortsword (d4)</option>
+                  <option value="Knife (d4)">Knife (d4)</option>
+                  <option value="Warhammer (d6)">Warhammer (d6)</option>
+                  <option value="Sword (d6)">Sword (d6)</option>
+                  <option value="Bow (d6)">
+                    Bow (d6)
+                  </option>
+                  <option value="Flail (d8)">Flail (d8)</option>
+                  <option value="Crossbow (d8)">
+                    Crossbow (d8)
+                  </option>
+                  <option value="Zweihander (d10)">Zweihander (d10)</option>
+                  <option value="__custom__">Custom weapon...</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-icon">
+                  <i class="stat-lucide" data-lucide="crosshair" aria-hidden="true"></i>
+                  <span>Primary Attack Stat</span>
+                </span>
+                <select id="attack">
+                  <option value="Strength">Strength</option>
+                  <option value="Presence">Presence</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-icon">
+                  <i class="stat-lucide" data-lucide="target" aria-hidden="true"></i>
+                  <span>Ammo</span>
+                </span>
+                <input id="ammo" type="number" min="0" max="999" step="1" inputmode="numeric" />
+              </label>
+              <label>
+                <span class="label-with-icon">
+                  <i class="stat-lucide" data-lucide="plus" aria-hidden="true"></i>
+                  <span>Custom Weapon Damage Modifier</span>
+                </span>
+                <input id="weaponCustomDamageModifier" type="number" min="-20" max="20" step="1" inputmode="numeric" />
+              </label>
+            </div>
             <label id="weapon-custom-name-wrap" class="is-hidden" hidden>
               Custom Weapon Name
               <input id="weaponCustomName" maxlength="80" placeholder="Hooked chainblade" disabled />
@@ -470,17 +496,32 @@
               Custom Weapon Damage Die (dX)
               <input id="weaponCustomDie" type="number" min="2" max="20" step="1" disabled />
             </label>
-            <label>
-              <span class="label-with-icon">
-                <i class="stat-lucide" data-lucide="crosshair" aria-hidden="true"></i>
-                <span>Primary Attack Stat</span>
-              </span>
-              <select id="attack">
-                <option value="Strength">Strength</option>
-                <option value="Presence">Presence</option>
-                <option value="Strength or Presence">Strength or Presence</option>
-              </select>
-            </label>
+            <div class="equipment-roll-row equipment-attack-row equipment-roll-row-split span-2">
+              <button id="attack-roll-btn" class="equipment-roll-btn equipment-attack-btn" type="button"
+                data-attack-roll disabled>
+                <span class="equipment-roll-btn-glyph" aria-hidden="true">
+                  <i class="stat-lucide equipment-roll-btn-icon" data-lucide="crosshair"></i>
+                </span>
+                <span class="equipment-roll-btn-copy">
+                  <span class="equipment-roll-btn-label">Roll Attack</span>
+                  <span id="attack-roll-btn-meta" class="equipment-roll-btn-meta">Choose a weapon to arm this
+                    roll.</span>
+                </span>
+              </button>
+              <button id="attack-damage-roll-btn" class="equipment-roll-btn equipment-attack-damage-btn" type="button"
+                data-attack-damage-roll disabled>
+                <span class="equipment-roll-btn-glyph" aria-hidden="true">
+                  <i id="attack-damage-roll-icon" class="stat-lucide equipment-roll-btn-icon" data-lucide="sword"></i>
+                </span>
+                <span class="equipment-roll-btn-copy">
+                  <span class="equipment-roll-btn-label">Roll Damage</span>
+                  <span id="attack-damage-roll-btn-meta" class="equipment-roll-btn-meta">Choose a weapon to arm this
+                    roll.</span>
+                </span>
+              </button>
+            </div>
+            <div class="equipment-roll-break equipment-roll-break-attack span-2" data-sheet-roll-break
+              aria-hidden="true"></div>
             <label>
               <span class="label-with-icon">
                 <i class="stat-lucide" data-lucide="anvil" aria-hidden="true"></i>
@@ -512,7 +553,7 @@
                 <i class="stat-lucide" data-lucide="shield" aria-hidden="true"></i>
                 <span>Shield Equipped</span>
               </span>
-              <span class="checkbox-row">
+              <span class="checkbox-row checkbox-row-shield">
                 <input id="shieldEquipped" type="checkbox" />
                 <span>Apply shield protection (-1 damage, can break to ignore one attack)</span>
               </span>
@@ -527,6 +568,20 @@
               </div>
               <p id="armor-total-meta" class="tracker-hint">No armor or shield equipped.</p>
             </article>
+            <div class="equipment-roll-row equipment-defence-row span-2">
+              <button id="defence-roll-btn" class="equipment-roll-btn equipment-defence-btn" type="button"
+                data-defence-roll>
+                <span class="equipment-roll-btn-glyph" aria-hidden="true">
+                  <i class="stat-lucide equipment-roll-btn-icon" data-lucide="dices"></i>
+                </span>
+                <span class="equipment-roll-btn-copy">
+                  <span class="equipment-roll-btn-label">Roll Defence</span>
+                  <span id="defence-roll-btn-meta" class="equipment-roll-btn-meta">Agility +0</span>
+                </span>
+              </button>
+            </div>
+            <div class="equipment-roll-break equipment-roll-break-defence span-2" data-sheet-roll-break
+              aria-hidden="true"></div>
             <div id="scroll-gear-warning" class="tracker-hint equipment-warning span-2" hidden>
               <span class="equipment-warning-text">
                 Warning: scroll Powers normally fail while using a zweihander or medium/heavy armor.
@@ -878,25 +933,108 @@
 
   <footer class="site-footer" aria-label="Legal and attribution">
     <div class="site-footer-wrap">
+      <section class="footer-card footer-commandments" aria-labelledby="footer-commandments-title">
+        <div class="footer-card-head footer-commandments-head">
+          <h2 id="footer-commandments-title" class="footer-section-title">Reliquary Commandments</h2>
+          <p class="footer-commandments-copy">Small rites worth knowing before you descend.</p>
+        </div>
+        <ol class="footer-commandment-list">
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Banish Dice With Two Taps</p>
+            <p class="footer-commandment-desc">Double-tap any rolled die in the tray to throw it off-screen and clear
+              the scene.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Roll Straight From The Sheet</p>
+            <p class="footer-commandment-desc">Use the dice buttons beside Strength, Agility, Presence, and Toughness to
+              roll tests with their current modifiers.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Read The Ledger</p>
+            <p class="footer-commandment-desc">The roll banner&apos;s View Log action opens the dice history and jumps
+              you straight to recent results.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Trust Autosave, Not Fate</p>
+            <p class="footer-commandment-desc">Sheets save locally in this browser, so export JSON before moving to
+              another device or browser.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Tame The Tray</p>
+            <p class="footer-commandment-desc">Open Advanced in the dice panel to change the notification timer or
+              switch to 2D Fallback and Low Performance.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Settings Persist</p>
+            <p class="footer-commandment-desc">Theme choice and dice tray settings stay remembered in this browser, so
+              your preferred reliquary usually returns as you left it.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Install For The Road</p>
+            <p class="footer-commandment-desc">If your browser supports it, install the reliquary as an app for faster
+              access beyond the tab bar.</p>
+          </li>
+          <li class="footer-commandment-item">
+            <p class="footer-commandment-title">Imports May Overwrite Twins</p>
+            <p class="footer-commandment-desc">Importing may replace characters that already share matching reliquary
+              IDs.</p>
+          </li>
+        </ol>
+      </section>
       <section class="footer-card footer-references" aria-labelledby="footer-references-title">
-        <div class="footer-references-body">
+        <div class="footer-card-head footer-references-head">
           <h2 id="footer-references-title" class="footer-section-title">References</h2>
           <p class="footer-references-copy">Useful MORK BORG resources beyond the reliquary.</p>
-          <ul class="footer-reference-list" aria-label="External MORK BORG resources">
-            <li>
-              <a href="https://morkborg.com/" target="_blank" rel="noopener noreferrer">Official MORK BORG site</a>
-              <span>News, books, and the main hub for the game.</span>
-            </li>
-            <li>
-              <a href="https://scvmbirther.makedatanotlore.dev/" target="_blank" rel="noopener noreferrer">SCVMBIRTHER</a>
-              <span>The official MORK BORG character generator.</span>
-            </li>
-          </ul>
         </div>
+        <ul class="footer-reference-list" aria-label="External MORK BORG resources">
+          <li>
+            <a class="footer-reference-link" href="https://morkborg.com/" target="_blank" rel="noopener noreferrer">
+              <span class="footer-reference-title">Official MORK BORG site</span>
+              <span class="footer-reference-desc">News, books, and the main hub for the game.</span>
+            </a>
+          </li>
+          <li>
+            <a class="footer-reference-link" href="https://scvmbirther.makedatanotlore.dev/" target="_blank"
+              rel="noopener noreferrer">
+              <span class="footer-reference-title">SCVMBIRTHER</span>
+              <span class="footer-reference-desc">The official MORK BORG character generator.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="footer-card footer-patch-notes" aria-labelledby="footer-patch-notes-title">
+        <div class="footer-card-head footer-patch-notes-head">
+          <h2 id="footer-patch-notes-title" class="footer-section-title">Patch Notes</h2>
+          <p class="footer-patch-notes-copy">A short ledger of what the reliquary has gained since v2.</p>
+        </div>
+        <ol class="footer-patch-note-list">
+          <li class="footer-patch-note-item">
+            <p class="footer-patch-note-version">v2.0</p>
+            <p class="footer-patch-note-summary">Major upgrades and improvements. Added app versioning and tighter cache
+              handling so updates land more reliably.</p>
+          </li>
+          <li class="footer-patch-note-item">
+            <p class="footer-patch-note-version">v2.1</p>
+            <p class="footer-patch-note-summary">Added clearer save-state feedback, stronger import validation, and
+              in-app status notices.</p>
+          </li>
+          <li class="footer-patch-note-item">
+            <p class="footer-patch-note-version">v2.2</p>
+            <p class="footer-patch-note-summary">Added integrated character sheet rolls, modifiers in dice history, a
+              roll result banner, and deeper tray controls.</p>
+          </li>
+          <li class="footer-patch-note-item">
+            <p class="footer-patch-note-version">v2.3</p>
+            <p class="footer-patch-note-summary">Added combat rolls, ammo-aware damage rolls, custom weapon modifiers,
+              and the new footer reference/help sections.</p>
+          </li>
+        </ol>
       </section>
       <section class="footer-card footer-license">
-        <img class="footer-license-logo" src="assets/logos/CompWith_MORKBORG_horiz.svg" alt="Compatible with MORK BORG"
-          loading="lazy" decoding="async" />
+        <div class="footer-card-head footer-license-head">
+          <img class="footer-license-logo" src="assets/logos/CompWith_MORKBORG_horiz.svg"
+            alt="Compatible with MORK BORG" loading="lazy" decoding="async" />
+        </div>
         <p class="footer-license-copy">
           Character Reliquary is an independent production by Mane Mike and is not affiliated
           with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK
@@ -943,8 +1081,13 @@
         <p id="sheet-roll-banner-stat" class="sheet-roll-banner-stat">Strength</p>
         <div class="sheet-roll-banner-metrics">
           <span id="sheet-roll-banner-roll" class="sheet-roll-banner-chip is-roll">d20 12</span>
+          <span id="sheet-roll-banner-plus" class="sheet-roll-banner-op" hidden aria-hidden="true">+</span>
           <span id="sheet-roll-banner-mod" class="sheet-roll-banner-chip is-mod">mod +0</span>
+          <span id="sheet-roll-banner-equals" class="sheet-roll-banner-op" hidden aria-hidden="true">=</span>
           <span id="sheet-roll-banner-total" class="sheet-roll-banner-chip is-total">total 12</span>
+          <span id="sheet-roll-banner-note" class="sheet-roll-banner-chip is-note" hidden>ammo 10 -> 9</span>
+          <span id="sheet-roll-banner-critical" class="sheet-roll-banner-chip is-critical" hidden>CRITICAL!</span>
+          <span id="sheet-roll-banner-fumble" class="sheet-roll-banner-chip is-fumble" hidden>FUMBLE!</span>
         </div>
       </div>
     </section>
@@ -969,8 +1112,8 @@
     <canvas id="dice-canvas" aria-label="3D dice canvas" hidden></canvas>
   </div>
 
-  <script src="assets/vendor/lucide-0.468.0.min.js" defer></script>
-  <script src="app.js?v=20260306-clear-distance-boost-3" defer></script>
+  <script src="assets/vendor/lucide-0.577.0.min.js" defer></script>
+  <script src="app.js?v=20260306-weapon-alias-bow-icon-1" defer></script>
 </body>
 
 </html>
