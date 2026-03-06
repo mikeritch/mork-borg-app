@@ -183,6 +183,144 @@
         "Birds drop from rafters when they sing old hymns.",
         "The next bell they ring might be their own."
       ]
+    },
+    {
+      "id": "corpse-cart-drover",
+      "origin": [
+        "{name} drove corpse carts through {homeland} until the roads learned their face.",
+        "A magistrate in {homeland} paid {name} in silence and stale bread to haul the dead.",
+        "The last winter in {homeland}, {name} stacked bodies higher than wagon rails."
+      ],
+      "fracture": [
+        "{scar} came from a wheel pin snapping downhill into a ditch of bones.",
+        "They kept {trinket} from a pauper no priest would bless.",
+        "Now every rattling axle sounds like a prayer unfinished."
+      ],
+      "drive": [
+        "They seek roads no plague cart ever returned from.",
+        "They bury strangers for coin and enemies for free.",
+        "They swear no corpse under their watch will feed crows."
+      ],
+      "doom": [
+        "Wheels creak in the dark even when their cart stands still.",
+        "Mules refuse to cross bridges after seeing {name}.",
+        "One night, their old cargo will sit up and ask for names."
+      ]
+    },
+    {
+      "id": "failed-exorcist",
+      "origin": [
+        "{name} studied rites beneath cracked altar stones in {homeland}.",
+        "Once called {epithet}, {name} was sent to cast out a devil and returned alone.",
+        "{name} burned their own prayer book after the bells would not stop."
+      ],
+      "fracture": [
+        "{scar} marks where holy oil caught fire on skin.",
+        "Their order gave them {trinket} and called it pardon.",
+        "They still mouth old liturgies when thunder begins."
+      ],
+      "drive": [
+        "They hunt whispers of possessions no bishop dares name.",
+        "They gather forbidden rites to finish the exorcism that failed.",
+        "They offer mercy first, steel second, and flame last."
+      ],
+      "doom": [
+        "Children smile at empty corners when {name} enters a room.",
+        "Candles gutter black wherever they sleep.",
+        "The thing they failed to cast out still knows their true name."
+      ]
+    },
+    {
+      "id": "salt-road-smuggler",
+      "origin": [
+        "{name} learned the salt roads of {homeland} by outrunning tax blades.",
+        "Before the wars, {name} smuggled flour and relics between starving towns.",
+        "{name} crossed marsh ferries at midnight with sacks and lies."
+      ],
+      "fracture": [
+        "{scar} came from customs men with hooked pikes.",
+        "They hid {trinket} inside a cargo of bones and never sold it.",
+        "A drowned partner still knocks on their dreams for unpaid shares."
+      ],
+      "drive": [
+        "They move contraband medicine to villages written off as dead.",
+        "They seek one last route through the old checkpoints.",
+        "They trade secrets faster than goods and trust neither."
+      ],
+      "doom": [
+        "Every toll bell sounds like a verdict.",
+        "Dogs along the road bark before {name} appears.",
+        "Soon, every border post will carry their likeness in charcoal."
+      ]
+    },
+    {
+      "id": "catacomb-lampbearer",
+      "origin": [
+        "{name} lit oil lamps in catacombs beneath {homeland} where nobles hid their dead.",
+        "As a child, {name} memorized every tunnel where the lantern smoke would not rise.",
+        "{name} kept vigil underground while cities above forgot the names below."
+      ],
+      "fracture": [
+        "{scar} formed when hot oil spilled during a cave-in.",
+        "They found {trinket} in a chamber sealed with wax and teeth.",
+        "Darkness no longer frightens them; silence does."
+      ],
+      "drive": [
+        "They map forgotten ossuaries before looters can reach them.",
+        "They guide pilgrims through tombs for coin and confession.",
+        "They swear to return every stolen bone to its shelf."
+      ],
+      "doom": [
+        "Their lamp burns low whenever the dead are restless.",
+        "Bats roost in rooms where {name} says no word.",
+        "One night, the tunnels will close behind them for good."
+      ]
+    },
+    {
+      "id": "false-saint",
+      "origin": [
+        "{name} was crowned a miracle-worker in {homeland} after a lucky lie.",
+        "Pilgrims touched {name}'s hands and called blisters stigmata.",
+        "The title {epithet} began as mockery and became a procession."
+      ],
+      "fracture": [
+        "{scar} came from zealots demanding proof in iron.",
+        "They wear {trinket} because followers would kill for it.",
+        "When famine struck, their miracles failed and the mob remembered."
+      ],
+      "drive": [
+        "They seek a true sign to justify every false sermon.",
+        "They steal relics to keep worse hands from wielding them.",
+        "They feed shrines with silver and leave before dawn."
+      ],
+      "doom": [
+        "Crowds still kneel when they should run.",
+        "Any blessing they speak now sounds like a curse.",
+        "One day their oldest devotee will come to collect salvation."
+      ]
+    },
+    {
+      "id": "war-camp-sawbones",
+      "origin": [
+        "{name} stitched soldiers in mud camps outside {homeland} until thread ran out.",
+        "Armies hired {name} for quick hands and fewer questions.",
+        "In siege winters, {name} traded surgery for firewood and prayers."
+      ],
+      "fracture": [
+        "{scar} marks where a patient woke with a knife still inside.",
+        "They keep {trinket} from the first life they failed to save.",
+        "The smell of vinegar and blood never leaves their coat."
+      ],
+      "drive": [
+        "They search for herbs that might undo old battlefield fevers.",
+        "They take any contract that keeps scalpels in hand.",
+        "They hunt the general who ordered wounded men burned."
+      ],
+      "doom": [
+        "Hands shake only when the wound is familiar.",
+        "They hear groans at night from beds long empty.",
+        "One day they will face a patient they cannot cut away from memory."
+      ]
     }
   ]
 }
