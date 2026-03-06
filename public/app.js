@@ -1,6 +1,7 @@
 const STORAGE_KEY = "morkborg-reliquary.characters.v1";
 const ACTIVE_KEY = "morkborg-reliquary.active.v1";
 const THEME_KEY = "morkborg-reliquary.theme.v1";
+const INSTALL_HINT_KEY = "morkborg-reliquary.install-hint.v1";
 const CUSTOM_OPTION_VALUE = "__custom__";
 const POWER_TRACKER_LENGTH = 12;
 const KNOWN_POWERS_MAX = 99;
@@ -380,6 +381,7 @@ const state = {
 
 let didReloadOnServiceWorkerControllerChange = false;
 let deferredInstallPrompt = null;
+let hasInstalledAppHint = false;
 let joinPartyTooltipCloseTimer = null;
 
 const els = {
@@ -2296,12 +2298,32 @@ function shouldHideInstallButton() {
   return isFirefoxDesktop() || isSafariDesktop();
 }
 
+function readInstallHint() {
+  try {
+    return localStorage.getItem(INSTALL_HINT_KEY) === "1";
+  } catch (_error) {
+    return false;
+  }
+}
+
+function writeInstallHint(installed) {
+  try {
+    if (installed) {
+      localStorage.setItem(INSTALL_HINT_KEY, "1");
+      return;
+    }
+    localStorage.removeItem(INSTALL_HINT_KEY);
+  } catch (_error) {
+    // Ignore storage failures; install UX should still work.
+  }
+}
+
 function setInstallButtonState() {
   if (!els.installApp) {
     return;
   }
 
-  if (shouldHideInstallButton()) {
+  if (shouldHideInstallButton() || isStandaloneDisplayMode()) {
     els.installApp.hidden = true;
     els.installApp.setAttribute("aria-hidden", "true");
     return;
@@ -2310,11 +2332,11 @@ function setInstallButtonState() {
   els.installApp.hidden = false;
   els.installApp.removeAttribute("aria-hidden");
 
-  if (isStandaloneDisplayMode()) {
-    els.installApp.textContent = "Installed";
-    els.installApp.disabled = true;
-    els.installApp.setAttribute("aria-disabled", "true");
-    els.installApp.title = "App is already installed";
+  if (hasInstalledAppHint) {
+    els.installApp.textContent = "Open App";
+    els.installApp.disabled = false;
+    els.installApp.removeAttribute("aria-disabled");
+    els.installApp.title = "Open installed app";
     return;
   }
 
@@ -2331,15 +2353,25 @@ function setInstallButtonState() {
 }
 
 function setupInstallAppButton() {
+  hasInstalledAppHint = readInstallHint();
+  if (isStandaloneDisplayMode()) {
+    hasInstalledAppHint = true;
+    writeInstallHint(true);
+  }
   setInstallButtonState();
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
+    hasInstalledAppHint = false;
+    writeInstallHint(false);
     setInstallButtonState();
   });
 
   window.addEventListener("appinstalled", () => {
     deferredInstallPrompt = null;
+    hasInstalledAppHint = true;
+    writeInstallHint(true);
     setInstallButtonState();
     setStatus("App installed locally.", "ok");
   });
@@ -2347,7 +2379,17 @@ function setupInstallAppButton() {
 
 async function handleInstallAppClick() {
   if (isStandaloneDisplayMode()) {
-    setStatus("App is already installed on this device.", "ok");
+    setStatus("App is already open.", "ok");
+    return;
+  }
+
+  if (hasInstalledAppHint) {
+    const target = `${window.location.origin}/`;
+    const opened = window.open(target, "_blank");
+    if (!opened) {
+      window.location.href = target;
+    }
+    setStatus("Opening app...", "ok");
     return;
   }
 
@@ -2357,6 +2399,9 @@ async function handleInstallAppClick() {
     deferredInstallPrompt = null;
     setInstallButtonState();
     if (outcome && outcome.outcome === "accepted") {
+      hasInstalledAppHint = true;
+      writeInstallHint(true);
+      setInstallButtonState();
       setStatus("Install accepted. Finishing setup...", "ok");
       return;
     }
