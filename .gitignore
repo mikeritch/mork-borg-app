@@ -40,3 +40,6 @@ pnpm-debug.log*
 
 # Notes
 /notes/
+
+# Internal docs (local only)
+/README.internal.md
