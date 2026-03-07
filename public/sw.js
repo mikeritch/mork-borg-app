@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-03-07-v57";
+const CACHE_VERSION = "2026-03-07-v60";
 const APP_SHELL_CACHE = `cr-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `cr-runtime-${CACHE_VERSION}`;
 const IMAGE_CACHE = `cr-images-${CACHE_VERSION}`;
@@ -8,8 +8,8 @@ const APP_SHELL_URLS = [
   "/",
   "/index.html",
   "/theme-init.js?v=20260305-csp-init-1",
-  "/styles.css?v=20260306-footer-mobile-grid-fix-1",
-  "/app.js?v=20260307-damage-banner-ops-1",
+  "/styles.css?v=20260307-hp-roll-signs-2",
+  "/app.js?v=20260307-hp-roll-buttons-1",
   "/dice.js?v=20260306-banner-mobile-layout-1",
   "/assets/vendor/lucide-0.577.0.min.js",
   "/assets/vendor/three-0.161.0.module.js",

@@ -52,7 +52,7 @@
       }
     </script>
   <script src="theme-init.js?v=20260305-csp-init-1"></script>
-  <link rel="stylesheet" href="styles.css?v=20260306-footer-mobile-grid-fix-1" />
+  <link rel="stylesheet" href="styles.css?v=20260307-hp-roll-signs-2" />
 </head>
 
 <body>
@@ -392,6 +392,32 @@
                 <button class="tracker-btn tracker-btn-plus" type="button" data-hp-action="increment"
                   aria-label="Increase current hit points">
                   +
+                </button>
+              </div>
+              <div class="hp-roll-row" role="group" aria-label="Hit point roll controls">
+                <button class="hp-roll-btn is-heal" type="button" data-hp-roll="d6" data-hp-roll-mode="heal"
+                  aria-label="Roll d6 to heal hit points">
+                  <span class="hp-roll-sign" aria-hidden="true">+</span>
+                  <i class="stat-lucide hp-roll-icon" data-lucide="heart" aria-hidden="true"></i>
+                  <span>d6</span>
+                </button>
+                <button class="hp-roll-btn is-heal" type="button" data-hp-roll="d4" data-hp-roll-mode="heal"
+                  aria-label="Roll d4 to heal hit points">
+                  <span class="hp-roll-sign" aria-hidden="true">+</span>
+                  <i class="stat-lucide hp-roll-icon" data-lucide="heart" aria-hidden="true"></i>
+                  <span>d4</span>
+                </button>
+                <button class="hp-roll-btn is-damage" type="button" data-hp-roll="d4" data-hp-roll-mode="damage"
+                  aria-label="Roll d4 to lose hit points">
+                  <span class="hp-roll-sign" aria-hidden="true">-</span>
+                  <i class="stat-lucide hp-roll-icon" data-lucide="heart-crack" aria-hidden="true"></i>
+                  <span>d4</span>
+                </button>
+                <button class="hp-roll-btn is-damage" type="button" data-hp-roll="d6" data-hp-roll-mode="damage"
+                  aria-label="Roll d6 to lose hit points">
+                  <span class="hp-roll-sign" aria-hidden="true">-</span>
+                  <i class="stat-lucide hp-roll-icon" data-lucide="heart-crack" aria-hidden="true"></i>
+                  <span>d6</span>
                 </button>
               </div>
               <p id="hp-current-hint" class="tracker-hint" hidden>Current HP cannot exceed Max HP.</p>
@@ -1113,7 +1139,7 @@
   </div>
 
   <script src="assets/vendor/lucide-0.577.0.min.js" defer></script>
-  <script src="app.js?v=20260307-damage-banner-ops-1" defer></script>
+  <script src="app.js?v=20260307-hp-roll-buttons-1" defer></script>
 </body>
 
 </html>

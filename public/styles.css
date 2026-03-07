@@ -2236,6 +2236,127 @@ html[data-theme="light"] .sheet-roll-banner-chip.is-fumble {
   display: none !important;
 }
 
+.hp-roll-row {
+  margin-top: 0.62rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.hp-roll-btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--line) 62%, var(--gold) 38%);
+  border-radius: 999px;
+  min-height: 2.18rem;
+  padding: 0.22rem 0.46rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  font: 700 0.76rem/1 "Cinzel", serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 130ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease;
+}
+
+.hp-roll-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2);
+}
+
+.hp-roll-btn:active {
+  transform: translateY(0);
+}
+
+.hp-roll-btn:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: var(--focus-ring);
+}
+
+.hp-roll-icon {
+  width: 0.86rem;
+  height: 0.86rem;
+  stroke-width: 2.25;
+}
+
+.hp-roll-sign {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.02rem;
+  min-height: 1.02rem;
+  padding: 0 0.16rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font: 700 0.82rem/1 "Cinzel", serif;
+  letter-spacing: 0;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.hp-roll-btn.is-heal {
+  border-color: color-mix(in srgb, #2f8a63 56%, var(--line) 44%);
+  color: #e9fff2;
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, #71c89f 26%, transparent 74%), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, #2f8a63 78%, #153f2f 22%), color-mix(in srgb, #1d5a42 84%, #0f2a20 16%));
+}
+
+.hp-roll-btn.is-damage {
+  border-color: color-mix(in srgb, #8f262d 58%, var(--line) 42%);
+  color: #ffe9eb;
+  background:
+    radial-gradient(circle at 50% 0, color-mix(in srgb, #d45c62 28%, transparent 72%), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, #8f262d 80%, #3f0f14 20%), color-mix(in srgb, #60191f 84%, #24090d 16%));
+}
+
+.hp-roll-btn.is-heal .hp-roll-sign {
+  background: color-mix(in srgb, #163f2f 74%, #2f8a63 26%);
+  color: #dcffef;
+}
+
+.hp-roll-btn.is-damage .hp-roll-sign {
+  background: color-mix(in srgb, #4e1117 76%, #8f262d 24%);
+  color: #ffe1e4;
+}
+
+html[data-theme="light"] .hp-roll-btn {
+  box-shadow:
+    0 7px 14px rgba(36, 25, 23, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+html[data-theme="light"] .hp-roll-btn.is-heal {
+  border-color: color-mix(in srgb, #2f8a63 64%, #f0f6f2 36%);
+  color: #f9fffc;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #60b58d 76%, #f7fcf9 24%), color-mix(in srgb, #2f8a63 86%, #1f5a43 14%));
+}
+
+html[data-theme="light"] .hp-roll-btn.is-damage {
+  border-color: color-mix(in srgb, #8f262d 62%, #f8ecec 38%);
+  color: #fff8f8;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #cc4f58 76%, #fff2f2 24%), color-mix(in srgb, #8f262d 86%, #5a171d 14%));
+}
+
+html[data-theme="light"] .hp-roll-btn.is-heal .hp-roll-sign {
+  background: color-mix(in srgb, #1d5a43 72%, #2f8a63 28%);
+  color: #ecfff6;
+}
+
+html[data-theme="light"] .hp-roll-btn.is-damage .hp-roll-sign {
+  background: color-mix(in srgb, #5a171d 74%, #8f262d 26%);
+  color: #fff0f1;
+}
+
 .tracker-value.is-bloodied {
   color: #ffecec;
   border-color: #7f1b22;
@@ -3253,6 +3374,29 @@ textarea:focus {
     min-width: 1.26rem;
     min-height: 1.44rem;
     font-size: 1.08rem;
+  }
+
+  .hp-roll-row {
+    gap: 0.34rem;
+  }
+
+  .hp-roll-btn {
+    min-height: 1.94rem;
+    padding: 0.18rem 0.34rem;
+    gap: 0.24rem;
+    font-size: 0.67rem;
+    letter-spacing: 0.05em;
+  }
+
+  .hp-roll-icon {
+    width: 0.74rem;
+    height: 0.74rem;
+  }
+
+  .hp-roll-sign {
+    min-width: 0.92rem;
+    min-height: 0.92rem;
+    font-size: 0.76rem;
   }
 
   .span-2 {

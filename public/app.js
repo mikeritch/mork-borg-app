@@ -372,7 +372,7 @@ const els = {
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, document.getElementById(id)])),
   sheetRollButtons: Array.from(
     document.querySelectorAll(
-      "[data-core-stat-roll], [data-attack-roll], [data-attack-damage-roll], [data-defence-roll]"
+      "[data-core-stat-roll], [data-attack-roll], [data-attack-damage-roll], [data-defence-roll], [data-hp-roll]"
     )
   ),
   sheetRollBreaks: Array.from(document.querySelectorAll("[data-sheet-roll-break]")),
@@ -401,6 +401,10 @@ function setSheetRollButtonsVisible(isVisible) {
     const equipmentRollRow = button.closest(".equipment-roll-row");
     if (equipmentRollRow) {
       equipmentRollRow.hidden = !isVisible;
+    }
+    const hpRollRow = button.closest(".hp-roll-row");
+    if (hpRollRow) {
+      hpRollRow.hidden = !isVisible;
     }
   });
   els.sheetRollBreaks.forEach((divider) => {
@@ -677,6 +681,24 @@ function consumeAmmoForDamageRoll(metadata) {
   return `ammo ${ammoBefore} -> ${next.ammo}`;
 }
 
+function applyHpDeltaFromRoll(metadata, rolledValue, totalValue) {
+  const rollSource = String(metadata?.source || "").trim().toLowerCase();
+  if (rollSource !== "hp-roll") {
+    return "";
+  }
+  const direction = Number(metadata?.hpDirection) < 0 ? -1 : 1;
+  const baseAmount = Number.isFinite(rolledValue) ? Math.abs(Math.trunc(rolledValue)) : Math.abs(Math.trunc(totalValue));
+  const amount = Math.max(0, baseAmount);
+  if (amount <= 0) {
+    return "";
+  }
+  const { hpCurrent: before } = syncCurrentHpTracker();
+  adjustCurrentHp(direction * amount);
+  scheduleAutoSave();
+  const after = Math.trunc(toSafeNumber(els.fields.hpCurrent?.value, before));
+  return direction > 0 ? `hp +${amount} (${before} -> ${after})` : `hp -${amount} (${before} -> ${after})`;
+}
+
 function handleDiceRollResult(result, context = {}) {
   const metadata = context?.metadata;
   const hasMetadata = Boolean(metadata && typeof metadata === "object");
@@ -696,7 +718,18 @@ function handleDiceRollResult(result, context = {}) {
   const shouldShowFumble =
     isAttackOrDefenceRoll &&
     naturalRollValue === 1;
-  const bannerNote = isSheetRoll ? consumeAmmoForDamageRoll(metadata) : "";
+  const bannerNotes = [];
+  if (isSheetRoll) {
+    const hpNote = applyHpDeltaFromRoll(metadata, rolledValue, total);
+    if (hpNote) {
+      bannerNotes.push(hpNote);
+    }
+    const ammoNote = consumeAmmoForDamageRoll(metadata);
+    if (ammoNote) {
+      bannerNotes.push(ammoNote);
+    }
+  }
+  const bannerNote = bannerNotes.join(" · ");
   const shouldShowModifier =
     isSheetRoll &&
     (
@@ -1777,6 +1810,39 @@ function adjustCurrentHp(delta) {
     retriggerAnimation(els.hpCurrentCard, "is-shaking");
   }
   setStatus(`Current HP: ${next}/${hpMax}.`, "ok");
+}
+
+function normalizeHpRollNotation(value) {
+  const clean = String(value || "").trim().toLowerCase();
+  if (clean === "d4" || clean === "d6") {
+    return clean;
+  }
+  return "";
+}
+
+async function rollHpAdjustment(notation, mode = "heal") {
+  const normalizedNotation = normalizeHpRollNotation(notation);
+  if (!normalizedNotation) {
+    setStatus("Unsupported HP roll.", "error");
+    return;
+  }
+  const direction = String(mode || "").trim().toLowerCase() === "damage" ? -1 : 1;
+  const ready = await ensureDiceTrayInitialized();
+  if (!ready || !state.diceTray) {
+    setStatus("Dice tray unavailable. Could not roll HP adjustment.", "error");
+    return;
+  }
+  const actionLabel = direction > 0 ? "heal" : "damage";
+  setStatus(`Rolling ${normalizedNotation} to ${actionLabel} HP.`, "neutral");
+  state.diceTray.roll(normalizedNotation, {
+    source: "hp-roll",
+    statId: "hpCurrent",
+    statLabel: direction > 0 ? `HP Heal (${normalizedNotation})` : `HP Damage (${normalizedNotation})`,
+    modifier: 0,
+    showModifier: true,
+    hpDirection: direction,
+    characterName: resolveActiveCharacterName(),
+  });
 }
 
 function trackerCountFromCharacter(character, target) {
@@ -3258,6 +3324,17 @@ function bindEvents() {
   els.form.addEventListener("click", (event) => {
     const origin = event.target;
     if (!(origin instanceof Element)) {
+      return;
+    }
+    const hpRollButton = origin.closest("[data-hp-roll]");
+    if (hpRollButton instanceof HTMLElement) {
+      const notation = normalizeHpRollNotation(hpRollButton.dataset.hpRoll);
+      const mode = String(hpRollButton.dataset.hpRollMode || "heal").trim().toLowerCase();
+      if (!notation) {
+        setStatus("Unsupported HP roll.", "error");
+        return;
+      }
+      void rollHpAdjustment(notation, mode === "damage" ? "damage" : "heal");
       return;
     }
     const hpButton = origin.closest("[data-hp-action]");
