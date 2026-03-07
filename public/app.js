@@ -1814,7 +1814,7 @@ function adjustCurrentHp(delta) {
 
 function normalizeHpRollNotation(value) {
   const clean = String(value || "").trim().toLowerCase();
-  if (clean === "d4" || clean === "d6") {
+  if (clean === "d4" || clean === "d6" || clean === "d8") {
     return clean;
   }
   return "";

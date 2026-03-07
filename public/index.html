@@ -395,6 +395,12 @@
                 </button>
               </div>
               <div class="hp-roll-row" role="group" aria-label="Hit point roll controls">
+                <button class="hp-roll-btn is-heal" type="button" data-hp-roll="d8" data-hp-roll-mode="heal"
+                  aria-label="Roll d8 to heal hit points">
+                  <span class="hp-roll-sign" aria-hidden="true">+</span>
+                  <i class="stat-lucide hp-roll-icon" data-lucide="heart" aria-hidden="true"></i>
+                  <span>d8</span>
+                </button>
                 <button class="hp-roll-btn is-heal" type="button" data-hp-roll="d6" data-hp-roll-mode="heal"
                   aria-label="Roll d6 to heal hit points">
                   <span class="hp-roll-sign" aria-hidden="true">+</span>
@@ -418,6 +424,12 @@
                   <span class="hp-roll-sign" aria-hidden="true">-</span>
                   <i class="stat-lucide hp-roll-icon" data-lucide="heart-crack" aria-hidden="true"></i>
                   <span>d6</span>
+                </button>
+                <button class="hp-roll-btn is-damage" type="button" data-hp-roll="d8" data-hp-roll-mode="damage"
+                  aria-label="Roll d8 to lose hit points">
+                  <span class="hp-roll-sign" aria-hidden="true">-</span>
+                  <i class="stat-lucide hp-roll-icon" data-lucide="heart-crack" aria-hidden="true"></i>
+                  <span>d8</span>
                 </button>
               </div>
               <p id="hp-current-hint" class="tracker-hint" hidden>Current HP cannot exceed Max HP.</p>

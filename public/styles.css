@@ -2239,7 +2239,7 @@ html[data-theme="light"] .sheet-roll-banner-chip.is-fumble {
 .hp-roll-row {
   margin-top: 0.62rem;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.42rem;
 }
 
