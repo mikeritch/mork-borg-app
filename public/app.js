@@ -1418,11 +1418,9 @@ async function rollAttackDamage() {
     characterName: resolveActiveCharacterName(),
     weaponLabel: details.weaponLabel,
     characterId: activeCharacter()?.id || "",
+    modifier: details.damageModifier,
+    showModifier: true,
   };
-  if (details.hasCustomDamageModifier) {
-    metadata.modifier = details.damageModifier;
-    metadata.showModifier = true;
-  }
   state.diceTray.roll(details.damageNotation, metadata);
 }
 
