@@ -2984,7 +2984,7 @@ async function randomCharacterPatch() {
     epithet: pick(library.epithets),
     className: "Classless Scvm",
     homeland: pick(library.homelands),
-    age: String(rollDice(2, 10) + 8),
+    age: String(rollDice(1, 73) + 13),
     level: 1,
     strength,
     agility,
