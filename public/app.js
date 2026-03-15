@@ -2,6 +2,7 @@ const STORAGE_KEY = "morkborg-reliquary.characters.v1";
 const ACTIVE_KEY = "morkborg-reliquary.active.v1";
 const THEME_KEY = "morkborg-reliquary.theme.v1";
 const INSTALL_HINT_KEY = "morkborg-reliquary.install-hint.v1";
+const MORKBORG_THEME_KEY = "morkborg-reliquary.morkborg-theme.v1";
 const APP_VERSION = "__APP_VERSION__";
 const CUSTOM_OPTION_VALUE = "__custom__";
 const POWER_TRACKER_LENGTH = 12;
@@ -297,6 +298,8 @@ const els = {
   newCharacter: document.getElementById("new-character"),
   randomCharacter: document.getElementById("random-character"),
   themeToggle: document.getElementById("theme-toggle"),
+  morkborgToggle: document.getElementById("morkborg-toggle"),
+  morkborgStylesheet: document.getElementById("morkborg-stylesheet"),
   joinPartyTooltip: document.getElementById("join-party-tooltip"),
   installApp: document.getElementById("install-app"),
   saveIndicator: document.getElementById("save-indicator"),
@@ -3450,6 +3453,9 @@ function bindEvents() {
   if (els.themeToggle) {
     els.themeToggle.addEventListener("click", toggleTheme);
   }
+  if (els.morkborgToggle) {
+    els.morkborgToggle.addEventListener("click", toggleMorkborgTheme);
+  }
   if (els.installApp) {
     els.installApp.addEventListener("click", handleInstallAppClick);
   }
@@ -3777,6 +3783,37 @@ async function registerServiceWorker() {
   }
 }
 
+function applyMorkborgTheme(on) {
+  if (els.morkborgStylesheet) {
+    els.morkborgStylesheet.setAttribute("media", on ? "all" : "not all");
+  }
+  if (els.morkborgToggle) {
+    els.morkborgToggle.setAttribute("aria-pressed", String(on));
+    els.morkborgToggle.setAttribute("aria-checked", String(on));
+    const label = els.morkborgToggle.querySelector(".theme-toggle-label");
+    if (label) {
+      label.textContent = on ? "M\u00f6rk Borg" : "Vanilla";
+    }
+  }
+}
+
+function isMorkborgEnabled() {
+  try {
+    return localStorage.getItem(MORKBORG_THEME_KEY) !== "off";
+  } catch (_e) {
+    return true;
+  }
+}
+
+function toggleMorkborgTheme() {
+  const next = !isMorkborgEnabled();
+  try {
+    localStorage.setItem(MORKBORG_THEME_KEY, next ? "on" : "off");
+  } catch (_e) { /* ignore */ }
+  applyMorkborgTheme(next);
+  setStatus(next ? "The dying world bleeds through." : "Vanilla restored.", "ok");
+}
+
 function init() {
   ensureThemeToggleButton();
   setupJoinPartyTooltip();
@@ -3784,6 +3821,7 @@ function init() {
   setAutoSaveIndicator("saved");
   setSheetRollButtonsVisible(Boolean(els.dicePanel && els.diceToggle));
   applyTheme(resolveTheme(), false);
+  applyMorkborgTheme(isMorkborgEnabled());
   renderFooterYear();
   renderFooterVersion();
   renderLucideIcons();
